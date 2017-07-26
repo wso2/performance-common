@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.text.MessageFormat;
+import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -111,20 +112,25 @@ public final class JTLSplitter {
                 return;
             }
 
-            String[] data = line.split(",");
-            long startTimestamp = Long.parseLong(data[0]);
+            StringTokenizer st = new StringTokenizer(line, ",", false);
+            long startTimestamp = Long.parseLong(st.nextToken());
 
             // Current Line Number
             long lineNumber = 2;
+            standardOutput.print("Started splitting...\r");
 
             do {
-                data = line.split(",");
-                standardOutput.format("Processing line %10d\r", lineNumber);
-                // Validate data
-                if (data.length != 16) {
-                    errorOutput.format("Line %d doesn't have 16 columns: %s%n", lineNumber, line);
+                st = new StringTokenizer(line, ",", false);
+                if (lineNumber % 10_000 == 0) {
+                    standardOutput.print("Processed " + lineNumber + " lines.\r");
                 }
-                long timestamp = Long.parseLong(data[0]);
+                // Validate token count
+                // JTL file usually has 16 columns
+                if (st.countTokens() > 16) {
+                    errorOutput.format("Line %d doesn't have expected number of columns: %s%n", lineNumber, line);
+                    continue;
+                }
+                long timestamp = Long.parseLong(st.nextToken());
                 long diff = timestamp - startTimestamp;
                 if (diff <= timeLimit) {
                     bwWarmup.write(line);
