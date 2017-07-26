@@ -24,7 +24,7 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>performance-common-dist</artifactId>
+    <artifactId>performance-common-distribution</artifactId>
     <packaging>pom</packaging>
     <name>Performance Common Distribution</name>
     <description>Package for all components and scripts</description>

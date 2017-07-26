@@ -15,27 +15,43 @@
     # limitations under the License.
 -->
 <assembly>
-    <includeBaseDirectory>true</includeBaseDirectory>
-    <baseDirectory>performance-common-${performance.common.version}</baseDirectory>
+    <includeBaseDirectory>false</includeBaseDirectory>
     <id>performance-common</id>
     <formats>
-        <format>zip</format>
+        <format>tar.gz</format>
     </formats>
 
     <fileSets>
         <fileSet>
-            <directory>../scripts</directory>
-            <outputDirectory>scripts</outputDirectory>
+            <directory>scripts</directory>
+            <outputDirectory>.</outputDirectory>
+            <filtered>true</filtered>
         </fileSet>
     </fileSets>
 
     <dependencySets>
         <dependencySet>
-            <outputDirectory>jars</outputDirectory>
+            <outputDirectory>netty-service</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
             <useStrictFiltering>true</useStrictFiltering>
             <includes>
-                <include>org.wso2.performance</include>
+                <include>org.wso2.performance:netty-http-echo-service</include>
+            </includes>
+        </dependencySet>
+        <dependencySet>
+            <outputDirectory>payloads</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <useStrictFiltering>true</useStrictFiltering>
+            <includes>
+                <include>org.wso2.performance:payload-generator</include>
+            </includes>
+        </dependencySet>
+        <dependencySet>
+            <outputDirectory>jtl-splitter</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <useStrictFiltering>true</useStrictFiltering>
+            <includes>
+                <include>org.wso2.performance:jtl-splitter</include>
             </includes>
         </dependencySet>
     </dependencySets>
