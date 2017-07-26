@@ -50,6 +50,7 @@
     <modules>
         <module>components/netty-http-echo-service</module>
         <module>components/payload-generator</module>
+        <module>components/jtl-splitter</module>
     </modules>
 
     <dependencyManagement>
@@ -147,6 +148,7 @@
                     <effort>Max</effort>
                     <threshold>Low</threshold>
                     <xmlOutput>true</xmlOutput>
+                    <excludeFilterFile>${project.parent.basedir}/findbugs-exclude.xml</excludeFilterFile>
                 </configuration>
                 <executions>
                     <execution>
