@@ -48,6 +48,7 @@ public final class PayloadGenerator {
             jcmdr.parse(args);
         } catch (Exception e) {
             errorOutput.println(e.getMessage());
+            return;
         }
 
         if (payloadGenerator.help) {
