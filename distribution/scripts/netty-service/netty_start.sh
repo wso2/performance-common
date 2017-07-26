@@ -30,11 +30,13 @@ if pgrep -f "$service_name" > /dev/null; then
     pkill -f $service_name
 fi
 
-if [[ -f ./logs/nettygc.log ]]; then
+if [[ -f $script_dir/logs/nettygc.log ]]; then
     echo "GC Log exists. Moving to /tmp"
-    mv ./logs/nettygc.log /tmp/
+    mv $script_dir/logs/nettygc.log /tmp/
 fi
 
+mkdir -p $script_dir/logs
+
 echo "Starting Netty"
-nohup java -Xms2g -Xmx2g -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:./logs/nettygc.log \
+nohup java -Xms2g -Xmx2g -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$script_dir/logs/nettygc.log \
     -jar $script_dir/$service_name-${performance.common.version}.jar --worker-threads 2000 --sleep-time $sleep_time &
