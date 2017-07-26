@@ -49,6 +49,7 @@
 
     <modules>
         <module>components/netty-http-echo-service</module>
+        <module>components/payload-generator</module>
     </modules>
 
     <dependencyManagement>
