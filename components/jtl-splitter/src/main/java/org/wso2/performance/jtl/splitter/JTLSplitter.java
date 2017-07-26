@@ -87,10 +87,6 @@ public final class JTLSplitter {
                 measurementJTLFile.getFileName());
         standardOutput.format("Warmup Time: %d %s%n", warmupTime, timeUnit);
 
-        if (deleteJTLFileOnExit) {
-            jtlFile.deleteOnExit();
-        }
-
         long timeLimit = timeUnit.toMillis(warmupTime);
 
         try (BufferedReader br = new BufferedReader(new FileReader(jtlFile));
@@ -141,6 +137,11 @@ public final class JTLSplitter {
                 }
                 lineNumber++;
             } while ((line = br.readLine()) != null);
+
+            // Delete only if splitting is successful
+            if (deleteJTLFileOnExit) {
+                jtlFile.deleteOnExit();
+            }
         } catch (IOException e) {
             errorOutput.println(e.getMessage());
         } finally {
