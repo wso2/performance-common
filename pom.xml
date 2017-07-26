@@ -51,6 +51,7 @@
         <module>components/netty-http-echo-service</module>
         <module>components/payload-generator</module>
         <module>components/jtl-splitter</module>
+        <module>distribution</module>
     </modules>
 
     <dependencyManagement>
@@ -100,6 +101,23 @@
                 <artifactId>log4j-slf4j-impl</artifactId>
                 <version>${log4j.version}</version>
             </dependency>
+            <!-- Distribution Dependencies - Start -->
+            <dependency>
+                <groupId>org.wso2.performance</groupId>
+                <artifactId>netty-http-echo-service</artifactId>
+                <version>${performance.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.performance</groupId>
+                <artifactId>payload-generator</artifactId>
+                <version>${performance.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.performance</groupId>
+                <artifactId>jtl-splitter</artifactId>
+                <version>${performance.common.version}</version>
+            </dependency>
+            <!-- Distribution Dependencies - End -->
         </dependencies>
     </dependencyManagement>
 
