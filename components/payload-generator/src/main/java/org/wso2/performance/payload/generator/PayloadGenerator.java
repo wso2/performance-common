@@ -20,6 +20,7 @@ import com.beust.jcommander.Parameter;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
@@ -66,7 +67,7 @@ public final class PayloadGenerator {
         payloadBuilder.append(',').append('"').append("payload").append('"');
         payloadBuilder.append(':').append('"');
 
-        int limit = payloadSize * 1024 - (payloadBuilder.toString().getBytes().length + 2);
+        int limit = payloadSize * 1024 - (payloadBuilder.toString().getBytes(Charset.forName("UTF-8")).length + 2);
 
         int c = '0';
         for (int i = 0; i < limit; i++) {
@@ -83,7 +84,7 @@ public final class PayloadGenerator {
 
         payloadBuilder.append('"').append('}');
 
-        byte[] payloadBytes = payloadBuilder.toString().getBytes();
+        byte[] payloadBytes = payloadBuilder.toString().getBytes(Charset.forName("UTF-8"));
         String fileName = MessageFormat.format("{0}K.json", payloadSize);
         try {
             Files.write(Paths.get(fileName), payloadBytes);
