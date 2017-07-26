@@ -238,7 +238,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <performance.common.version>0.1.0-SNAPSHOT</performance.common.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jcommander.version>1.72</jcommander.version>
         <netty.version>4.1.13.Final</netty.version>
         <slf4j.version>1.7.25</slf4j.version>
