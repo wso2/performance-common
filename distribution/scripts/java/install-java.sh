@@ -78,6 +78,17 @@ if [[ -f $unlimited_jce_policy_dist ]]; then
     unzip -j -o $unlimited_jce_policy_dist *.jar -d $extracted_dirname/jre/lib/security
 fi
 
+commands=( "jar" "java" "javac" "javadoc" "javah" "javap" "javaws" "jcmd" "jconsole" "jarsigner" "jhat" "jinfo" "jmap" "jmc" "jps" "jstack" "jstat" "jstatd" "jvisualvm" "keytool" "policytool" "wsgen" "wsimport" )
+
+echo "Running update-alternatives --install and --config for ${commands[@]}"
+
+for i in "${commands[@]}"
+do
+    command_path=$extracted_dirname/bin/$i
+    sudo update-alternatives --install "/usr/bin/$i" "$i" "$command_path" 10000
+    sudo update-alternatives --set "$i" "$command_path"
+done
+
 # Create system preferences directory
 java_system_prefs_dir="/etc/.java/.systemPrefs"
 if [[ ! -d $java_system_prefs_dir ]]; then
