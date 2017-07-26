@@ -33,7 +33,7 @@ public final class PayloadGenerator {
             validateWith = PayloadSizeValidator.class)
     private int payloadSize;
 
-    @Parameter(names = "--help", description = "Display Help", help = true)
+    @Parameter(names = {"-h", "--help"}, description = "Display Help", help = true)
     private boolean help = false;
 
     private static PrintStream errorOutput = System.err;

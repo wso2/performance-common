@@ -60,7 +60,7 @@ public final class EchoHttpServer {
     @Parameter(names = "--sleep-time", description = "Sleep Time in milliseconds")
     private int sleepTime = 0;
 
-    @Parameter(names = "--help", description = "Display Help", help = true)
+    @Parameter(names = {"-h", "--help"}, description = "Display Help", help = true)
     private boolean help = false;
 
     public static void main(String[] args) throws Exception {
