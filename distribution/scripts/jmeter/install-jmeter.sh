@@ -22,7 +22,6 @@ current_dir=$(dirname "$0")
 
 if [[ ! -f $jmeter_dist ]]; then
     echo "Please specify the jmeter distribution file (apache-jmeter-*.tgz)"
-    help
     exit 1
 fi
 
