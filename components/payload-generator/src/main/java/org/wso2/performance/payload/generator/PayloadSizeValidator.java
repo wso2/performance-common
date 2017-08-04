@@ -25,8 +25,9 @@ public class PayloadSizeValidator implements IParameterValidator {
 
     public void validate(String name, String value) throws ParameterException {
         int n = Integer.parseInt(value);
-        if (n <= 0) {
-            throw new ParameterException("Parameter " + name + " should be greater than zero (found " + value + ")");
+        if (n < 50) {
+            throw new ParameterException("Parameter " + name +
+                    " should be greater than or equal 50 (found " + value + ")");
         }
     }
 

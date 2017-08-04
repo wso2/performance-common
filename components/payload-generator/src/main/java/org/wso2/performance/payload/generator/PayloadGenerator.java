@@ -30,7 +30,7 @@ import java.text.MessageFormat;
  */
 public final class PayloadGenerator {
 
-    @Parameter(names = "--size", description = "Size in Kibibytes (KiB)", required = true,
+    @Parameter(names = "--size", description = "Size in bytes (B)", required = true,
             validateWith = PayloadSizeValidator.class)
     private int payloadSize;
 
@@ -63,11 +63,11 @@ public final class PayloadGenerator {
     private void generatePayload() {
         StringBuilder payloadBuilder = new StringBuilder();
         payloadBuilder.append('{').append('"').append("size").append('"');
-        payloadBuilder.append(':').append('"').append(payloadSize).append('K').append('"');
+        payloadBuilder.append(':').append('"').append(payloadSize).append('B').append('"');
         payloadBuilder.append(',').append('"').append("payload").append('"');
         payloadBuilder.append(':').append('"');
 
-        int limit = payloadSize * 1024 - (payloadBuilder.toString().getBytes(Charset.forName("UTF-8")).length + 2);
+        int limit = payloadSize - (payloadBuilder.toString().getBytes(Charset.forName("UTF-8")).length + 2);
 
         int c = '0';
         for (int i = 0; i < limit; i++) {
@@ -85,14 +85,14 @@ public final class PayloadGenerator {
         payloadBuilder.append('"').append('}');
 
         byte[] payloadBytes = payloadBuilder.toString().getBytes(Charset.forName("UTF-8"));
-        String fileName = MessageFormat.format("{0}K.json", payloadSize);
+        String fileName = MessageFormat.format("{0,number,#}B.json", payloadSize);
         try {
             Files.write(Paths.get(fileName), payloadBytes);
         } catch (IOException e) {
             errorOutput.println(e.getMessage());
         }
 
-        standardOutput.println(MessageFormat.format("Wrote {0} bytes ({1} KiB) JSON payload file to {2}",
-                payloadBytes.length, payloadBytes.length / 1024, fileName));
+        standardOutput.println(MessageFormat.format("Wrote {0} bytes JSON payload file to {1}",
+                payloadBytes.length, fileName));
     }
 }

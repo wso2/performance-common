@@ -18,11 +18,9 @@
 # ----------------------------------------------------------------------------
 
 script_dir=$(dirname "$0")
-echo "Generating 0 KiB file"
-touch 0K.json
 
-for s in 1 10 100
+for s in 50 1024 10240 102400
 do
-    echo "Generating ${s}KiB file"
+    echo "Generating ${s}B file"
     java -jar $script_dir/payload-generator-${performance.common.version}.jar --size $s
 done
