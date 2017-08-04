@@ -18,6 +18,8 @@
 # ----------------------------------------------------------------------------
 
 script_dir=$(dirname "$0")
+# Change directory to make sure logs directory is created inside $script_dir
+cd $script_dir
 service_name=netty-http-echo-service
 sleep_time=$1
 
@@ -30,15 +32,15 @@ if pgrep -f "$service_name" > /dev/null; then
     pkill -f $service_name
 fi
 
-gc_log_file=$script_dir/logs/nettygc.log
+gc_log_file=./logs/nettygc.log
 
 if [[ -f $gc_log_file ]]; then
     echo "GC Log exists. Moving $gc_log_file to /tmp"
     mv $gc_log_file /tmp/
 fi
 
-mkdir -p $script_dir/logs
+mkdir -p logs
 
 echo "Starting Netty"
 nohup java -Xms4g -Xmx4g -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$gc_log_file \
-    -jar $script_dir/$service_name-${performance.common.version}.jar --worker-threads 2000 --sleep-time $sleep_time > netty.out 2>&1 &
+    -jar $service_name-${performance.common.version}.jar --worker-threads 2000 --sleep-time $sleep_time > netty.out 2>&1 &
