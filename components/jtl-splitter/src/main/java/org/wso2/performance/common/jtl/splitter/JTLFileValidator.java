@@ -13,22 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.wso2.performance.jtl.splitter;
+package org.wso2.performance.common.jtl.splitter;
 
-import com.beust.jcommander.IParameterValidator;
+import com.beust.jcommander.IValueValidator;
 import com.beust.jcommander.ParameterException;
 
-/**
- * Validate Warmup Time Parameter Value
- */
-public class WarmupTimeValidator implements IParameterValidator {
+import java.io.File;
 
-    public void validate(String name, String value) throws ParameterException {
-        int n = Integer.parseInt(value);
-        if (n <= 0) {
-            throw new ParameterException("Parameter " + name + " should be greater than zero (found " + value + ")");
+/**
+ * Validate JTL file extension
+ */
+public class JTLFileValidator implements IValueValidator<File> {
+
+    @Override
+    public void validate(String name, File file) throws ParameterException {
+        String fileName = file.toPath().getFileName().toString();
+        String ext = fileName.substring(fileName.lastIndexOf('.') + 1);
+        if (!file.exists() || !"jtl".equals(ext)) {
+            throw new ParameterException("Parameter " + name + " should be a valid JTL file");
         }
     }
-
 }
 

@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.wso2.performance.payload.generator;
+package org.wso2.performance.common.jtl.splitter;
 
 import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.ParameterException;
 
 /**
- * Validate Payload Size Parameter Value
+ * Validate Warmup Time Parameter Value
  */
-public class PayloadSizeValidator implements IParameterValidator {
+public class WarmupTimeValidator implements IParameterValidator {
 
     public void validate(String name, String value) throws ParameterException {
         int n = Integer.parseInt(value);
-        if (n < 50) {
-            throw new ParameterException("Parameter " + name +
-                    " should be greater than or equal 50 (found " + value + ")");
+        if (n <= 0) {
+            throw new ParameterException("Parameter " + name + " should be greater than zero (found " + value + ")");
         }
     }
 

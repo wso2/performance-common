@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.wso2.performance.jtl.splitter;
+package org.wso2.performance.common.payload.generator;
 
-import com.beust.jcommander.IValueValidator;
+import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.ParameterException;
 
-import java.io.File;
-
 /**
- * Validate JTL file extension
+ * Validate Payload Size Parameter Value
  */
-public class JTLFileValidator implements IValueValidator<File> {
+public class PayloadSizeValidator implements IParameterValidator {
 
-    @Override
-    public void validate(String name, File file) throws ParameterException {
-        String fileName = file.toPath().getFileName().toString();
-        String ext = fileName.substring(fileName.lastIndexOf('.') + 1);
-        if (!file.exists() || !"jtl".equals(ext)) {
-            throw new ParameterException("Parameter " + name + " should be a valid JTL file");
+    public void validate(String name, String value) throws ParameterException {
+        int n = Integer.parseInt(value);
+        if (n < 50) {
+            throw new ParameterException("Parameter " + name +
+                    " should be greater than or equal 50 (found " + value + ")");
         }
     }
+
 }
 

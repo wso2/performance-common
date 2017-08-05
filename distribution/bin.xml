@@ -35,7 +35,7 @@
             <useProjectArtifact>false</useProjectArtifact>
             <useStrictFiltering>true</useStrictFiltering>
             <includes>
-                <include>org.wso2.performance:netty-http-echo-service</include>
+                <include>org.wso2.performance.common:netty-http-echo-service</include>
             </includes>
         </dependencySet>
         <dependencySet>
@@ -43,7 +43,7 @@
             <useProjectArtifact>false</useProjectArtifact>
             <useStrictFiltering>true</useStrictFiltering>
             <includes>
-                <include>org.wso2.performance:payload-generator</include>
+                <include>org.wso2.performance.common:payload-generator</include>
             </includes>
         </dependencySet>
         <dependencySet>
@@ -51,7 +51,7 @@
             <useProjectArtifact>false</useProjectArtifact>
             <useStrictFiltering>true</useStrictFiltering>
             <includes>
-                <include>org.wso2.performance:jtl-splitter</include>
+                <include>org.wso2.performance.common:jtl-splitter</include>
             </includes>
         </dependencySet>
     </dependencySets>
