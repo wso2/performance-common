@@ -24,46 +24,14 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>netty-http-echo-service</artifactId>
+    <artifactId>payload-generator</artifactId>
     <packaging>jar</packaging>
-    <name>Netty HTTP Echo Service</name>
+    <name>Payload Generator</name>
 
     <dependencies>
         <dependency>
             <groupId>com.beust</groupId>
             <artifactId>jcommander</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-transport</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-buffer</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-handler</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-codec-http</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
     </dependencies>
 
@@ -77,7 +45,7 @@
     </build>
 
     <properties>
-        <main.class>org.wso2.performance.common.netty.echo.EchoHttpServer</main.class>
+        <main.class>org.wso2.performance.common.payload.generator.PayloadGenerator</main.class>
     </properties>
 
 </project>

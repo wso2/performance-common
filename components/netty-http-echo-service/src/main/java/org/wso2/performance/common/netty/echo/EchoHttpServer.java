@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.wso2.performance.netty.echo;
+package org.wso2.performance.common.netty.echo;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -60,7 +60,7 @@ public final class EchoHttpServer {
     @Parameter(names = "--sleep-time", description = "Sleep Time in milliseconds")
     private int sleepTime = 0;
 
-    @Parameter(names = "--help", description = "Display Help", help = true)
+    @Parameter(names = {"-h", "--help"}, description = "Display Help", help = true)
     private boolean help = false;
 
     public static void main(String[] args) throws Exception {
@@ -102,6 +102,7 @@ public final class EchoHttpServer {
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .option(ChannelOption.SO_BACKLOG, 1024)
+                    .childOption(ChannelOption.SO_KEEPALIVE, true)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
