@@ -55,3 +55,6 @@ export RMI_HOST_DEF=-Djava.rmi.server.hostname=$jmeter_host
 
 echo "Starting JMeter Server"
 nohup $JMETER_HOME/bin/jmeter-server > server.out 2>&1 &
+
+# Sleep for 10 seconds and make sure the JMeter server is ready to run the tests
+sleep 10
