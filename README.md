@@ -1,5 +1,11 @@
 # Common Artifacts for Performance Tests
 
+---
+|  Branch | Build Status |
+| :------ |:------------ |
+| master  | [![Build Status](https://wso2.org/jenkins/buildStatus/icon?job=platform-builds/performance-common)](https://wso2.org/jenkins/job/platform-builds/job/performance-common/) |
+---
+
 This repository has common artifacts to be used for Performance Tests.
 
 In [components](components), there are several Java projects and each project builds an executable JAR file.
@@ -8,7 +14,7 @@ The [distribution](distribution) directory has the scripts and the Maven project
  including all scripts and components to be used for performance tests.
 
 The package (**performance-common-distribution-${version}.tar.gz**) built by the distribution maven module is the
- only package required for performance test.
+ only package required for performance tests.
 
 ## Package contents
 
@@ -36,7 +42,7 @@ Following is the tree view of the contents inside distribution package.
 
 Each directory has an executable script.
 
-This package must be extracted in user home directory in all servers used for the performance tests.
+This package must be extracted in user home directory in all nodes used for the performance tests.
 
 **Note:** These scripts will work only on Debian based systems like Ubuntu.
 
@@ -116,6 +122,12 @@ The performance testing script can call this script to generate payloads require
 How to run:
 
 `./generate-payloads.sh`
+
+If you want to generate different payload sizes, pass the payload sizes as a single parameter in quotes.
+
+For example:
+
+`./generate-payloads.sh "128 256 512 1024"`
 
 ### SAR
 
