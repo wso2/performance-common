@@ -29,8 +29,8 @@ apt install sysstat
 #Enable
 sed -i "s|ENABLED=\"false\"|ENABLED=\"true\"|" /etc/default/sysstat
 
-#Change interval to 5 minutes
-sed -i "s|^5-55/10|5-55/5|" /etc/cron.d/sysstat
+#Change interval to 1 minute
+sed -i "s|^5-55/10|*/1|" /etc/cron.d/sysstat
 
 #Restart the service
 service sysstat restart
