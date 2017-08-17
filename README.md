@@ -8,7 +8,7 @@ The [distribution](distribution) directory has the scripts and the Maven project
  including all scripts and components to be used for performance tests.
 
 The package (**performance-common-distribution-${version}.tar.gz**) built by the distribution maven module is the
- only package required for performance test.
+ only package required for performance tests.
 
 ## Package contents
 
@@ -116,6 +116,12 @@ The performance testing script can call this script to generate payloads require
 How to run:
 
 `./generate-payloads.sh`
+
+If you want to generate different payload sizes, pass the payload sizes as a single parameter in quotes.
+
+For example:
+
+`./generate-payloads.sh "128 256 512 1024"`
 
 ### SAR
 
