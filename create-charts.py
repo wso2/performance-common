@@ -21,6 +21,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
+import apimchart
 
 sns.set_style("darkgrid")
 
@@ -37,28 +38,6 @@ def save_line_chart(chart, column, sleep_time, title):
     sns_plot = sns.pointplot(x="Concurrent Users", y=column, hue="Message Size (Bytes)", data=df.loc[df['Sleep Time (ms)'] == sleep_time], ci=None, dodge=True)
     plt.suptitle(title)
     plt.legend(loc=2, frameon=True, title="Message Size in Bytes")
-    plt.savefig(chart + "_" + str(sleep_time) + "ms.png")
-    plt.clf()
-    plt.close(fig)
-
-def save_multi_columns_categorical_charts(chart, sleep_time, columns, y, hue, title):
-    print("Creating " + chart + " charts for " + str(sleep_time) + "ms backend delay")
-    fig, ax = plt.subplots()
-    df_results = df.loc[df['Sleep Time (ms)'] == sleep_time]
-    all_columns=['Message Size (Bytes)','Concurrent Users']
-    all_columns.extend(columns)
-    df_results=df_results[all_columns]
-    df_results = df_results.set_index(['Message Size (Bytes)', 'Concurrent Users']).stack().reset_index().rename(columns={'level_2': hue, 0: y})
-    g = sns.factorplot(x="Concurrent Users", y=y,
-        hue=hue, col="Message Size (Bytes)",
-        data=df_results, kind="point",
-        size=5, aspect=1, col_wrap=2 ,legend=False);
-    for ax in g.axes.flatten():
-        ax.yaxis.set_major_formatter(
-            tkr.FuncFormatter(lambda y, p: "{:,}".format(y)))
-    plt.subplots_adjust(top=0.9, left=0.1)
-    g.fig.suptitle(title)
-    plt.legend(frameon=True)
     plt.savefig(chart + "_" + str(sleep_time) + "ms.png")
     plt.clf()
     plt.close(fig)
@@ -80,11 +59,11 @@ def save_bar_chart(message_size, sleep_time, title):
 for sleep_time in unique_sleep_times:
     save_line_chart("thrpt", "Throughput", sleep_time, "Throughput (Requests/sec) vs Concurrent Users for " + str(sleep_time) + "ms backend delay")
     save_line_chart("avgt", "Average (ms)", sleep_time, "Average Response Time (ms) vs Concurrent Users for " + str(sleep_time) + "ms backend delay")
-    save_multi_columns_categorical_charts("loadavg", sleep_time, ['API Manager Load Average - Last 1 minute','API Manager Load Average - Last 5 minutes','API Manager Load Average - Last 15 minutes'],
+    apimchart.save_multi_columns_categorical_charts(df, "loadavg", sleep_time, ['API Manager Load Average - Last 1 minute','API Manager Load Average - Last 5 minutes','API Manager Load Average - Last 15 minutes'],
         "Load Average", "API Manager", "Load Average with " + str(sleep_time) + "ms backend delay");
-    save_multi_columns_categorical_charts("network", sleep_time, ['Received (KB/sec)', 'Sent (KB/sec)'],
+    apimchart.save_multi_columns_categorical_charts(df, "network", sleep_time, ['Received (KB/sec)', 'Sent (KB/sec)'],
         "Network Throughput (KB/sec)", "Network", "Network Throughput with " + str(sleep_time) + "ms backend delay");
-    save_multi_columns_categorical_charts("gc", sleep_time, ['API Manager GC Throughput (%)'],
+    apimchart.save_multi_columns_categorical_charts(df, "gc", sleep_time, ['API Manager GC Throughput (%)'],
         "GC Throughput", "API Manager", "GC Throughput with " + str(sleep_time) + "ms backend delay")
     for message_size in unique_message_sizes:
         save_bar_chart(message_size, sleep_time, "Response Time Summary for " + str(message_size) + "B message size with " + str(sleep_time) + "ms backend delay")
