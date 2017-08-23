@@ -33,11 +33,8 @@ def save_line_chart(chart, column, sleep_time, title):
     print("Creating " + chart + " chart for " + str(sleep_time) + "ms backend delay")
     fig, ax = plt.subplots()
     fig.set_size_inches(8, 6)
-    # # Make sure all charts have the same max limit and there is enough space for legend
-    # max_limit=(int(df[column].max() / 1000) + 2) * 1000
     sns_plot = sns.pointplot(x="Concurrent Users", y=column, hue="Message Size (Bytes)", data=df.loc[df['Sleep Time (ms)'] == sleep_time], ci=None, dodge=True)
     plt.suptitle(title)
-    # sns_plot.set_ylim(0, max_limit)
     plt.legend(loc=2, frameon=True, title="Message Size in Bytes")
     plt.savefig(chart + "_" + str(sleep_time) + "ms.png")
     plt.clf()
@@ -46,34 +43,18 @@ def save_line_chart(chart, column, sleep_time, title):
 def save_multi_columns_categorical_charts(chart, sleep_time, columns, y, hue, title):
     print("Creating " + chart + " charts for " + str(sleep_time) + "ms backend delay")
     fig, ax = plt.subplots()
-    fig.set_size_inches(8, 6)
     df_results = df.loc[df['Sleep Time (ms)'] == sleep_time]
     all_columns=['Message Size (Bytes)','Concurrent Users']
     all_columns.extend(columns)
     df_results=df_results[all_columns]
     df_results = df_results.set_index(['Message Size (Bytes)', 'Concurrent Users']).stack().reset_index().rename(columns={'level_2': hue, 0: y})
-    sns_plot = sns.factorplot(x="Concurrent Users", y=y,
+    g = sns.factorplot(x="Concurrent Users", y=y,
         hue=hue, col="Message Size (Bytes)",
         data=df_results, kind="point",
-        size=6, aspect=1, col_wrap=2 ,legend=False);
-    plt.suptitle(title)
+        size=5, aspect=1, col_wrap=2 ,legend=False);
+    plt.subplots_adjust(top=0.9)
+    g.fig.suptitle(title)
     plt.legend(frameon=True)
-    plt.savefig(chart + "_" + str(sleep_time) + "ms.png")
-    plt.clf()
-    plt.close(fig)
-
-def save_gc_categorical_charts(chart, sleep_time, title):
-    print("Creating " + chart + " charts for " + str(sleep_time) + "ms backend delay")
-    fig, ax = plt.subplots()
-    fig.set_size_inches(8, 6)
-    df_results = df.loc[df['Sleep Time (ms)'] == sleep_time]
-    df_results=df_results[['Message Size (Bytes)','Concurrent Users','API Manager GC Throughput (%)']]
-    factorgrid = sns.factorplot(x="Concurrent Users", y="API Manager GC Throughput (%)",
-        col="Message Size (Bytes)",
-        data=df_results, kind="point",
-        size=6, aspect=1, col_wrap=2 ,legend=False);
-    factorgrid.set(ylim=(50, 100))
-    plt.suptitle(title)
     plt.savefig(chart + "_" + str(sleep_time) + "ms.png")
     plt.clf()
     plt.close(fig)
@@ -99,7 +80,8 @@ for sleep_time in unique_sleep_times:
         "Load Average", "API Manager", "Load Average with " + str(sleep_time) + "ms backend delay");
     save_multi_columns_categorical_charts("network", sleep_time, ['Received (KB/sec)', 'Sent (KB/sec)'],
         "Network Throughput (KB/sec)", "Network", "Network Throughput with " + str(sleep_time) + "ms backend delay");
-    save_gc_categorical_charts("gc", sleep_time, "GC Throughput with " + str(sleep_time) + "ms backend delay")
+    save_multi_columns_categorical_charts("gc", sleep_time, ['API Manager GC Throughput (%)'],
+        "GC Throughput", "API Manager", "GC Throughput with " + str(sleep_time) + "ms backend delay")
     for message_size in unique_message_sizes:
         save_bar_chart(message_size, sleep_time, "Response Time Summary for " + str(message_size) + "B message size with " + str(sleep_time) + "ms backend delay")
 
