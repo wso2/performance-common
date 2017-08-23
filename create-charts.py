@@ -20,6 +20,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.ticker as tkr
 
 sns.set_style("darkgrid")
 
@@ -52,7 +53,10 @@ def save_multi_columns_categorical_charts(chart, sleep_time, columns, y, hue, ti
         hue=hue, col="Message Size (Bytes)",
         data=df_results, kind="point",
         size=5, aspect=1, col_wrap=2 ,legend=False);
-    plt.subplots_adjust(top=0.9)
+    for ax in g.axes.flatten():
+        ax.yaxis.set_major_formatter(
+            tkr.FuncFormatter(lambda y, p: "{:,}".format(y)))
+    plt.subplots_adjust(top=0.9, left=0.1)
     g.fig.suptitle(title)
     plt.legend(frameon=True)
     plt.savefig(chart + "_" + str(sleep_time) + "ms.png")
