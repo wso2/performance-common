@@ -25,54 +25,57 @@ import getopt, sys
 import apimchart
 
 def usage():
-    print(sys.argv[0] + " --summary1 <summary1.csv> --name1 <name1> --summary2 <summary2.csv> --name2 <name2>")
+    print(sys.argv[0] + " summary1.csv name1 summary2.csv name2 <summary3.csv> <name3> ... ...")
 
 def main():
-    global summary1_file
-    global summary2_file
-    global name1
-    global name2
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "summary1=", "name1=", "summary2=", "name2="])
-    except getopt.GetoptError as err:
-        # print help information and exit:
-        print(err)  # will print something like "option -a not recognized"
+    global summary_files
+    global names
+    global summary_count
+
+    summary_files=[]
+    names=[]
+
+    args=sys.argv[1:]
+
+    args_count=len(args)
+
+    if args_count < 4:
+        print("Please provide arguments at least two summary files with names")
         usage()
-        sys.exit(2)
-    for o, a in opts:
-        if o == "--summary1":
-            summary1_file = a
-        elif o == "--name1":
-            name1 = a
-        elif o == "--summary2":
-            summary2_file = a
-        elif o == "--name2":
-            name2 = a
-        elif o in ("-h", "--help"):
-            usage()
-            sys.exit()
-        else:
-            assert False, "unhandled option"
+        sys.exit(1)
+
+    if args_count % 2 != 0:
+        print("Please provide a name for each summary file")
+        usage()
+        sys.exit(1)
+
+    summary_count=args_count // 2
+
+    for i in range(0, args_count, 2):
+        summary_files.append(args[i])
+        names.append(args[i + 1])
 
 if __name__ == "__main__":
     main()
 
-if summary1_file == '' or summary2_file == '' or name1 == '' or name2 == '':
-    print("Please provide arguments")
-    usage()
-    sys.exit(1)
-
 def add_suffix(string, suffix):
     return string + " - " + suffix
 
-print("Comparing " + name1 + " and " + name2)
-
-df1 = pd.read_csv(summary1_file)
-df2 = pd.read_csv(summary2_file)
+print("Reading " + summary_files[0] + " with name " + names[0])
+df = pd.read_csv(summary_files[0])
 
 keys=['Message Size (Bytes)', 'Sleep Time (ms)', 'Concurrent Users']
 
-df = df1.merge(df2, on=keys, how='inner', suffixes=[add_suffix('', name1), add_suffix('', name2)])
+for i in range(1, summary_count):
+    print("Merging " + summary_files[i] + " with name " + names[i])
+    df_merge=pd.read_csv(summary_files[i])
+    if i == summary_count - 1:
+        # Add suffixes to new right columns. Add suffixes to left columns using the first summary name
+        suffixes=[add_suffix('', names[0]), add_suffix('', names[i])]
+    else:
+        # Add suffixes to new right columns. Keep the left column names unchanged till the last summary file.
+        suffixes=['', add_suffix('', names[i])]
+    df = df.merge(df_merge, on=keys, how='inner', suffixes=suffixes)
 
 sns.set_style("darkgrid")
 
@@ -81,8 +84,8 @@ unique_sleep_times=df['Sleep Time (ms)'].unique()
 def save_multi_columns_categorical_charts(chart, sleep_time, columns, y, hue, title, kind='point'):
     comparison_columns = []
     for column in columns:
-        comparison_columns.append(add_suffix(column, name1))
-        comparison_columns.append(add_suffix(column, name2))
+        for name in names:
+            comparison_columns.append(add_suffix(column, name))
     apimchart.save_multi_columns_categorical_charts(df, chart, sleep_time, comparison_columns, y, hue, title, kind)
 
 for sleep_time in unique_sleep_times:
