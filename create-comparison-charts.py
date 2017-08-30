@@ -90,9 +90,9 @@ def save_multi_columns_categorical_charts(chart, sleep_time, columns, y, hue, ti
 
 for sleep_time in unique_sleep_times:
     save_multi_columns_categorical_charts("comparison_thrpt", sleep_time, ['Throughput'],
-        "Throughput (Requests/sec)", "API Manager", "Throughput (Requests/sec) vs Concurrent Users for " + str(sleep_time) + "ms backend delay");
+        "Throughput (Requests/sec)", "API Manager", "Throughput vs Concurrent Users for " + str(sleep_time) + "ms backend delay");
     save_multi_columns_categorical_charts("comparison_avgt", sleep_time, ['Average (ms)'],
-        "Average Response Time (ms)", "API Manager", "Average Response Time (ms) vs Concurrent Users for " + str(sleep_time) + "ms backend delay");
+        "Average Response Time (ms)", "API Manager", "Average Response Time vs Concurrent Users for " + str(sleep_time) + "ms backend delay");
     save_multi_columns_categorical_charts("comparison_response_time_summary", sleep_time, ['Min (ms)','90th Percentile (ms)','95th Percentile (ms)','99th Percentile (ms)','Max (ms)'],
         "Response Time (ms)", "API Manager", "Response Time Summary for " + str(sleep_time) + "ms backend delay", kind='bar');
     save_multi_columns_categorical_charts("comparison_loadavg", sleep_time, ['API Manager Load Average - Last 1 minute','API Manager Load Average - Last 5 minutes','API Manager Load Average - Last 15 minutes'],

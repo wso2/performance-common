@@ -21,7 +21,8 @@ import matplotlib.ticker as tkr
 import re
 
 def save_multi_columns_categorical_charts(df, chart, sleep_time, columns, y, hue, title, single_statistic=False, single_statistic_name=None, kind='point'):
-    print("Creating " + chart + " charts for " + str(sleep_time) + "ms backend delay")
+    filename=chart + "_" + str(sleep_time) + "ms.png"
+    print("Creating chart: " + title + ", File name: " + filename)
     fig, ax = plt.subplots()
     df_results = df.loc[df['Sleep Time (ms)'] == sleep_time]
     all_columns=['Message Size (Bytes)','Concurrent Users']
@@ -45,6 +46,6 @@ def save_multi_columns_categorical_charts(df, chart, sleep_time, columns, y, hue
             if not leg is None: break
         for text in leg.texts:
             text.set_text(re.sub(re.escape(single_statistic_name) + r'\s*-\s*', '', text.get_text()))
-    plt.savefig(chart + "_" + str(sleep_time) + "ms.png")
+    plt.savefig(filename)
     plt.clf()
     plt.close(fig)
