@@ -17,10 +17,8 @@
 # Create charts from the summary.csv file
 # ----------------------------------------------------------------------------
 import pandas as pd
-import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matplotlib.ticker as tkr
 import apimchart
 
 sns.set_style("darkgrid")
@@ -35,7 +33,7 @@ unique_sleep_times = df['Sleep Time (ms)'].unique()
 unique_message_sizes = df['Message Size (Bytes)'].unique()
 
 
-def save_line_chart(chart, column, sleep_time, title, ylabel=None):
+def save_line_chart(chart, column, title, ylabel=None):
     filename = chart + "_" + str(sleep_time) + "ms.png"
     print("Creating chart: " + title + ", File name: " + filename)
     fig, ax = plt.subplots()
@@ -52,7 +50,7 @@ def save_line_chart(chart, column, sleep_time, title, ylabel=None):
     plt.close(fig)
 
 
-def save_bar_chart(message_size, sleep_time, title):
+def save_bar_chart(title):
     filename = "response_time_summary_" + str(message_size) + "B_" + str(sleep_time) + "ms.png"
     print("Creating chart: " + title + ", File name: " + filename)
     fig, ax = plt.subplots()
@@ -63,7 +61,7 @@ def save_bar_chart(message_size, sleep_time, title):
          '99th Percentile (ms)', 'Max (ms)']]
     df_results = df_results.set_index(['Message Size (Bytes)', 'Concurrent Users']).stack().reset_index().rename(
         columns={'level_2': 'Summary', 0: 'Response Time (ms)'})
-    sns_plot = sns.barplot(x='Concurrent Users', y='Response Time (ms)', hue='Summary', data=df_results, ci=None)
+    sns.barplot(x='Concurrent Users', y='Response Time (ms)', hue='Summary', data=df_results, ci=None)
     plt.suptitle(title)
     plt.legend(loc=2, frameon=True, title="Response Time Summary")
     plt.savefig(filename)
@@ -72,13 +70,12 @@ def save_bar_chart(message_size, sleep_time, title):
 
 
 for sleep_time in unique_sleep_times:
-    save_line_chart("thrpt", "Throughput", sleep_time,
-                    "Throughput vs Concurrent Users for " + str(sleep_time) + "ms backend delay",
+    save_line_chart("thrpt", "Throughput", "Throughput vs Concurrent Users for " + str(sleep_time) + "ms backend delay",
                     ylabel="Throughput (Requests/sec)")
-    save_line_chart("avgt", "Average (ms)", sleep_time,
+    save_line_chart("avgt", "Average (ms)",
                     "Average Response Time vs Concurrent Users for " + str(sleep_time) + "ms backend delay",
                     ylabel="Average Response Time (ms)")
-    save_line_chart("gc", "API Manager GC Throughput (%)", sleep_time,
+    save_line_chart("gc", "API Manager GC Throughput (%)",
                     "GC Throughput vs Concurrent Users for " + str(sleep_time) + "ms backend delay",
                     ylabel="GC Throughput (%)")
     apimchart.save_multi_columns_categorical_charts(df, "loadavg", sleep_time,
@@ -86,13 +83,12 @@ for sleep_time in unique_sleep_times:
                                                      'API Manager Load Average - Last 5 minutes',
                                                      'API Manager Load Average - Last 15 minutes'],
                                                     "Load Average", "API Manager",
-                                                    "Load Average with " + str(sleep_time) + "ms backend delay");
+                                                    "Load Average with " + str(sleep_time) + "ms backend delay")
     apimchart.save_multi_columns_categorical_charts(df, "network", sleep_time, ['Received (KB/sec)', 'Sent (KB/sec)'],
                                                     "Network Throughput (KB/sec)", "Network",
-                                                    "Network Throughput with " + str(sleep_time) + "ms backend delay");
+                                                    "Network Throughput with " + str(sleep_time) + "ms backend delay")
     for message_size in unique_message_sizes:
-        save_bar_chart(message_size, sleep_time,
-                       "Response Time Summary for " + message_size + " message size with " + str(
-                           sleep_time) + "ms backend delay")
+        save_bar_chart(
+            "Response Time Summary for " + message_size + " message size with " + str(sleep_time) + "ms backend delay")
 
 print("Done")

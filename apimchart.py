@@ -21,10 +21,10 @@ import matplotlib.ticker as tkr
 import re
 
 
-def format_bytes(bytes):
-    if bytes >= 1024 and bytes % 1024 == 0:
-        return str(bytes // 1024) + 'KiB'
-    return str(bytes) + 'B'
+def format_bytes(b):
+    if b >= 1024 and b % 1024 == 0:
+        return str(b // 1024) + 'KiB'
+    return str(b) + 'B'
 
 
 def save_multi_columns_categorical_charts(df, chart, sleep_time, columns, y, hue, title, single_statistic=False,
@@ -41,20 +41,23 @@ def save_multi_columns_categorical_charts(df, chart, sleep_time, columns, y, hue
     g = sns.factorplot(x="Concurrent Users", y=y,
                        hue=hue, col="Message Size (Bytes)",
                        data=df_results, kind=kind,
-                       size=5, aspect=1, col_wrap=2, legend=False);
+                       size=5, aspect=1, col_wrap=2, legend=False)
     for ax in g.axes.flatten():
         ax.yaxis.set_major_formatter(
-            tkr.FuncFormatter(lambda y, p: "{:,}".format(y)))
+            tkr.FuncFormatter(lambda y_value, p: "{:,}".format(y_value)))
     plt.subplots_adjust(top=0.9, left=0.1)
     g.fig.suptitle(title)
     plt.legend(frameon=True)
     if single_statistic:
+        leg = None
         # Get legend and remove column name from legend
         for ax in g.axes.flat:
             leg = ax.get_legend()
-            if not leg is None: break
-        for text in leg.texts:
-            text.set_text(re.sub(re.escape(single_statistic_name) + r'\s*-\s*', '', text.get_text()))
+            if leg is not None:
+                break
+        if leg is not None:
+            for text in leg.texts:
+                text.set_text(re.sub(re.escape(single_statistic_name) + r'\s*-\s*', '', text.get_text()))
     plt.savefig(filename)
     plt.clf()
     plt.close(fig)

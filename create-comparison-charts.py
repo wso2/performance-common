@@ -17,12 +17,13 @@
 # Create comparison charts from two summary.csv files
 # ----------------------------------------------------------------------------
 import pandas as pd
-import numpy as np
 import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib.ticker as tkr
-import getopt, sys
+import sys
 import apimchart
+
+summary_files = []
+names = []
+summary_count = 0
 
 
 def usage():
@@ -34,11 +35,7 @@ def main():
     global names
     global summary_count
 
-    summary_files = []
-    names = []
-
     args = sys.argv[1:]
-
     args_count = len(args)
 
     if args_count < 4:
@@ -53,9 +50,9 @@ def main():
 
     summary_count = args_count // 2
 
-    for i in range(0, args_count, 2):
-        summary_files.append(args[i])
-        names.append(args[i + 1])
+    for index in range(0, args_count, 2):
+        summary_files.append(args[index])
+        names.append(args[index + 1])
 
 
 if __name__ == "__main__":
@@ -84,13 +81,12 @@ for i in range(1, summary_count):
 
 # Format message size values
 df['Message Size (Bytes)'] = df['Message Size (Bytes)'].map(apimchart.format_bytes)
+unique_sleep_times = df['Sleep Time (ms)'].unique()
 
 sns.set_style("darkgrid")
 
-unique_sleep_times = df['Sleep Time (ms)'].unique()
 
-
-def save_multi_columns_categorical_charts(chart, sleep_time, columns, y, hue, title, kind='point'):
+def save_multi_columns_categorical_charts(chart, columns, y, hue, title, kind='point'):
     comparison_columns = []
     for column in columns:
         for name in names:
@@ -100,28 +96,29 @@ def save_multi_columns_categorical_charts(chart, sleep_time, columns, y, hue, ti
 
 
 for sleep_time in unique_sleep_times:
-    save_multi_columns_categorical_charts("comparison_thrpt", sleep_time, ['Throughput'],
+    save_multi_columns_categorical_charts("comparison_thrpt", ['Throughput'],
                                           "Throughput (Requests/sec)", "API Manager",
-                                          "Throughput vs Concurrent Users for " + str(sleep_time) + "ms backend delay");
-    save_multi_columns_categorical_charts("comparison_avgt", sleep_time, ['Average (ms)'],
+                                          "Throughput vs Concurrent Users for " + str(sleep_time) + "ms backend delay")
+    save_multi_columns_categorical_charts("comparison_avgt", ['Average (ms)'],
                                           "Average Response Time (ms)", "API Manager",
                                           "Average Response Time vs Concurrent Users for " + str(
-                                              sleep_time) + "ms backend delay");
-    save_multi_columns_categorical_charts("comparison_response_time_summary", sleep_time,
+                                              sleep_time) + "ms backend delay")
+    save_multi_columns_categorical_charts("comparison_response_time_summary",
                                           ['Min (ms)', '90th Percentile (ms)', '95th Percentile (ms)',
                                            '99th Percentile (ms)', 'Max (ms)'],
                                           "Response Time (ms)", "API Manager",
                                           "Response Time Summary for " + str(sleep_time) + "ms backend delay",
-                                          kind='bar');
-    save_multi_columns_categorical_charts("comparison_loadavg", sleep_time, ['API Manager Load Average - Last 1 minute',
-                                                                             'API Manager Load Average - Last 5 minutes',
-                                                                             'API Manager Load Average - Last 15 minutes'],
+                                          kind='bar')
+    save_multi_columns_categorical_charts("comparison_loadavg",
+                                          ['API Manager Load Average - Last 1 minute',
+                                           'API Manager Load Average - Last 5 minutes',
+                                           'API Manager Load Average - Last 15 minutes'],
                                           "Load Average", "API Manager",
-                                          "Load Average with " + str(sleep_time) + "ms backend delay");
-    save_multi_columns_categorical_charts("comparison_network", sleep_time, ['Received (KB/sec)', 'Sent (KB/sec)'],
+                                          "Load Average with " + str(sleep_time) + "ms backend delay")
+    save_multi_columns_categorical_charts("comparison_network", ['Received (KB/sec)', 'Sent (KB/sec)'],
                                           "Network Throughput (KB/sec)", "Network",
-                                          "Network Throughput with " + str(sleep_time) + "ms backend delay");
-    save_multi_columns_categorical_charts("comparison_gc", sleep_time, ['API Manager GC Throughput (%)'],
+                                          "Network Throughput with " + str(sleep_time) + "ms backend delay")
+    save_multi_columns_categorical_charts("comparison_gc", ['API Manager GC Throughput (%)'],
                                           "GC Throughput (%)", "API Manager",
                                           "GC Throughput with " + str(sleep_time) + "ms backend delay")
 
