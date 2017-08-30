@@ -20,24 +20,28 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
 import re
 
+
 def format_bytes(bytes):
     if bytes >= 1024 and bytes % 1024 == 0:
         return str(bytes // 1024) + 'KiB'
     return str(bytes) + 'B'
 
-def save_multi_columns_categorical_charts(df, chart, sleep_time, columns, y, hue, title, single_statistic=False, single_statistic_name=None, kind='point'):
-    filename=chart + "_" + str(sleep_time) + "ms.png"
+
+def save_multi_columns_categorical_charts(df, chart, sleep_time, columns, y, hue, title, single_statistic=False,
+                                          single_statistic_name=None, kind='point'):
+    filename = chart + "_" + str(sleep_time) + "ms.png"
     print("Creating chart: " + title + ", File name: " + filename)
     fig, ax = plt.subplots()
     df_results = df.loc[df['Sleep Time (ms)'] == sleep_time]
-    all_columns=['Message Size (Bytes)','Concurrent Users']
+    all_columns = ['Message Size (Bytes)', 'Concurrent Users']
     all_columns.extend(columns)
-    df_results=df_results[all_columns]
-    df_results = df_results.set_index(['Message Size (Bytes)', 'Concurrent Users']).stack().reset_index().rename(columns={'level_2': hue, 0: y})
+    df_results = df_results[all_columns]
+    df_results = df_results.set_index(['Message Size (Bytes)', 'Concurrent Users']).stack().reset_index().rename(
+        columns={'level_2': hue, 0: y})
     g = sns.factorplot(x="Concurrent Users", y=y,
-        hue=hue, col="Message Size (Bytes)",
-        data=df_results, kind=kind,
-        size=5, aspect=1, col_wrap=2 ,legend=False);
+                       hue=hue, col="Message Size (Bytes)",
+                       data=df_results, kind=kind,
+                       size=5, aspect=1, col_wrap=2, legend=False);
     for ax in g.axes.flatten():
         ax.yaxis.set_major_formatter(
             tkr.FuncFormatter(lambda y, p: "{:,}".format(y)))

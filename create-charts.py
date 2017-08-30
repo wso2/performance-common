@@ -27,36 +27,42 @@ sns.set_style("darkgrid")
 
 df = pd.read_csv('summary.csv')
 # Filter errors
-df=df.loc[df['Error Count'] < 100]
+df = df.loc[df['Error Count'] < 100]
 # Format message size values
 df['Message Size (Bytes)'] = df['Message Size (Bytes)'].map(apimchart.format_bytes)
 
-unique_sleep_times=df['Sleep Time (ms)'].unique()
-unique_message_sizes=df['Message Size (Bytes)'].unique()
+unique_sleep_times = df['Sleep Time (ms)'].unique()
+unique_message_sizes = df['Message Size (Bytes)'].unique()
+
 
 def save_line_chart(chart, column, sleep_time, title, ylabel=None):
-    filename=chart + "_" + str(sleep_time) + "ms.png"
+    filename = chart + "_" + str(sleep_time) + "ms.png"
     print("Creating chart: " + title + ", File name: " + filename)
     fig, ax = plt.subplots()
     fig.set_size_inches(8, 6)
-    sns_plot = sns.pointplot(x="Concurrent Users", y=column, hue="Message Size (Bytes)", data=df.loc[df['Sleep Time (ms)'] == sleep_time], ci=None, dodge=True)
+    sns_plot = sns.pointplot(x="Concurrent Users", y=column, hue="Message Size (Bytes)",
+                             data=df.loc[df['Sleep Time (ms)'] == sleep_time], ci=None, dodge=True)
     plt.suptitle(title)
     if ylabel is None:
-        ylabel=column
+        ylabel = column
     sns_plot.set(ylabel=ylabel)
     plt.legend(loc=2, frameon=True, title="Message Size")
     plt.savefig(filename)
     plt.clf()
     plt.close(fig)
 
+
 def save_bar_chart(message_size, sleep_time, title):
-    filename="response_time_summary_" + str(message_size) + "B_" + str(sleep_time) + "ms.png"
+    filename = "response_time_summary_" + str(message_size) + "B_" + str(sleep_time) + "ms.png"
     print("Creating chart: " + title + ", File name: " + filename)
     fig, ax = plt.subplots()
     fig.set_size_inches(8, 6)
     df_results = df.loc[(df['Message Size (Bytes)'] == message_size) & (df['Sleep Time (ms)'] == sleep_time)]
-    df_results=df_results[['Message Size (Bytes)','Concurrent Users','Min (ms)','90th Percentile (ms)','95th Percentile (ms)','99th Percentile (ms)','Max (ms)']]
-    df_results = df_results.set_index(['Message Size (Bytes)', 'Concurrent Users']).stack().reset_index().rename(columns={'level_2': 'Summary', 0: 'Response Time (ms)'})
+    df_results = df_results[
+        ['Message Size (Bytes)', 'Concurrent Users', 'Min (ms)', '90th Percentile (ms)', '95th Percentile (ms)',
+         '99th Percentile (ms)', 'Max (ms)']]
+    df_results = df_results.set_index(['Message Size (Bytes)', 'Concurrent Users']).stack().reset_index().rename(
+        columns={'level_2': 'Summary', 0: 'Response Time (ms)'})
     sns_plot = sns.barplot(x='Concurrent Users', y='Response Time (ms)', hue='Summary', data=df_results, ci=None)
     plt.suptitle(title)
     plt.legend(loc=2, frameon=True, title="Response Time Summary")
@@ -64,19 +70,29 @@ def save_bar_chart(message_size, sleep_time, title):
     plt.clf()
     plt.close(fig)
 
+
 for sleep_time in unique_sleep_times:
     save_line_chart("thrpt", "Throughput", sleep_time,
-        "Throughput vs Concurrent Users for " + str(sleep_time) + "ms backend delay", ylabel="Throughput (Requests/sec)")
+                    "Throughput vs Concurrent Users for " + str(sleep_time) + "ms backend delay",
+                    ylabel="Throughput (Requests/sec)")
     save_line_chart("avgt", "Average (ms)", sleep_time,
-        "Average Response Time vs Concurrent Users for " + str(sleep_time) + "ms backend delay", ylabel="Average Response Time (ms)")
+                    "Average Response Time vs Concurrent Users for " + str(sleep_time) + "ms backend delay",
+                    ylabel="Average Response Time (ms)")
     save_line_chart("gc", "API Manager GC Throughput (%)", sleep_time,
-        "GC Throughput vs Concurrent Users for " + str(sleep_time) + "ms backend delay", ylabel="GC Throughput (%)")
-    apimchart.save_multi_columns_categorical_charts(df, "loadavg", sleep_time, ['API Manager Load Average - Last 1 minute','API Manager Load Average - Last 5 minutes','API Manager Load Average - Last 15 minutes'],
-        "Load Average", "API Manager", "Load Average with " + str(sleep_time) + "ms backend delay");
+                    "GC Throughput vs Concurrent Users for " + str(sleep_time) + "ms backend delay",
+                    ylabel="GC Throughput (%)")
+    apimchart.save_multi_columns_categorical_charts(df, "loadavg", sleep_time,
+                                                    ['API Manager Load Average - Last 1 minute',
+                                                     'API Manager Load Average - Last 5 minutes',
+                                                     'API Manager Load Average - Last 15 minutes'],
+                                                    "Load Average", "API Manager",
+                                                    "Load Average with " + str(sleep_time) + "ms backend delay");
     apimchart.save_multi_columns_categorical_charts(df, "network", sleep_time, ['Received (KB/sec)', 'Sent (KB/sec)'],
-        "Network Throughput (KB/sec)", "Network", "Network Throughput with " + str(sleep_time) + "ms backend delay");
+                                                    "Network Throughput (KB/sec)", "Network",
+                                                    "Network Throughput with " + str(sleep_time) + "ms backend delay");
     for message_size in unique_message_sizes:
         save_bar_chart(message_size, sleep_time,
-            "Response Time Summary for " + message_size + " message size with " + str(sleep_time) + "ms backend delay")
+                       "Response Time Summary for " + message_size + " message size with " + str(
+                           sleep_time) + "ms backend delay")
 
 print("Done")
