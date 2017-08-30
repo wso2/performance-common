@@ -28,13 +28,11 @@ sns.set_style("darkgrid")
 df = pd.read_csv('summary.csv')
 # Filter errors
 df=df.loc[df['Error Count'] < 100]
+# Format message size values
+df['Message Size (Bytes)'] = df['Message Size (Bytes)'].map(apimchart.format_bytes)
+
 unique_sleep_times=df['Sleep Time (ms)'].unique()
 unique_message_sizes=df['Message Size (Bytes)'].unique()
-
-def format_bytes(bytes):
-    if bytes >= 1024 and bytes % 1024 == 0:
-        return str(bytes // 1024) + 'KiB'
-    return str(bytes) + 'B'
 
 def save_line_chart(chart, column, sleep_time, title, ylabel=None):
     filename=chart + "_" + str(sleep_time) + "ms.png"
@@ -47,9 +45,6 @@ def save_line_chart(chart, column, sleep_time, title, ylabel=None):
         ylabel=column
     sns_plot.set(ylabel=ylabel)
     plt.legend(loc=2, frameon=True, title="Message Size")
-    leg = ax.get_legend()
-    for text in leg.texts:
-        text.set_text(format_bytes(int(text.get_text())))
     plt.savefig(filename)
     plt.clf()
     plt.close(fig)
@@ -82,6 +77,6 @@ for sleep_time in unique_sleep_times:
         "Network Throughput (KB/sec)", "Network", "Network Throughput with " + str(sleep_time) + "ms backend delay");
     for message_size in unique_message_sizes:
         save_bar_chart(message_size, sleep_time,
-            "Response Time Summary for " + format_bytes(message_size) + " message size with " + str(sleep_time) + "ms backend delay")
+            "Response Time Summary for " + message_size + " message size with " + str(sleep_time) + "ms backend delay")
 
 print("Done")

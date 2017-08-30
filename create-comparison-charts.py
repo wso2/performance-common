@@ -77,6 +77,9 @@ for i in range(1, summary_count):
         suffixes=['', add_suffix('', names[i])]
     df = df.merge(df_merge, on=keys, how='inner', suffixes=suffixes)
 
+# Format message size values
+df['Message Size (Bytes)'] = df['Message Size (Bytes)'].map(apimchart.format_bytes)
+
 sns.set_style("darkgrid")
 
 unique_sleep_times=df['Sleep Time (ms)'].unique()

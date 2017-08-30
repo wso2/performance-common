@@ -20,6 +20,11 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
 import re
 
+def format_bytes(bytes):
+    if bytes >= 1024 and bytes % 1024 == 0:
+        return str(bytes // 1024) + 'KiB'
+    return str(bytes) + 'B'
+
 def save_multi_columns_categorical_charts(df, chart, sleep_time, columns, y, hue, title, single_statistic=False, single_statistic_name=None, kind='point'):
     filename=chart + "_" + str(sleep_time) + "ms.png"
     print("Creating chart: " + title + ", File name: " + filename)
