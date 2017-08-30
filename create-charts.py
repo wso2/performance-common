@@ -19,6 +19,7 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.ticker as tkr
 import apimchart
 
 sns.set_style("darkgrid")
@@ -40,6 +41,7 @@ def save_line_chart(chart, column, title, ylabel=None):
     fig.set_size_inches(8, 6)
     sns_plot = sns.pointplot(x="Concurrent Users", y=column, hue="Message Size (Bytes)",
                              data=df.loc[df['Sleep Time (ms)'] == sleep_time], ci=None, dodge=True)
+    ax.yaxis.set_major_formatter(tkr.FuncFormatter(lambda y, p: "{:,}".format(y)))
     plt.suptitle(title)
     if ylabel is None:
         ylabel = column
@@ -51,7 +53,7 @@ def save_line_chart(chart, column, title, ylabel=None):
 
 
 def save_bar_chart(title):
-    filename = "response_time_summary_" + str(message_size) + "B_" + str(sleep_time) + "ms.png"
+    filename = "response_time_summary_" + message_size + "_" + str(sleep_time) + "ms.png"
     print("Creating chart: " + title + ", File name: " + filename)
     fig, ax = plt.subplots()
     fig.set_size_inches(8, 6)
@@ -62,6 +64,7 @@ def save_bar_chart(title):
     df_results = df_results.set_index(['Message Size (Bytes)', 'Concurrent Users']).stack().reset_index().rename(
         columns={'level_2': 'Summary', 0: 'Response Time (ms)'})
     sns.barplot(x='Concurrent Users', y='Response Time (ms)', hue='Summary', data=df_results, ci=None)
+    ax.yaxis.set_major_formatter(tkr.FuncFormatter(lambda y, p: "{:,}".format(y)))
     plt.suptitle(title)
     plt.legend(loc=2, frameon=True, title="Response Time Summary")
     plt.savefig(filename)
@@ -87,6 +90,12 @@ for sleep_time in unique_sleep_times:
     apimchart.save_multi_columns_categorical_charts(df, "network", sleep_time, ['Received (KB/sec)', 'Sent (KB/sec)'],
                                                     "Network Throughput (KB/sec)", "Network",
                                                     "Network Throughput with " + str(sleep_time) + "ms backend delay")
+    apimchart.save_multi_columns_categorical_charts(df, "response_time", sleep_time,
+                                                    ['90th Percentile (ms)', '95th Percentile (ms)',
+                                                     '99th Percentile (ms)'],
+                                                    "Response Time (ms)", "Response Time",
+                                                    "Response Time Percentiles with " + str(sleep_time)
+                                                    + "ms backend delay", kind='bar')
     for message_size in unique_message_sizes:
         save_bar_chart(
             "Response Time Summary for " + message_size + " message size with " + str(sleep_time) + "ms backend delay")

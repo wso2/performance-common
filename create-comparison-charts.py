@@ -103,11 +103,11 @@ for sleep_time in unique_sleep_times:
                                           "Average Response Time (ms)", "API Manager",
                                           "Average Response Time vs Concurrent Users for " + str(
                                               sleep_time) + "ms backend delay")
-    save_multi_columns_categorical_charts("comparison_response_time_summary",
-                                          ['Min (ms)', '90th Percentile (ms)', '95th Percentile (ms)',
-                                           '99th Percentile (ms)', 'Max (ms)'],
+    save_multi_columns_categorical_charts("comparison_response_time",
+                                          ['90th Percentile (ms)', '95th Percentile (ms)',
+                                           '99th Percentile (ms)'],
                                           "Response Time (ms)", "API Manager",
-                                          "Response Time Summary for " + str(sleep_time) + "ms backend delay",
+                                          "Response Time Percentiles for " + str(sleep_time) + "ms backend delay",
                                           kind='bar')
     save_multi_columns_categorical_charts("comparison_loadavg",
                                           ['API Manager Load Average - Last 1 minute',
