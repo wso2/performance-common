@@ -60,4 +60,28 @@ def save_multi_columns_categorical_charts(df, chart, sleep_time, columns, y, hue
                 text.set_text(re.sub(re.escape(single_statistic_name) + r'\s*-\s*', '', text.get_text()))
     plt.savefig(filename)
     plt.clf()
+    plt.cla()
+    plt.close(fig)
+
+
+def save_lmplot(df, chart, x, y, title, hue=None, xlabel=None, ylabel=None):
+    filename = chart + ".png"
+    print("Creating chart: " + title + ", File name: " + filename)
+    fig, ax = plt.subplots()
+    # fig.set_size_inches(10, 8)
+    g = sns.lmplot(data=df, x=x, y=y, hue=hue, size=6)
+    for ax in g.axes.flatten():
+        ax.yaxis.set_major_formatter(
+            tkr.FuncFormatter(lambda y_value, p: "{:,}".format(y_value)))
+    plt.subplots_adjust(top=0.9, left=0.18)
+    if xlabel is None:
+        xlabel = x
+    if ylabel is None:
+        ylabel = y
+    g.set_axis_labels(xlabel, ylabel)
+    g.set(ylim=(0, None))
+    g.fig.suptitle(title)
+    plt.savefig(filename)
+    plt.clf()
+    plt.cla()
     plt.close(fig)

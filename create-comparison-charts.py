@@ -21,6 +21,8 @@ import seaborn as sns
 import sys
 import apimchart
 
+sns.set_style("darkgrid")
+
 summary_files = []
 names = []
 summary_count = 0
@@ -64,26 +66,48 @@ def add_suffix(string, suffix):
 
 
 print("Reading " + summary_files[0] + " with name " + names[0])
+# DataFrame to merge all data
 df = pd.read_csv(summary_files[0])
+
+# DataFrame to append all data
+df_all = df.copy()
+df_all['Name'] = names[0]
 
 keys = ['Message Size (Bytes)', 'Sleep Time (ms)', 'Concurrent Users']
 
 for i in range(1, summary_count):
-    print("Merging " + summary_files[i] + " with name " + names[i])
-    df_merge = pd.read_csv(summary_files[i])
+    print("Reading " + summary_files[i] + " with name " + names[i] + " to merge and append")
+    df_read = pd.read_csv(summary_files[i])
     if i == summary_count - 1:
         # Add suffixes to new right columns. Add suffixes to left columns using the first summary name
         suffixes = [add_suffix('', names[0]), add_suffix('', names[i])]
     else:
         # Add suffixes to new right columns. Keep the left column names unchanged till the last summary file.
         suffixes = ['', add_suffix('', names[i])]
-    df = df.merge(df_merge, on=keys, how='outer', suffixes=suffixes)
+    # Merge
+    df = df.merge(df_read, on=keys, how='outer', suffixes=suffixes)
+
+    # Append data frame
+    df_to_concat = df_read.copy()
+    df_to_concat['Name'] = names[i]
+    df_all = df_all.append(df_to_concat, ignore_index=True)
 
 # Format message size values
 df['Message Size (Bytes)'] = df['Message Size (Bytes)'].map(apimchart.format_bytes)
-unique_sleep_times = df['Sleep Time (ms)'].unique()
 
-sns.set_style("darkgrid")
+# Save lmplots
+xcolumns = ['Message Size (Bytes)', 'Sleep Time (ms)', 'Concurrent Users']
+xcharts = ['message_size', 'sleep_time', 'concurrent_users']
+ycolumns = ['Throughput', 'Average (ms)']
+ycharts = ['lmplot_througput', 'lmplot_average_time']
+ylabels = ['Throughput (Requests/sec)', 'Average Response Time (ms)']
+
+for ycolumn, ylabel, ychart in zip(ycolumns, ylabels, ycharts):
+    for xcolumn, xchart in zip(xcolumns, xcharts):
+        chart = ychart + '_vs_' + xchart
+        title = ylabel + ' vs ' + xcolumn
+        apimchart.save_lmplot(df_all, chart, xcolumn, ycolumn, title, ylabel=ylabel)
+        apimchart.save_lmplot(df_all, chart + '_with_hue', xcolumn, ycolumn, title, hue='Name', ylabel=ylabel)
 
 
 def save_multi_columns_categorical_charts(chart, columns, y, hue, title, kind='point'):
@@ -94,6 +118,8 @@ def save_multi_columns_categorical_charts(chart, columns, y, hue, title, kind='p
     apimchart.save_multi_columns_categorical_charts(df, chart, sleep_time, comparison_columns, y, hue, title,
                                                     len(columns) == 1, columns[0], kind)
 
+
+unique_sleep_times = df['Sleep Time (ms)'].unique()
 
 for sleep_time in unique_sleep_times:
     save_multi_columns_categorical_charts("comparison_thrpt", ['Throughput'],
