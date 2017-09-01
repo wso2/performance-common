@@ -77,7 +77,7 @@ for i in range(1, summary_count):
     else:
         # Add suffixes to new right columns. Keep the left column names unchanged till the last summary file.
         suffixes = ['', add_suffix('', names[i])]
-    df = df.merge(df_merge, on=keys, how='inner', suffixes=suffixes)
+    df = df.merge(df_merge, on=keys, how='outer', suffixes=suffixes)
 
 # Format message size values
 df['Message Size (Bytes)'] = df['Message Size (Bytes)'].map(apimchart.format_bytes)
