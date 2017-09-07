@@ -48,7 +48,7 @@ def add_chart_details(title, filename):
 
 def save_charts_details():
     print("Saving charts' details to charts.csv")
-    df_charts.to_csv("charts.csv")
+    df_charts.sort_index().to_csv("charts.csv")
 
 
 atexit.register(save_charts_details)
