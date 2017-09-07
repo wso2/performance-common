@@ -73,7 +73,7 @@ df = df.loc[df['Error Count'] < 100]
 
 # DataFrame to append all data
 df_all = df.copy()
-df_all['Name'] = names[0]
+df_all.insert(0, 'Name', names[0])
 
 keys = ['Message Size (Bytes)', 'Sleep Time (ms)', 'Concurrent Users']
 
@@ -93,8 +93,11 @@ for i in range(1, summary_count):
 
     # Append data frame
     df_to_concat = df_read.copy()
-    df_to_concat['Name'] = names[i]
+    df_to_concat.insert(0, 'Name', names[i])
     df_all = df_all.append(df_to_concat, ignore_index=True)
+
+# Save all data frame
+df_all.to_csv('all_results.csv')
 
 # Format message size values
 df['Message Size (Bytes)'] = df['Message Size (Bytes)'].map(apimchart.format_bytes)
