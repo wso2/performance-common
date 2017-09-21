@@ -15,12 +15,13 @@
 # ----------------------------------------------------------------------------
 # Common python module to save charts
 # ----------------------------------------------------------------------------
-import seaborn as sns
+import atexit
+import re
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
-import re
 import pandas as pd
-import atexit
+import seaborn as sns
 
 df_charts = None
 
@@ -54,20 +55,19 @@ def save_charts_details():
 atexit.register(save_charts_details)
 
 
-def save_multi_columns_categorical_charts(df, chart, sleep_time, columns, y, hue, title, single_statistic=False,
-                                          single_statistic_name=None, kind='point'):
-    filename = chart + "_" + str(sleep_time) + "ms.png"
+def save_multi_columns_categorical_charts(df, chart, columns, y, hue, title, single_statistic=False,
+                                          single_statistic_name=None, kind='point', col='Message Size (Bytes)'):
+    filename = chart + ".png"
     print("Creating chart: " + title + ", File name: " + filename)
     add_chart_details(title, filename)
     fig, ax = plt.subplots()
-    df_results = df.loc[df['Sleep Time (ms)'] == sleep_time]
-    all_columns = ['Message Size (Bytes)', 'Concurrent Users']
+    all_columns = [col, 'Concurrent Users']
     all_columns.extend(columns)
-    df_results = df_results[all_columns]
-    df_results = df_results.set_index(['Message Size (Bytes)', 'Concurrent Users']).stack().reset_index().rename(
+    df_results = df[all_columns]
+    df_results = df_results.set_index([col, 'Concurrent Users']).stack().reset_index().rename(
         columns={'level_2': hue, 0: y})
     g = sns.factorplot(x="Concurrent Users", y=y,
-                       hue=hue, col="Message Size (Bytes)",
+                       hue=hue, col=col,
                        data=df_results, kind=kind,
                        size=5, aspect=1, col_wrap=2, legend=False)
     for ax in g.axes.flatten():

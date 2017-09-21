@@ -16,10 +16,11 @@
 # ----------------------------------------------------------------------------
 # Create charts from the summary.csv file
 # ----------------------------------------------------------------------------
-import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
+import pandas as pd
+import seaborn as sns
+
 import apimchart
 
 sns.set_style("darkgrid")
@@ -81,16 +82,19 @@ for sleep_time in unique_sleep_times:
     save_line_chart("gc", "API Manager GC Throughput (%)",
                     "GC Throughput vs Concurrent Users for " + str(sleep_time) + "ms backend delay",
                     ylabel="GC Throughput (%)")
-    apimchart.save_multi_columns_categorical_charts(df, "loadavg", sleep_time,
+    df_results = df.loc[df['Sleep Time (ms)'] == sleep_time]
+    chart_suffix = "_" + str(sleep_time) + "ms"
+    apimchart.save_multi_columns_categorical_charts(df_results, "loadavg" + chart_suffix,
                                                     ['API Manager Load Average - Last 1 minute',
                                                      'API Manager Load Average - Last 5 minutes',
                                                      'API Manager Load Average - Last 15 minutes'],
                                                     "Load Average", "API Manager",
                                                     "Load Average with " + str(sleep_time) + "ms backend delay")
-    apimchart.save_multi_columns_categorical_charts(df, "network", sleep_time, ['Received (KB/sec)', 'Sent (KB/sec)'],
+    apimchart.save_multi_columns_categorical_charts(df_results, "network" + chart_suffix,
+                                                    ['Received (KB/sec)', 'Sent (KB/sec)'],
                                                     "Network Throughput (KB/sec)", "Network",
                                                     "Network Throughput with " + str(sleep_time) + "ms backend delay")
-    apimchart.save_multi_columns_categorical_charts(df, "response_time", sleep_time,
+    apimchart.save_multi_columns_categorical_charts(df_results, "response_time" + chart_suffix,
                                                     ['90th Percentile (ms)', '95th Percentile (ms)',
                                                      '99th Percentile (ms)'],
                                                     "Response Time (ms)", "Response Time",

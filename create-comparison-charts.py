@@ -16,9 +16,11 @@
 # ----------------------------------------------------------------------------
 # Create comparison charts from two summary.csv files
 # ----------------------------------------------------------------------------
+import sys
+
 import pandas as pd
 import seaborn as sns
-import sys
+
 import apimchart
 
 sns.set_style("darkgrid")
@@ -57,15 +59,12 @@ def main():
         names.append(args[index + 1])
 
     df, df_all = read_summary_csv_files()
+    save_single_comparison_plots(df)
     save_comparison_plots(df)
     save_point_plots(df_all)
     save_lmplots(df_all)
 
     print("Done")
-
-
-if __name__ == "__main__":
-    main()
 
 
 def add_suffix(string, suffix):
@@ -160,8 +159,9 @@ def save_multi_columns_categorical_charts(df, chart, sleep_time, columns, y, hue
     for column in columns:
         for name in names:
             comparison_columns.append(add_suffix(column, name))
-    apimchart.save_multi_columns_categorical_charts(df, chart, sleep_time, comparison_columns, y, hue, title,
-                                                    len(columns) == 1, columns[0], kind)
+    apimchart.save_multi_columns_categorical_charts(df.loc[df['Sleep Time (ms)'] == sleep_time],
+                                                    chart + "_" + str(sleep_time) + "ms", comparison_columns, y, hue,
+                                                    title, len(columns) == 1, columns[0], kind)
 
 
 def save_bar_plot(df, chart, sleep_time, message_size, columns, y, hue, title):
@@ -224,3 +224,65 @@ def save_comparison_plots(df):
                            'API Manager Load Average - Last 15 minutes'],
                           "Load Average", "API Manager",
                           "Load Average" + title_suffix)
+
+
+def merge_all_sleep_time_and_concurrent_users(df):
+    unique_message_sizes = df['Message Size (Bytes)'].unique()
+    keys = ['Sleep Time (ms)', 'Concurrent Users']
+
+    first_message_size = unique_message_sizes[0]
+    other_message_sizes = unique_message_sizes[1:]
+
+    print("Creating DataFrame with " + first_message_size + " message size")
+    df_merge = df[df['Message Size (Bytes)'] == first_message_size]
+    del df_merge['Message Size (Bytes)']
+
+    for message_size, i in zip(other_message_sizes, range(0, len(other_message_sizes))):
+        print("Merging data for " + message_size + " message size")
+        df_filtered = df[df['Message Size (Bytes)'] == message_size]
+        del df_filtered['Message Size (Bytes)']
+        if i == len(other_message_sizes) - 1:
+            # Add suffixes to new right columns. Add suffixes to left columns using the first summary name
+            suffixes = [add_suffix('', first_message_size),
+                        add_suffix('', message_size)]
+        else:
+            # Add suffixes to new right columns. Keep the left column names unchanged till the last summary file.
+            suffixes = ['', add_suffix('', message_size)]
+        # Merge
+        df_merge = df_merge.merge(df_filtered, on=keys, how='outer', suffixes=suffixes)
+    return df_merge
+
+
+def save_single_comparison_plots_by_sleep_time(df, chart, unique_message_sizes, columns, y, hue, title, kind='point'):
+    comparison_columns = []
+    for column in columns:
+        for name in names:
+            for message_size in unique_message_sizes:
+                comparison_columns.append(add_suffix(add_suffix(column, name), message_size))
+    apimchart.save_multi_columns_categorical_charts(df, chart, comparison_columns, y, hue, title, len(columns) == 1,
+                                                    columns[0], col='Sleep Time (ms)', kind=kind)
+
+
+def save_single_comparison_plots(df):
+    df_merge = merge_all_sleep_time_and_concurrent_users(df)
+    unique_message_sizes = df['Message Size (Bytes)'].unique()
+    chart_prefix = 'comparison_'
+    charts = ['thrpt', 'avgt', 'response_time', 'loadavg', 'network', 'gc']
+    # Removed '90th Percentile (ms)'. Too much data points
+    comparison_columns = [['Throughput'], ['Average (ms)'], ['95th Percentile (ms)', '99th Percentile (ms)'],
+                          ['API Manager Load Average - Last 1 minute', 'API Manager Load Average - Last 5 minutes',
+                           'API Manager Load Average - Last 15 minutes'], ['Received (KB/sec)', 'Sent (KB/sec)'],
+                          ['API Manager GC Throughput (%)']]
+    ycolumns = ['Throughput (Requests/sec)', 'Average Response Time (ms)', 'Response Time (ms)', 'Load Average',
+                'Network Throughput (KB/sec)', 'GC Throughput (%)']
+    title_prefixes = ['Throughput', 'Average Response Time', 'Response Time Percentiles', 'Load Average',
+                      'Network Throughput', 'GC Throughput']
+    plot_kinds = ['point', 'point', 'bar', 'point', 'point', 'point']
+    for chart, columns, y, title_prefix, plot_kind in zip(charts, comparison_columns, ycolumns, title_prefixes,
+                                                          plot_kinds):
+        save_single_comparison_plots_by_sleep_time(df_merge, chart_prefix + chart, unique_message_sizes, columns, y,
+                                                   'API Manager', title_prefix + ' vs Concurrent Users', kind=plot_kind)
+
+
+if __name__ == "__main__":
+    main()
