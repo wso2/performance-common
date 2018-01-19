@@ -22,9 +22,14 @@ script_dir=$(dirname "$0")
 cd $script_dir
 service_name=netty-http-echo-service
 sleep_time=$1
+port=$2
 
 if [ -z "$sleep_time" ]; then
     sleep_time=0
+fi
+
+if [ -z "$port" ]; then
+    port="8688"
 fi
 
 if pgrep -f "$service_name" > /dev/null; then
@@ -43,4 +48,4 @@ mkdir -p logs
 
 echo "Starting Netty"
 nohup java -Xms4g -Xmx4g -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$gc_log_file \
-    -jar $service_name-${performance.common.version}.jar --worker-threads 2000 --sleep-time $sleep_time > netty.out 2>&1 &
+    -jar $service_name-${performance.common.version}.jar --worker-threads 2000 --sleep-time $sleep_time --port $port > netty.out 2>&1 &
