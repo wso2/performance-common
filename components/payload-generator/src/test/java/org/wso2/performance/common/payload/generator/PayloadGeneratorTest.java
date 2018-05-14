@@ -90,4 +90,56 @@ public class PayloadGeneratorTest {
         Assert.assertTrue(isValidJson(json), "Invalid Json object\n" + json);
         Assert.assertEquals(payload.length, size, "Invalid size\n" + json);
     }
+
+
+    @DataProvider(name = "simplePayloads")
+    public Object[][] simplePayloads() {
+        List<Object[]> payloads = new ArrayList<>(10);
+        payloads.add(new Object[]{50, "{\"size\":\"50B\",\"payload\":\"0123456789ABCDEFGHIJKLM\"}"});
+        payloads.add(new Object[]{100, "{\"size\":\"100B\",\"payload\":" +
+                "\"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\"}"});
+        payloads.add(new Object[]{150, "{\"size\":\"150B\",\"payload\":" +
+                "\"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" +
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwx\"}"});
+        return payloads.toArray(new Object[payloads.size()][1]);
+    }
+
+    @Test(dataProvider = "simplePayloads")
+    private void testSimplePayload(int size, String expected) {
+        testPayload(new SimplePayload(size).getJson(), expected);
+    }
+
+    @DataProvider(name = "arrayPayloads")
+    public Object[][] arrayPayloads() {
+        List<Object[]> payloads = new ArrayList<>(10);
+        payloads.add(new Object[]{50, "{\"size\":\"50B\",\"payload\":[\"0123456789\",\"ABCDEFGH\"]}"});
+        payloads.add(new Object[]{55, "{\"size\":\"55B\",\"payload\":[\"0123456789\",\"ABCDEFGHIJKLM\"]}"});
+        payloads.add(new Object[]{56, "{\"size\":\"56B\",\"payload\":[\"0123456789\",\"ABCDEFGHIJ\",\"K\"]}"});
+        return payloads.toArray(new Object[payloads.size()][1]);
+    }
+
+    @Test(dataProvider = "arrayPayloads")
+    private void testArrayPayload(int size, String expected) {
+        testPayload(new ArrayPayload(size, 10).getJson(), expected);
+    }
+
+    @DataProvider(name = "objectPayloads")
+    public Object[][] objectPayloads() {
+        List<Object[]> payloads = new ArrayList<>(10);
+        payloads.add(new Object[]{50, "{\"size\":\"50B\",\"payload\":{\"payload1\":\"0123456789\"}}"});
+        payloads.add(new Object[]{64, "{\"size\":\"64B\",\"payload\":{\"payload1\":\"0123456789ABCDEFGHIJKLMN\"}}"});
+        payloads.add(new Object[]{65,
+                "{\"size\":\"65B\",\"payload\":{\"payload1\":\"0123456789\",\"payload2\":\"A\"}}"});
+        return payloads.toArray(new Object[payloads.size()][1]);
+    }
+
+    @Test(dataProvider = "objectPayloads")
+    private void testObjectPayload(int size, String expected) {
+        testPayload(new ObjectPayload(size, 10).getJson(), expected);
+    }
+
+    private void testPayload(byte[] payload, String expected) {
+        String json = new String(payload);
+        Assert.assertEquals(json, expected, "Unexpected Json\n" + json);
+    }
 }
