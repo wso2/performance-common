@@ -20,7 +20,6 @@ import com.beust.jcommander.Parameter;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
@@ -30,9 +29,16 @@ import java.text.MessageFormat;
  */
 public final class PayloadGenerator {
 
-    @Parameter(names = "--size", description = "Size in bytes (B)", required = true,
+    @Parameter(names = {"-s", "--size"}, description = "Size in bytes (B)", required = true,
             validateWith = PayloadSizeValidator.class)
     private int payloadSize;
+
+    @Parameter(names = {"-t", "--payload-type"}, description = "Type of payload object to generate")
+    private PayloadType payloadType = PayloadType.SIMPLE;
+
+    @Parameter(names = "--payload-min-length", description = "Minimum length of payload string in bytes (B). " +
+            "Use with --payload-type ARRAY or OBJECT", validateWith = PayloadMinLengthValidator.class)
+    private int payloadMinLength = 10;
 
     @Parameter(names = {"-h", "--help"}, description = "Display Help", help = true)
     private boolean help = false;
@@ -57,34 +63,25 @@ public final class PayloadGenerator {
             return;
         }
 
-        payloadGenerator.generatePayload();
+        payloadGenerator.writePayload();
     }
 
-    private void generatePayload() {
-        StringBuilder payloadBuilder = new StringBuilder();
-        payloadBuilder.append('{').append('"').append("size").append('"');
-        payloadBuilder.append(':').append('"').append(payloadSize).append('B').append('"');
-        payloadBuilder.append(',').append('"').append("payload").append('"');
-        payloadBuilder.append(':').append('"');
-
-        int limit = payloadSize - (payloadBuilder.toString().getBytes(Charset.forName("UTF-8")).length + 2);
-
-        int c = '0';
-        for (int i = 0; i < limit; i++) {
-            payloadBuilder.append((char) c);
-            if (c == '9') {
-                c = 'A' - 1;
-            } else if (c == 'Z') {
-                c = 'a' - 1;
-            } else if (c == 'z') {
-                c = '0' - 1;
-            }
-            c++;
+    private void writePayload() {
+        Payload payload;
+        switch (payloadType) {
+            case SIMPLE:
+                payload = new SimplePayload(payloadSize);
+                break;
+            case ARRAY:
+                payload = new ArrayPayload(payloadSize, payloadMinLength);
+                break;
+            case OBJECT:
+                payload = new ObjectPayload(payloadSize, payloadMinLength);
+                break;
+            default:
+                throw new IllegalStateException("Unknown payload type.");
         }
-
-        payloadBuilder.append('"').append('}');
-
-        byte[] payloadBytes = payloadBuilder.toString().getBytes(Charset.forName("UTF-8"));
+        byte[] payloadBytes = payload.getJson();
         String fileName = MessageFormat.format("{0,number,#}B.json", payloadSize);
         try {
             Files.write(Paths.get(fileName), payloadBytes);
@@ -95,4 +92,5 @@ public final class PayloadGenerator {
         standardOutput.println(MessageFormat.format("Wrote {0} bytes JSON payload file to {1}",
                 payloadBytes.length, fileName));
     }
+
 }
