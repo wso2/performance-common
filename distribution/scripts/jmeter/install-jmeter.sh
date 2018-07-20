@@ -21,6 +21,10 @@ jmeter_dist="$1"
 jmeter_home=${2:-$HOME}
 current_dir=$(dirname "$0")
 
+# Shift first two arguments
+shift 2
+# Rest of the arguments are JMeter Plugins
+
 if [[ ! -f $jmeter_dist ]]; then
     echo "Please specify the jmeter distribution file (apache-jmeter-*.tgz)"
     exit 1
@@ -98,3 +102,8 @@ else
     # Install Upgrades
     $PluginsManagerCMD install "$upgrades"
 fi
+
+for plugin in "$@"; do
+    echo "Installing $plugin plugin"
+    $PluginsManagerCMD install $plugin
+done
