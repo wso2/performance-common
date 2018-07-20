@@ -259,12 +259,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <performance.common.version>0.1.1-SNAPSHOT</performance.common.version>
         <jcommander.version>1.72</jcommander.version>
-        <netty.version>4.1.24.Final</netty.version>
+        <netty.version>4.1.27.Final</netty.version>
         <slf4j.version>1.7.25</slf4j.version>
         <slf4j.version.range>[1.7.0,1.8.0)</slf4j.version.range>
         <log4j.version>2.11.0</log4j.version>
         <testng.version>6.14.3</testng.version>
-        <gson.version>2.8.4</gson.version>
+        <gson.version>2.8.5</gson.version>
         <!-- Maven Plugins -->
         <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
         <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
