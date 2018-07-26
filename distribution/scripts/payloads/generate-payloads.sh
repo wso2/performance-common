@@ -18,7 +18,8 @@
 # ----------------------------------------------------------------------------
 
 script_dir=$(dirname "$0")
-payloads=$1
+payload_type=$1
+payloads=$2
 
 if [[ -z $payloads ]]; then
     payloads="50 1024 10240 102400"
@@ -27,5 +28,5 @@ fi
 for s in $payloads
 do
     echo "Generating ${s}B file"
-    java -jar $script_dir/payload-generator-${performance.common.version}.jar --size $s
+    java -jar $script_dir/payload-generator-${performance.common.version}.jar --size $s --payload-type $1
 done
