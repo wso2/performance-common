@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 # Copyright 2017 WSO2 Inc. (http://wso2.org)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,14 +18,22 @@
 # ----------------------------------------------------------------------------
 
 script_dir=$(dirname "$0")
-payloads=$1
+payload_type="$1"
 
-if [[ -z $payloads ]]; then
-    payloads="50 1024 10240 102400"
+if [[ -z $payload_type ]]; then
+    payload_type="simple"
+else
+    shift 1
 fi
 
-for s in $payloads
+declare -a payloads=("$@")
+
+if [[ ${#payloads[@]} -eq 0 ]]; then
+    payloads=("50 1024 10240 102400")
+fi
+
+for s in ${payloads[*]}
 do
     echo "Generating ${s}B file"
-    java -jar $script_dir/payload-generator-${performance.common.version}.jar --size $s
+    java -jar $script_dir/payload-generator-${performance.common.version}.jar --size $s --payload-type ${payload_type}
 done
