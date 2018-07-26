@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 # Copyright 2017 WSO2 Inc. (http://wso2.org)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,11 @@ current_dir=$(dirname "$0")
 # Shift first two arguments
 shift 2
 # Rest of the arguments are JMeter Plugins
+declare -a plugins=("$@")
+# Install following plugins to generate AggregateReport from command line.
+# For example:
+# JMeterPluginsCMD.sh --generate-csv test.csv --input-jtl results.jtl --plugin-type AggregateReport
+plugins+=( "jpgc-cmd" "jpgc-synthesis" )
 
 if [[ ! -f $jmeter_dist ]]; then
     echo "Please specify the jmeter distribution file (apache-jmeter-*.tgz)"
@@ -82,11 +87,11 @@ if [[ ! -f $plugins_manager_cmd ]]; then
 fi
 
 cmdrunner_version=$(grep -o 'cmdrunner-\(.*\)\.jar' $plugins_manager_cmd | sed -nE 's/cmdrunner-(.*)\.jar/\1/p')
-cmdrunner_output_file=cmdrunner-${cmdrunner_version}.jar
+cmdrunner_jar=cmdrunner-${cmdrunner_version}.jar
 
-if [[ ! -f $extracted_dirname/lib/$cmdrunner_output_file ]]; then
-    wget -U "${wget_useragent}" http://search.maven.org/remotecontent?filepath=kg/apc/cmdrunner/${cmdrunner_version}/cmdrunner-${cmdrunner_version}.jar -O /tmp/${cmdrunner_output_file}
-    cp /tmp/$cmdrunner_output_file $extracted_dirname/lib/
+if [[ ! -f $extracted_dirname/lib/${cmdrunner_jar} ]]; then
+    wget -U "${wget_useragent}" http://search.maven.org/remotecontent?filepath=kg/apc/cmdrunner/${cmdrunner_version}/${cmdrunner_jar} -O /tmp/${cmdrunner_jar}
+    cp /tmp/${cmdrunner_jar} $extracted_dirname/lib/
 fi
 
 PluginsManagerCMD=$plugins_manager_cmd
@@ -103,7 +108,10 @@ else
     $PluginsManagerCMD install "$upgrades"
 fi
 
-for plugin in "$@"; do
+for plugin in ${plugins[@]}; do
     echo "Installing $plugin plugin"
     $PluginsManagerCMD install $plugin
 done
+
+# Set cmdrunner version in JMeterPluginsCMD.sh
+sed -i "s/cmdrunner-.*\.jar/$cmdrunner_jar/g" $extracted_dirname/bin/JMeterPluginsCMD.sh
