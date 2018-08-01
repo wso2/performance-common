@@ -24,9 +24,9 @@ declare -a payloads
 function usage {
     echo ""
     echo "Usage: "
-    echo "$0 -p <payload_type> -s <payload_size>"
+    echo "$0 [-p <payload_type>] [-s <payload_size>]"
     echo ""
-    echo "-p: The Payload Type"
+    echo "-p: The Payload Type."
     echo "-s: The Payload Size. You can give multiple payload sizes."
     echo ""
 }
