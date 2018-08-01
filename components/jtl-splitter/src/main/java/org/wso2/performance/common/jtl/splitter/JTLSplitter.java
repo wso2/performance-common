@@ -49,6 +49,9 @@ public final class JTLSplitter {
     @Parameter(names = {"-d", "--delete-jtl-file-on-exit"}, description = "Delete JTL File on exit")
     private boolean deleteJTLFileOnExit;
 
+    @Parameter(names = {"-s", "--show-progress"}, description = "Show progress")
+    private boolean showProgress;
+
     @Parameter(names = {"-h", "--help"}, description = "Display Help", help = true)
     private boolean help = false;
 
@@ -113,11 +116,13 @@ public final class JTLSplitter {
 
             // Current Line Number
             long lineNumber = 2;
-            standardOutput.print("Started splitting...\r");
+            if (showProgress) {
+                standardOutput.print("Started splitting...\r");
+            }
 
             do {
                 st = new StringTokenizer(line, ",", false);
-                if (lineNumber % 10_000 == 0) {
+                if (showProgress && lineNumber % 10_000 == 0) {
                     standardOutput.print("Processed " + lineNumber + " lines.\r");
                 }
                 // Validate token count
