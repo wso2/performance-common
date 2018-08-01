@@ -17,34 +17,77 @@
 # Installation script for setting up Apache JMeter
 # ----------------------------------------------------------------------------
 
-jmeter_dist="$1"
-jmeter_home=${2:-$HOME}
 current_dir=$(dirname "$0")
+jmeter_dist=""
+installation_dir=""
+# JMeter Plugins
+declare -a plugins
 
-# Shift first two arguments
-shift 2
-# Rest of the arguments are JMeter Plugins
-declare -a plugins=("$@")
-# Install following plugins to generate AggregateReport from command line.
-# For example:
-# JMeterPluginsCMD.sh --generate-csv test.csv --input-jtl results.jtl --plugin-type AggregateReport
-plugins+=( "jpgc-cmd" "jpgc-synthesis" )
+function usage {
+    echo ""
+    echo "Usage: "
+    echo "$0 -f <jmeter_dist> -i <installation_dir> [-p <jmeter_plugin_name>] [-h]"
+    echo ""
+    echo "-f: The JMeter tgz distribution."
+    echo "-i: The JMeter installation directory."
+    echo "-p: The name of the JMeter Plugin to install. You can provide multiple names."
+    echo "-h: Display this help and exit."
+    echo ""
+}
+
+while getopts "f:i:p:h" opts
+do
+  case $opts in
+    f)
+        jmeter_dist=${OPTARG}
+        ;;
+    i)
+        installation_dir=${OPTARG}
+        ;;
+    p)
+        plugins+=("${OPTARG}")
+        ;;
+    h)
+        usage
+        exit 0
+        ;;
+    \?)
+        usage
+        exit 1
+        ;;
+  esac
+done
 
 if [[ ! -f $jmeter_dist ]]; then
     echo "Please specify the jmeter distribution file (apache-jmeter-*.tgz)"
     exit 1
 fi
 
+if [[ ! $jmeter_dist =~ ^.*\.tgz$ ]]; then
+    echo "Please provide the jmeter tgz distribution file (apache-jmeter-*.tgz)"
+    exit 1
+fi
+
+if [[ ! -d $installation_dir ]]; then
+    echo "Please provide the JMeter installation direcory."
+    exit 1
+fi
+
+# Install following plugins to generate AggregateReport from command line.
+# For example:
+# JMeterPluginsCMD.sh --generate-csv test.csv --input-jtl results.jtl --plugin-type AggregateReport
+plugins+=( "jpgc-cmd" "jpgc-synthesis" )
+
 # Extract JMeter Distribution
 jmeter_dist_filename=$(basename $jmeter_dist)
 
 dirname=$(echo $jmeter_dist_filename | sed 's/apache-jmeter-\([0-9]\.[0-9]\).*/apache-jmeter-\1/')
 
-extracted_dirname=$jmeter_home"/"$dirname
+extracted_dirname=$installation_dir"/"$dirname
 
 if [[ ! -d $extracted_dirname ]]; then
-    echo "Extracting $jmeter_dist to $jmeter_home"
-    tar -xof $jmeter_dist -C $jmeter_home
+    echo "Extracting $jmeter_dist to $installation_dir"
+    tar -xof $jmeter_dist -C $installation_dir
     echo "JMeter is extracted to $extracted_dirname"
 else 
     echo "JMeter is already extracted to $extracted_dirname"
