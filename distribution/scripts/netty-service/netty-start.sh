@@ -21,8 +21,34 @@ script_dir=$(dirname "$0")
 # Change directory to make sure logs directory is created inside $script_dir
 cd $script_dir
 service_name=netty-http-echo-service
-sleep_time=$1
-port=$2
+sleep_time=""
+port=""
+
+function usage {
+    echo ""
+    echo "Usage: "
+    echo "$0 [-t <sleep_time>] [-p <port>]"
+    echo ""
+    echo "-t: The service sleep time"
+    echo "-p: The service port"
+    echo ""
+}
+
+while getopts "t:p:" opts
+do
+  case $opts in
+    t)
+        sleep_time=${OPTARG}
+        ;;
+    p)
+        port=${OPTARG}
+        ;;
+    \?)
+        usage
+        exit 1
+        ;;
+  esac
+done
 
 if [ -z "$sleep_time" ]; then
     sleep_time=0
