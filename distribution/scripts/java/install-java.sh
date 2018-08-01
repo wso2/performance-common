@@ -19,7 +19,18 @@
 # https://github.com/chrishantha/install-java
 # ----------------------------------------------------------------------------
 
-java_dist="$1"
+java_dist=""
+java_dir=""
+
+function usage {
+    echo ""
+    echo "Usage: "
+    echo "$0 -f <java_dist> [-p <java_dir>]"
+    echo ""
+    echo "-f: The jdk tar.gz file"
+    echo "-p: Java installation directory"
+    echo ""
+}
 
 # Make sure the script is running as root.
 if [ "$UID" -ne "0" ]; then
@@ -27,20 +38,46 @@ if [ "$UID" -ne "0" ]; then
     exit 9
 fi
 
+while getopts "f:p:" opts
+do
+  case $opts in
+    f)
+        java_dist=${OPTARG}
+        ;;
+    p)
+        java_dir=${OPTARG}
+        ;;
+    \?)
+        usage
+        exit 1
+        ;;
+  esac
+done
+
 if [[ ! -f $java_dist ]]; then
     echo "Please specify the java distribution file (tar.gz)"
     help
     exit 1
 fi
 
+#If no directory was provided, we need to create the default one
+if [[ -z $java_dir ]]; then
+    java_dir="/usr/lib/jvm"
+    mkdir -p $java_dir
+fi
+
+#Validate java directory
+if [[ ! -d $java_dir ]]; then
+    echo "Please specify a valid java installation directory"
+    exit 1
+fi
+
+
 #Check whether unzip command exsits
 if ! command -v unzip >/dev/null 2>&1; then
     echo "Please install unzip (sudo apt -y install unzip)"
     exit 1
 fi
-
-java_dir="/usr/lib/jvm"
-mkdir -p $java_dir
 
 # Extract Java Distribution
 java_dist_filename=$(basename $java_dist)
