@@ -18,8 +18,38 @@
 # ----------------------------------------------------------------------------
 
 script_dir=$(dirname "$0")
-jtl_file=$1
-warmup_time=$2
+jtl_file=""
+warmup_time=""
+delete_on_exit=""
+
+function usage {
+    echo ""
+    echo "Usage: "
+    echo "$0 -f <jtl_file> [-t <warmup_time>] [-d]"
+    echo ""
+    echo "-f: The JTL file."
+    echo "-t: The warmup time. Default 5 minutes"
+    echo ""
+}
+
+while getopts "f:t:d" opts
+do
+  case $opts in
+    f)
+        jtl_file=${OPTARG}
+        ;;
+    t)
+        warmup_time=${OPTARG}
+        ;;
+    d)
+        delete_on_exit="-d"
+        ;;
+    \?)
+        usage
+        exit 1
+        ;;
+  esac
+done
 
 if [ -z "$jtl_file" ]; then
     echo "JTL file not provided"
@@ -30,4 +60,4 @@ if [ -z "$warmup_time" ]; then
     warmup_time=5
 fi
 
-java -jar $script_dir/jtl-splitter-${performance.common.version}.jar -f $jtl_file -t $warmup_time -d
+java -jar $script_dir/jtl-splitter-${performance.common.version}.jar -f $jtl_file -t $warmup_time $delete_on_exit
