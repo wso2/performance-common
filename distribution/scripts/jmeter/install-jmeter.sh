@@ -23,7 +23,7 @@ installation_dir=""
 # JMeter Plugins
 declare -a plugins
 
-function usage {
+function usage() {
     echo ""
     echo "Usage: "
     echo "$0 -f <jmeter_dist> -i <installation_dir> [-p <jmeter_plugin_name>] [-h]"
@@ -35,9 +35,8 @@ function usage {
     echo ""
 }
 
-while getopts "f:i:p:h" opts
-do
-  case $opts in
+while getopts "f:i:p:h" opts; do
+    case $opts in
     f)
         jmeter_dist=${OPTARG}
         ;;
@@ -55,7 +54,7 @@ do
         usage
         exit 1
         ;;
-  esac
+    esac
 done
 
 if [[ ! -f $jmeter_dist ]]; then
@@ -76,7 +75,7 @@ fi
 # Install following plugins to generate AggregateReport from command line.
 # For example:
 # JMeterPluginsCMD.sh --generate-csv test.csv --input-jtl results.jtl --plugin-type AggregateReport
-plugins+=( "jpgc-cmd" "jpgc-synthesis" )
+plugins+=("jpgc-cmd" "jpgc-synthesis")
 
 # Extract JMeter Distribution
 jmeter_dist_filename=$(basename $jmeter_dist)
@@ -89,7 +88,7 @@ if [[ ! -d $extracted_dirname ]]; then
     echo "Extracting $jmeter_dist to $installation_dir"
     tar -xof $jmeter_dist -C $installation_dir
     echo "JMeter is extracted to $extracted_dirname"
-else 
+else
     echo "JMeter is already extracted to $extracted_dirname"
 fi
 
@@ -101,7 +100,7 @@ cp $properties_file $extracted_dirname/bin
 if grep -q "export JMETER_HOME=.*" $HOME/.bashrc; then
     sed -i "s|export JMETER_HOME=.*|export JMETER_HOME=$extracted_dirname|" $HOME/.bashrc
 else
-    echo "export JMETER_HOME=$extracted_dirname" >> $HOME/.bashrc
+    echo "export JMETER_HOME=$extracted_dirname" >>$HOME/.bashrc
 fi
 source $HOME/.bashrc
 
@@ -111,7 +110,7 @@ plugins_manager_output_file=jmeter-plugins-manager.jar
 
 # Download plugins manager JAR file
 
-if ! ls $extracted_dirname/lib/ext/jmeter-plugins-manager*.jar 1> /dev/null 2>&1; then
+if ! ls $extracted_dirname/lib/ext/jmeter-plugins-manager*.jar 1>/dev/null 2>&1; then
     wget -U "${wget_useragent}" https://jmeter-plugins.org/get/ -O /tmp/${plugins_manager_output_file}
     cp /tmp/$plugins_manager_output_file $extracted_dirname/lib/ext/
 fi

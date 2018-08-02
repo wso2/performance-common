@@ -22,7 +22,7 @@ jtl_file=""
 warmup_time=""
 delete_on_exit=""
 
-function usage {
+function usage() {
     echo ""
     echo "Usage: "
     echo "$0 -f <jtl_file> [-t <warmup_time>] [-d]"
@@ -32,9 +32,8 @@ function usage {
     echo ""
 }
 
-while getopts "f:t:d" opts
-do
-  case $opts in
+while getopts "f:t:d" opts; do
+    case $opts in
     f)
         jtl_file=${OPTARG}
         ;;
@@ -48,7 +47,7 @@ do
         usage
         exit 1
         ;;
-  esac
+    esac
 done
 
 if [ -z "$jtl_file" ]; then

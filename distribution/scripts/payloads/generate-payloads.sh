@@ -21,7 +21,7 @@ script_dir=$(dirname "$0")
 payload_type=""
 declare -a payloads
 
-function usage {
+function usage() {
     echo ""
     echo "Usage: "
     echo "$0 [-p <payload_type>] [-s <payload_size>]"
@@ -31,9 +31,8 @@ function usage {
     echo ""
 }
 
-while getopts "p:s:" opts
-do
-  case $opts in
+while getopts "p:s:" opts; do
+    case $opts in
     p)
         payload_type=${OPTARG}
         ;;
@@ -44,7 +43,7 @@ do
         usage
         exit 1
         ;;
-  esac
+    esac
 done
 
 if [[ -z $payload_type ]]; then
@@ -55,8 +54,7 @@ if [[ ${#payloads[@]} -eq 0 ]]; then
     payloads=("50 1024 10240 102400")
 fi
 
-for s in ${payloads[*]}
-do
+for s in ${payloads[*]}; do
     echo "Generating ${s}B file"
     java -jar $script_dir/payload-generator-${performance.common.version}.jar --size $s --payload-type ${payload_type}
 done

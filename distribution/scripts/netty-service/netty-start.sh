@@ -24,7 +24,7 @@ service_name=netty-http-echo-service
 sleep_time=""
 port=""
 
-function usage {
+function usage() {
     echo ""
     echo "Usage: "
     echo "$0 [-t <sleep_time>] [-p <port>]"
@@ -34,9 +34,8 @@ function usage {
     echo ""
 }
 
-while getopts "t:p:" opts
-do
-  case $opts in
+while getopts "t:p:" opts; do
+    case $opts in
     t)
         sleep_time=${OPTARG}
         ;;
@@ -47,7 +46,7 @@ do
         usage
         exit 1
         ;;
-  esac
+    esac
 done
 
 if [ -z "$sleep_time" ]; then
@@ -58,7 +57,7 @@ if [ -z "$port" ]; then
     port="8688"
 fi
 
-if pgrep -f "$service_name" > /dev/null; then
+if pgrep -f "$service_name" >/dev/null; then
     echo "Shutting down Netty"
     pkill -f $service_name
 fi
@@ -74,4 +73,4 @@ mkdir -p logs
 
 echo "Starting Netty"
 nohup java -Xms4g -Xmx4g -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$gc_log_file \
-    -jar $service_name-${performance.common.version}.jar --worker-threads 2000 --sleep-time $sleep_time --port $port > netty.out 2>&1 &
+    -jar $service_name-${performance.common.version}.jar --worker-threads 2000 --sleep-time $sleep_time --port $port >netty.out 2>&1 &

@@ -23,7 +23,7 @@ jar_name=ApacheJMeter.jar
 jmeter_hostname=""
 jmeter_installation_dir=""
 
-function usage {
+function usage() {
     echo ""
     echo "Usage: "
     echo "$0 -n <jmeter_hostname> -i <jmeter_installation_dir> [-h]"
@@ -34,9 +34,8 @@ function usage {
     echo ""
 }
 
-while getopts "n:i:h" opts
-do
-  case $opts in
+while getopts "n:i:h" opts; do
+    case $opts in
     n)
         jmeter_hostname=${OPTARG}
         ;;
@@ -51,7 +50,7 @@ do
         usage
         exit 1
         ;;
-  esac
+    esac
 done
 
 JMETER_HOME=""
@@ -69,16 +68,15 @@ if [[ ! -d $JMETER_HOME ]]; then
     exit 1
 fi
 
-if pgrep -f "$jar_name" > /dev/null; then
+if pgrep -f "$jar_name" >/dev/null; then
     echo "Stopping JMeter Server"
     pkill -f $jar_name
 fi
 
 echo "Waiting for JMeter Server to stop"
 
-while true
-do
-    if ! pgrep -f "$jar_name" > /dev/null; then
+while true; do
+    if ! pgrep -f "$jar_name" >/dev/null; then
         echo "JMeter Server stopped"
         break
     else
@@ -97,12 +95,12 @@ export JVM_ARGS="-Xms4g -Xmx4g -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDate
 export RMI_HOST_DEF=-Djava.rmi.server.hostname=$jmeter_hostname
 
 echo "Starting JMeter Server"
-nohup $JMETER_HOME/bin/jmeter-server > server.out 2>&1 &
+nohup $JMETER_HOME/bin/jmeter-server >server.out 2>&1 &
 
 # Sleep for 10 seconds and make sure the JMeter server is ready to run the tests
 sleep 10
 
-if pgrep -f "$jar_name" > /dev/null; then
+if pgrep -f "$jar_name" >/dev/null; then
     echo "Started JMeter server."
 else
     echo "JMeter Server has not started!"
