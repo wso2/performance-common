@@ -25,7 +25,7 @@ if [ "$UID" -ne "0" ]; then
 fi
 
 #Install sysstat package
-apt install -y sysstat
+apt-get install -y sysstat
 
 #Enable
 sed -i "s|ENABLED=\"false\"|ENABLED=\"true\"|" /etc/default/sysstat

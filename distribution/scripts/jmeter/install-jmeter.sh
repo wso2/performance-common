@@ -17,26 +17,31 @@
 # Installation script for setting up Apache JMeter
 # ----------------------------------------------------------------------------
 
-current_dir=$(dirname "$0")
+script_dir=$(dirname "$0")
 jmeter_dist=""
 installation_dir=""
+download=false
 # JMeter Plugins
 declare -a plugins
 
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 -f <jmeter_dist> -i <installation_dir> [-p <jmeter_plugin_name>] [-h]"
+    echo "$0 -i <installation_dir> [-f <jmeter_dist>] [-d] [-p <jmeter_plugin_name>] [-h]"
     echo ""
-    echo "-f: The JMeter tgz distribution."
     echo "-i: The JMeter installation directory."
+    echo "-f: The JMeter tgz distribution."
+    echo "-d: Download JMeter from web."
     echo "-p: The name of the JMeter Plugin to install. You can provide multiple names."
     echo "-h: Display this help and exit."
     echo ""
 }
 
-while getopts "f:i:p:h" opts; do
+while getopts "df:i:p:h" opts; do
     case $opts in
+    d)
+        download=true
+        ;;
     f)
         jmeter_dist=${OPTARG}
         ;;
@@ -57,18 +62,34 @@ while getopts "f:i:p:h" opts; do
     esac
 done
 
+if [[ ! -d $installation_dir ]]; then
+    echo "Please provide the JMeter installation direcory."
+    exit 1
+fi
+
+if [ "$download" = true ]; then
+    if [[ ! -z $jmeter_dist ]]; then
+        echo "Do not specify JMeter distribution file with download option."
+        exit 1
+    fi
+    jmeter_dist="apache-jmeter-4.0.tgz"
+    if [[ ! -f $jmeter_dist ]]; then
+        # Download JMeter
+        echo "Downloading JMeter distribution"
+        wget -q http://www-us.apache.org/dist//jmeter/binaries/apache-jmeter-4.0.tgz -O $jmeter_dist
+    fi
+    # Verify JMeter
+    echo "Verifying JMeter distribution"
+    curl -s http://www-us.apache.org/dist//jmeter/binaries/apache-jmeter-4.0.tgz.sha512 | sha512sum -c
+fi
+
 if [[ ! -f $jmeter_dist ]]; then
-    echo "Please specify the jmeter distribution file (apache-jmeter-*.tgz)"
+    echo "Please specify the JMeter distribution file (apache-jmeter-*.tgz)"
     exit 1
 fi
 
 if [[ ! $jmeter_dist =~ ^.*\.tgz$ ]]; then
-    echo "Please provide the jmeter tgz distribution file (apache-jmeter-*.tgz)"
-    exit 1
-fi
-
-if [[ ! -d $installation_dir ]]; then
-    echo "Please provide the JMeter installation direcory."
+    echo "Please provide the JMeter tgz distribution file (apache-jmeter-*.tgz)"
     exit 1
 fi
 
@@ -92,7 +113,7 @@ else
     echo "JMeter is already extracted to $extracted_dirname"
 fi
 
-properties_file=$current_dir/user.properties
+properties_file=$script_dir/user.properties
 
 echo "Copying $properties_file file to $extracted_dirname/bin"
 cp $properties_file $extracted_dirname/bin
@@ -104,6 +125,7 @@ else
 fi
 source $HOME/.bashrc
 
+echo "Installing JMeter Plugins Manager"
 # Install JMeter Plugins Manager. Refer https://jmeter-plugins.org/wiki/PluginsManagerAutomated/
 wget_useragent="Linux Server"
 plugins_manager_output_file=jmeter-plugins-manager.jar
@@ -111,7 +133,7 @@ plugins_manager_output_file=jmeter-plugins-manager.jar
 # Download plugins manager JAR file
 
 if ! ls $extracted_dirname/lib/ext/jmeter-plugins-manager*.jar 1>/dev/null 2>&1; then
-    wget -U "${wget_useragent}" https://jmeter-plugins.org/get/ -O /tmp/${plugins_manager_output_file}
+    wget -q -U "${wget_useragent}" https://jmeter-plugins.org/get/ -O /tmp/${plugins_manager_output_file}
     cp /tmp/$plugins_manager_output_file $extracted_dirname/lib/ext/
 fi
 
@@ -132,12 +154,14 @@ cmdrunner_version=$(grep -o 'cmdrunner-\(.*\)\.jar' $plugins_manager_cmd | sed -
 cmdrunner_jar=cmdrunner-${cmdrunner_version}.jar
 
 if [[ ! -f $extracted_dirname/lib/${cmdrunner_jar} ]]; then
-    wget -U "${wget_useragent}" http://search.maven.org/remotecontent?filepath=kg/apc/cmdrunner/${cmdrunner_version}/${cmdrunner_jar} -O /tmp/${cmdrunner_jar}
+    echo "Downloading ${cmdrunner_jar}"
+    wget -q -U "${wget_useragent}" http://search.maven.org/remotecontent?filepath=kg/apc/cmdrunner/${cmdrunner_version}/${cmdrunner_jar} -O /tmp/${cmdrunner_jar}
     cp /tmp/${cmdrunner_jar} $extracted_dirname/lib/
 fi
 
 PluginsManagerCMD=$plugins_manager_cmd
 
+echo "Checking for plugin upgrades"
 upgrade_response="$(echo "$($PluginsManagerCMD upgrades)" | tail -1)"
 
 if [[ "$upgrade_response" =~ nothing ]]; then
