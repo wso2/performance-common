@@ -102,16 +102,22 @@ function setup() {
 
     chmod 600 $key_file_name
 
+    ssh_config_file=.ssh/config
+    if [[ -f ${ssh_config_file} ]]; then
+        echo "WARNING: Replacing existing SSH config file."
+        mv ${ssh_config_file}{,.bak$(date +%s)}
+    fi
+
     # Configure SSH
     mkdir -p .ssh
-    echo "Host *" >.ssh/config
-    echo "    StrictHostKeyChecking no" >>.ssh/config
-    echo -ne "\n" >>.ssh/config
+    echo "Host *" >${ssh_config_file}
+    echo "    StrictHostKeyChecking no" >>${ssh_config_file}
+    echo -ne "\n" >>${ssh_config_file}
     for ix in ${!ssh_aliases_array[*]}; do
-        echo "Host ${ssh_aliases_array[$ix]}" >>.ssh/config
-        echo "    HostName ${ssh_hostnames_array[$ix]}" >>.ssh/config
-        echo "    IdentityFile $PWD/$key_file_name" >>.ssh/config
-        echo -ne "\n" >>.ssh/config
+        echo "Host ${ssh_aliases_array[$ix]}" >>${ssh_config_file}
+        echo "    HostName ${ssh_hostnames_array[$ix]}" >>${ssh_config_file}
+        echo "    IdentityFile $PWD/$key_file_name" >>${ssh_config_file}
+        echo -ne "\n" >>${ssh_config_file}
     done
 
     $script_dir/../jmeter/install-jmeter.sh -d -i $PWD "${jmeter_plugins_array[@]}"
