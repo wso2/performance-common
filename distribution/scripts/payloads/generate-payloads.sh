@@ -28,16 +28,21 @@ function usage() {
     echo ""
     echo "-p: The Payload Type."
     echo "-s: The Payload Size. You can give multiple payload sizes."
+    echo "-h: Display this help and exit."
     echo ""
 }
 
-while getopts "p:s:" opts; do
+while getopts "p:s:h" opts; do
     case $opts in
     p)
         payload_type=${OPTARG}
         ;;
     s)
         payloads+=("${OPTARG}")
+        ;;
+    h)
+        usage
+        exit 0
         ;;
     \?)
         usage

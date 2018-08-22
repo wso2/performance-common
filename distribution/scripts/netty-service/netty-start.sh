@@ -29,8 +29,9 @@ function usage() {
     echo "Usage: "
     echo "$0 [-t <sleep_time>] [-p <port>]"
     echo ""
-    echo "-t: The service sleep time"
-    echo "-p: The service port"
+    echo "-t: The service sleep time."
+    echo "-p: The service port."
+    echo "-h: Display this help and exit."
     echo ""
 }
 
@@ -41,6 +42,10 @@ while getopts "t:p:" opts; do
         ;;
     p)
         port=${OPTARG}
+        ;;
+    h)
+        usage
+        exit 0
         ;;
     \?)
         usage
