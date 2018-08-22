@@ -124,4 +124,4 @@ function setup() {
 }
 export -f setup
 
-$script_dir/setup-common.sh "${opts[@]}" "$@" -p openjdk-8-jdk -p zip -p jq
+$script_dir/setup-common.sh "${opts[@]}" "$@" -p openjdk-8-jdk -p zip -p jq -p bc
