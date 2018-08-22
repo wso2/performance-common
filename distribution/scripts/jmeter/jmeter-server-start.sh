@@ -22,25 +22,30 @@ script_dir=$(dirname "$0")
 jar_name=ApacheJMeter.jar
 jmeter_hostname=""
 jmeter_installation_dir=""
+jmeter_heap_size=""
 
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 -n <jmeter_hostname> -i <jmeter_installation_dir> [-h]"
+    echo "$0 -n <jmeter_hostname> -i <jmeter_installation_dir> [-h] -- [jmeter_flags]"
     echo ""
     echo "-n: The JMeter hostname."
     echo "-i: The JMeter installation directory."
+    echo "-m: The heap memory size of JMeter."
     echo "-h: Display this help and exit."
     echo ""
 }
 
-while getopts "n:i:h" opts; do
+while getopts "n:i:m:h" opts; do
     case $opts in
     n)
         jmeter_hostname=${OPTARG}
         ;;
     i)
         jmeter_installation_dir=${OPTARG}
+        ;;
+    m)
+        jmeter_heap_size=${OPTARG}
         ;;
     h)
         usage
@@ -52,6 +57,9 @@ while getopts "n:i:h" opts; do
         ;;
     esac
 done
+shift "$((OPTIND - 1))"
+
+jmeter_flags="$@"
 
 JMETER_HOME=""
 for dir in $jmeter_installation_dir/apache-jmeter-*; do
@@ -84,14 +92,18 @@ while true; do
     fi
 done
 
-gc_log_file=$JMETER_HOME/jmetergc.log
+gc_log_file=$HOME/jmetergc.log
 
 if [[ -f $gc_log_file ]]; then
     echo "GC Log exists. Moving $gc_log_file to /tmp"
     mv $gc_log_file /tmp/
 fi
 
-export JVM_ARGS="-Xms4g -Xmx4g -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$gc_log_file"
+if [[ -z $jmeter_heap_size ]]; then
+    jmeter_heap_size="4g"
+fi
+
+export JVM_ARGS="-Xms$jmeter_heap_size -Xmx$jmeter_heap_size -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$gc_log_file $jmeter_flags"
 export RMI_HOST_DEF=-Djava.rmi.server.hostname=$jmeter_hostname
 
 echo "Starting JMeter Server"
