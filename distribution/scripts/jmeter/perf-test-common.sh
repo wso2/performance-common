@@ -72,7 +72,9 @@ jmeter_client_heap_size=2g
 jmeter_server_heap_size=4g
 
 # Scenario names to include
-declare -a scenario_names
+declare -a include_scenario_names
+# Scenario names to exclude
+declare -a exclude_scenario_names
 
 backend_ssh_host=netty
 
@@ -101,7 +103,8 @@ function usage() {
     echo ""
     echo "Usage: "
     echo "$0 [-u <concurrent_users>] [-b <message_sizes>] [-s <sleep_times>] [-m <heap_sizes>] [-d <test_duration>] [-w <warmup_time>]"
-    echo "   [-n <jmeter_servers>] [-j <jmeter_server_heap_size>] [-k <jmeter_client_heap_size>] [-i <scenario_name>] [-e]"
+    echo "   [-n <jmeter_servers>] [-j <jmeter_server_heap_size>] [-k <jmeter_client_heap_size>]"
+    echo "   [-i <include_scenario_name>] [-e <include_scenario_name>] [-t]"
     echo ""
     echo "-u: Concurrent Users to test. Multiple users must be separated by spaces. Default \"$concurrent_users\"."
     echo "-b: Message sizes in bytes. Multiple message sizes must be separated by spaces. Default \"$message_sizes\"."
@@ -113,12 +116,13 @@ function usage() {
     echo "-j: Heap Size of JMeter Server. Default $jmeter_server_heap_size."
     echo "-k: Heap Size of JMeter Client. Default $jmeter_client_heap_size."
     echo "-i: Scenario name to to be included. You can give multiple options to filter scenarios."
-    echo "-e: Estimate time without executing tests."
+    echo "-e: Scenario name to to be excluded. You can give multiple options to filter scenarios."
+    echo "-t: Estimate time without executing tests."
     echo "-h: Display this help and exit."
     echo ""
 }
 
-while getopts "u:b:s:m:d:w:n:j:k:i:eh" opts; do
+while getopts "u:b:s:m:d:w:n:j:k:i:e:th" opts; do
     case $opts in
     u)
         concurrent_users=${OPTARG}
@@ -148,9 +152,12 @@ while getopts "u:b:s:m:d:w:n:j:k:i:eh" opts; do
         jmeter_client_heap_size=${OPTARG}
         ;;
     i)
-        scenario_names+=("${OPTARG}")
+        include_scenario_names+=("${OPTARG}")
         ;;
     e)
+        exclude_scenario_names+=("${OPTARG}")
+        ;;
+    t)
         estimate=true
         ;;
     h)
@@ -301,13 +308,18 @@ function print_durations() {
 
 function initiailize_test() {
     # Filter scenarios
-    if [[  ${#scenario_names[@]} -gt 0 ]]; then
+    if [[  ${#include_scenario_names[@]} -gt 0 ]] || [[  ${#exclude_scenario_names[@]} -gt 0 ]]; then
         declare -n scenario
         for scenario in ${!test_scenario@}; do
             scenario[skip]=true
-            for name in ${scenario_names[@]}; do
+            for name in ${include_scenario_names[@]}; do
                 if [[ ${scenario[name]} =~ $name ]]; then
                     scenario[skip]=false
+                fi
+            done
+            for name in ${exclude_scenario_names[@]}; do
+                if [[ ${scenario[name]} =~ $name ]]; then
+                    scenario[skip]=true
                 fi
             done
         done
