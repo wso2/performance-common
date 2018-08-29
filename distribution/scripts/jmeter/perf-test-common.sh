@@ -54,22 +54,30 @@
 # Finally, execute test scenarios using the function test_scenarios
 
 # Concurrent users (these will by multiplied by the number of JMeter servers)
-concurrent_users="50 100 150 500 1000"
+default_concurrent_users="50 100 150 500 1000"
+concurrent_users="$default_concurrent_users"
 # Message Sizes
-message_sizes="50 1024 10240"
+default_message_sizes="50 1024 10240"
+message_sizes="$default_message_sizes"
 # Common backend sleep times (in milliseconds).
-backend_sleep_times="0 30 500 1000"
+default_backend_sleep_times="0 30 500 1000"
+backend_sleep_times="$default_backend_sleep_times"
 # Application heap Sizes
-heap_sizes="2g"
+default_heap_sizes="2g"
+heap_sizes="$default_heap_sizes"
 
 # Test Duration in seconds
-test_duration=900
+default_test_duration=900
+test_duration=$default_test_duration
 # Warm-up time in minutes
-warmup_time=5
+default_warmup_time=5
+warmup_time=$default_warmup_time
 # Heap size of JMeter Client
-jmeter_client_heap_size=2g
+default_jmeter_client_heap_size=2g
+jmeter_client_heap_size=$default_jmeter_client_heap_size
 # Heap size of JMeter Server
-jmeter_server_heap_size=4g
+default_jmeter_server_heap_size=4g
+jmeter_server_heap_size=$default_jmeter_server_heap_size
 
 # Scenario names to include
 declare -a include_scenario_names
@@ -80,7 +88,8 @@ backend_ssh_host=netty
 
 # JMeter Servers
 # If jmeter_servers = 1, only client will be used. If jmeter_servers > 1, remote JMeter servers will be used.
-jmeter_servers="1"
+default_jmeter_servers=1
+jmeter_servers=$default_jmeter_servers
 # JMeter SSH hosts array depending on the number of servers. For example, jmeter1 and jmeter2 for two servers.
 declare -a jmeter_ssh_hosts
 
@@ -106,15 +115,15 @@ function usage() {
     echo "   [-n <jmeter_servers>] [-j <jmeter_server_heap_size>] [-k <jmeter_client_heap_size>]"
     echo "   [-i <include_scenario_name>] [-e <include_scenario_name>] [-t]"
     echo ""
-    echo "-u: Concurrent Users to test. Multiple users must be separated by spaces. Default \"$concurrent_users\"."
-    echo "-b: Message sizes in bytes. Multiple message sizes must be separated by spaces. Default \"$message_sizes\"."
-    echo "-s: Backend Sleep Times in milliseconds. Multiple sleep times must be separated by spaces. Default \"$backend_sleep_times\"."
-    echo "-m: Application heap memory sizes. Multiple heap memory sizes must be separated by spaces. Default \"$heap_sizes\"."
-    echo "-d: Test Duration in seconds. Default $test_duration."
-    echo "-w: Warm-up time in minutes. Default $warmup_time."
-    echo "-n: Number of JMeter servers. If n=1, only client will be used. If n > 1, remote JMeter servers will be used. Default $jmeter_servers."
-    echo "-j: Heap Size of JMeter Server. Default $jmeter_server_heap_size."
-    echo "-k: Heap Size of JMeter Client. Default $jmeter_client_heap_size."
+    echo "-u: Concurrent Users to test. Multiple users must be separated by spaces. Default \"$default_concurrent_users\"."
+    echo "-b: Message sizes in bytes. Multiple message sizes must be separated by spaces. Default \"$default_message_sizes\"."
+    echo "-s: Backend Sleep Times in milliseconds. Multiple sleep times must be separated by spaces. Default \"$default_backend_sleep_times\"."
+    echo "-m: Application heap memory sizes. Multiple heap memory sizes must be separated by spaces. Default \"$default_heap_sizes\"."
+    echo "-d: Test Duration in seconds. Default $default_test_duration."
+    echo "-w: Warm-up time in minutes. Default $default_warmup_time."
+    echo "-n: Number of JMeter servers. If n=1, only client will be used. If n > 1, remote JMeter servers will be used. Default $default_jmeter_servers."
+    echo "-j: Heap Size of JMeter Server. Default $default_jmeter_server_heap_size."
+    echo "-k: Heap Size of JMeter Client. Default $default_jmeter_client_heap_size."
     echo "-i: Scenario name to to be included. You can give multiple options to filter scenarios."
     echo "-e: Scenario name to to be excluded. You can give multiple options to filter scenarios."
     echo "-t: Estimate time without executing tests."
