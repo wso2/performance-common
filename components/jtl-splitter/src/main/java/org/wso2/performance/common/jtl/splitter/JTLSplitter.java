@@ -17,6 +17,8 @@ package org.wso2.performance.common.jtl.splitter;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -26,8 +28,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
-import java.text.MessageFormat;
-import java.util.StringTokenizer;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -49,8 +50,14 @@ public final class JTLSplitter {
     @Parameter(names = {"-d", "--delete-jtl-file-on-exit"}, description = "Delete JTL File on exit")
     private boolean deleteJTLFileOnExit;
 
-    @Parameter(names = {"-s", "--show-progress"}, description = "Show progress")
+    @Parameter(names = {"-p", "--progress"}, description = "Show progress")
     private boolean showProgress;
+
+    @Parameter(names = {"-s", "--summarize"}, description = "Summarize results")
+    private boolean summarize;
+
+    @Parameter(names = {"-n", "--precision"}, description = "Precision to use in statistics")
+    private int precision = 2;
 
     @Parameter(names = {"-h", "--help"}, description = "Display Help", help = true)
     private boolean help = false;
@@ -82,13 +89,26 @@ public final class JTLSplitter {
         long startTime = System.nanoTime();
         Path jtlPath = jtlFile.toPath();
         String fileName = jtlPath.getFileName().toString();
-        String outputFileFormat = fileName.substring(0, fileName.length() - 4).concat("-{0}.jtl");
-        Path warmupJTLFile = jtlPath.resolveSibling(MessageFormat.format(outputFileFormat, "warmup"));
-        Path measurementJTLFile = jtlPath.resolveSibling(MessageFormat.format(outputFileFormat, "measurement"));
+        String outputFilePrefix = fileName.substring(0, fileName.length() - 4);
+        Path warmupJTLFile = jtlPath.resolveSibling(outputFilePrefix + "-warmup.jtl");
+        Path measurementJTLFile = jtlPath.resolveSibling(outputFilePrefix + "-measurement.jtl");
+
+        StatCalculator warmupStatCalculator = null;
+        StatCalculator measurementStatCalculator = null;
+        Path warmupSummaryJsonFile = jtlPath.resolveSibling(outputFilePrefix + "-warmup-summary.json");
+        Path measurementSummaryJsonFile = jtlPath.resolveSibling(outputFilePrefix + "-measurement-summary.json");
+        if (summarize) {
+            warmupStatCalculator = new StatCalculator(precision);
+            measurementStatCalculator = new StatCalculator(precision);
+        }
 
         standardOutput.format("Splitting %s file into %s and %s.%n", fileName, warmupJTLFile.getFileName(),
                 measurementJTLFile.getFileName());
         standardOutput.format("Warmup Time: %d %s%n", warmupTime, timeUnit);
+        if (summarize) {
+            standardOutput.format("Summarization is enabled. Summary statistics will be written to %s and %s.%n",
+                    warmupSummaryJsonFile.getFileName(), measurementSummaryJsonFile.getFileName());
+        }
 
         long timeLimit = timeUnit.toMillis(warmupTime);
 
@@ -105,43 +125,65 @@ public final class JTLSplitter {
                 bwMeasurement.newLine();
             }
 
-            // Read first line with data
-            line = br.readLine();
-            if (line == null) {
-                return;
-            }
-
-            StringTokenizer st = new StringTokenizer(line, ",", false);
-            long startTimestamp = Long.parseLong(st.nextToken());
-
+            long startTimestamp = Long.MAX_VALUE;
             // Current Line Number
-            long lineNumber = 2;
+            long lineNumber = 1;
+
             if (showProgress) {
                 standardOutput.print("Started splitting...\r");
             }
 
-            do {
-                st = new StringTokenizer(line, ",", false);
+            final int columnLimit = 16;
+
+            lineLoop:
+            while ((line = br.readLine()) != null) {
+                int i = 0;
+                String[] values = new String[columnLimit];
+                int pos = 0, end;
+                while ((end = line.indexOf(',', pos)) >= 0) {
+                    if (i < columnLimit - 1) {
+                        values[i++] = line.substring(pos, end);
+                        pos = end + 1;
+                    } else {
+                        // Validate line
+                        // JTL file usually has 16 columns
+                        errorOutput.format("Line %d has more columns than expected: %s%n", lineNumber, line);
+                        continue lineLoop;
+                    }
+                }
+                // Add remaining
+                values[i] = line.substring(pos);
                 if (showProgress && lineNumber % 10_000 == 0) {
                     standardOutput.print("Processed " + lineNumber + " lines.\r");
                 }
-                // Validate token count
-                // JTL file usually has 16 columns
-                if (st.countTokens() > 16) {
-                    errorOutput.format("Line %d doesn't have expected number of columns: %s%n", lineNumber, line);
-                    continue;
+                long timestamp = Long.parseLong(values[0]);
+                if (startTimestamp > timestamp) {
+                    startTimestamp = timestamp;
                 }
-                long timestamp = Long.parseLong(st.nextToken());
                 long diff = timestamp - startTimestamp;
+                final StatCalculator statCalculator;
                 if (diff <= timeLimit) {
+                    statCalculator = warmupStatCalculator;
                     bwWarmup.write(line);
                     bwWarmup.newLine();
                 } else {
+                    statCalculator = measurementStatCalculator;
                     bwMeasurement.write(line);
                     bwMeasurement.newLine();
                 }
+                if (summarize) {
+                    Objects.requireNonNull(statCalculator).addSample(timestamp,
+                            // elapsed
+                            Integer.parseInt(values[1]),
+                            // success
+                            Boolean.parseBoolean(values[7]),
+                            // bytes
+                            Integer.parseInt(values[9]),
+                            // sentBytes
+                            Integer.parseInt(values[10]));
+                }
                 lineNumber++;
-            } while ((line = br.readLine()) != null);
+            }
 
             // Delete only if splitting is successful
             if (deleteJTLFileOnExit) {
@@ -149,16 +191,28 @@ public final class JTLSplitter {
             }
         } catch (IOException e) {
             errorOutput.println(e.getMessage());
-        } finally {
-            long elapsed = System.nanoTime() - startTime;
-            // Add whitespace to clear progress information
-            standardOutput.format("Done in %d min, %d sec.                           %n",
-                    TimeUnit.NANOSECONDS.toMinutes(elapsed),
-                    TimeUnit.NANOSECONDS.toSeconds(elapsed) -
-                            TimeUnit.MINUTES.toSeconds(TimeUnit.NANOSECONDS.toMinutes(elapsed))
-            );
         }
 
+
+        if (summarize) {
+            try (BufferedWriter bwWarmupSummary =
+                         new BufferedWriter(new FileWriter(warmupSummaryJsonFile.toFile()));
+                 BufferedWriter bwMeasurementSummary =
+                         new BufferedWriter(new FileWriter(measurementSummaryJsonFile.toFile()))) {
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                gson.toJson(Objects.requireNonNull(warmupStatCalculator).calculate(), bwWarmupSummary);
+                gson.toJson(Objects.requireNonNull(measurementStatCalculator).calculate(), bwMeasurementSummary);
+            } catch (IOException e) {
+                errorOutput.println(e.getMessage());
+            }
+        }
+
+        long elapsed = System.nanoTime() - startTime;
+        // Add whitespace to clear progress information
+        standardOutput.format("Done in %d min, %d sec.                           %n",
+                TimeUnit.NANOSECONDS.toMinutes(elapsed),
+                TimeUnit.NANOSECONDS.toSeconds(elapsed) -
+                        TimeUnit.MINUTES.toSeconds(TimeUnit.NANOSECONDS.toMinutes(elapsed)));
 
     }
 }
