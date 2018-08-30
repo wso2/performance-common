@@ -37,6 +37,8 @@ public class StatCalculatorTest {
     // JMeter Calculator
     private SamplingStatCalculator samplingStatCalculator;
 
+    private static final int NO_OF_SAMPLES = 99_999;
+
     private Random random;
 
     @BeforeClass
@@ -52,7 +54,7 @@ public class StatCalculatorTest {
     public Object[][] samples() {
         long startTimestamp = System.currentTimeMillis();
         List<Object[]> samples = new ArrayList<>();
-        for (int i = 0; i < 10_0000; i++) {
+        for (int i = 0; i < NO_OF_SAMPLES; i++) {
             samples.add(new Object[]{startTimestamp + random.nextInt(1_000), random.nextInt(1_000),
                     random.nextBoolean(),
                     random.nextInt(10_000), random.nextInt(10_000)});
@@ -78,6 +80,7 @@ public class StatCalculatorTest {
     @Test(dependsOnMethods = "testSamples")
     public void testStatistics() {
         final SummaryStats summaryStats = statCalculator.calculate();
+        Assert.assertEquals(summaryStats.getSamples(), NO_OF_SAMPLES);
         Assert.assertEquals(summaryStats.getSamples(), samplingStatCalculator.getCount());
         Assert.assertEquals(summaryStats.getErrors(), samplingStatCalculator.getErrorCount());
         Assert.assertEquals(summaryStats.getErrorPercentage().doubleValue(),
@@ -90,18 +93,19 @@ public class StatCalculatorTest {
                 samplingStatCalculator.getMean(), 1.0);
         Assert.assertEquals(summaryStats.getStddev().doubleValue(),
                 samplingStatCalculator.getStandardDeviation(), 1.0);
+        final double percentileDelta = 10.0D;
         Assert.assertEquals(summaryStats.getP75().doubleValue(),
-                samplingStatCalculator.getPercentPoint(0.75).doubleValue(), 100.0);
+                samplingStatCalculator.getPercentPoint(0.75).doubleValue(), percentileDelta);
         Assert.assertEquals(summaryStats.getP90().doubleValue(),
-                samplingStatCalculator.getPercentPoint(0.90).doubleValue(), 100.0);
+                samplingStatCalculator.getPercentPoint(0.90).doubleValue(), percentileDelta);
         Assert.assertEquals(summaryStats.getP95().doubleValue(),
-                samplingStatCalculator.getPercentPoint(0.95).doubleValue(), 100.0);
+                samplingStatCalculator.getPercentPoint(0.95).doubleValue(), percentileDelta);
         Assert.assertEquals(summaryStats.getP98().doubleValue(),
-                samplingStatCalculator.getPercentPoint(0.98).doubleValue(), 100.0);
+                samplingStatCalculator.getPercentPoint(0.98).doubleValue(), percentileDelta);
         Assert.assertEquals(summaryStats.getP99().doubleValue(),
-                samplingStatCalculator.getPercentPoint(0.99).doubleValue(), 100.0);
+                samplingStatCalculator.getPercentPoint(0.99).doubleValue(), percentileDelta);
         Assert.assertEquals(summaryStats.getP999().doubleValue(),
-                samplingStatCalculator.getPercentPoint(0.999).doubleValue(), 100.0);
+                samplingStatCalculator.getPercentPoint(0.999).doubleValue(), percentileDelta);
         Assert.assertEquals(summaryStats.getReceivedKBytesRate().doubleValue(),
                 samplingStatCalculator.getKBPerSecond(), 0.1);
         Assert.assertEquals(summaryStats.getSentKBytesRate().doubleValue(),
