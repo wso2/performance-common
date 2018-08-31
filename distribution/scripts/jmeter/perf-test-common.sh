@@ -96,6 +96,9 @@ declare -a jmeter_ssh_hosts
 payload_type=ARRAY
 # Estimate flag
 estimate=false
+# Estimated processing time in between tests
+default_estimated_processing_time_in_between_tests=60
+estimated_processing_time_in_between_tests=$default_estimated_processing_time_in_between_tests
 
 # Start time of the test
 test_start_time=$(date +%s)
@@ -113,7 +116,7 @@ function usage() {
     echo "Usage: "
     echo "$0 [-u <concurrent_users>] [-b <message_sizes>] [-s <sleep_times>] [-m <heap_sizes>] [-d <test_duration>] [-w <warmup_time>]"
     echo "   [-n <jmeter_servers>] [-j <jmeter_server_heap_size>] [-k <jmeter_client_heap_size>]"
-    echo "   [-i <include_scenario_name>] [-e <include_scenario_name>] [-t]"
+    echo "   [-i <include_scenario_name>] [-e <include_scenario_name>] [-t] [-p <estimated_processing_time_in_between_tests>] [-h]"
     echo ""
     echo "-u: Concurrent Users to test. Multiple users must be separated by spaces. Default \"$default_concurrent_users\"."
     echo "-b: Message sizes in bytes. Multiple message sizes must be separated by spaces. Default \"$default_message_sizes\"."
@@ -127,11 +130,12 @@ function usage() {
     echo "-i: Scenario name to to be included. You can give multiple options to filter scenarios."
     echo "-e: Scenario name to to be excluded. You can give multiple options to filter scenarios."
     echo "-t: Estimate time without executing tests."
+    echo "-p: Estimated processing time in between tests in seconds. Default $default_estimated_processing_time_in_between_tests."
     echo "-h: Display this help and exit."
     echo ""
 }
 
-while getopts "u:b:s:m:d:w:n:j:k:i:e:th" opts; do
+while getopts "u:b:s:m:d:w:n:j:k:i:e:tp:h" opts; do
     case $opts in
     u)
         concurrent_users=${OPTARG}
@@ -168,6 +172,9 @@ while getopts "u:b:s:m:d:w:n:j:k:i:e:th" opts; do
         ;;
     t)
         estimate=true
+        ;;
+    p)
+        estimated_processing_time_in_between_tests=${OPTARG}
         ;;
     h)
         usage
@@ -401,7 +408,7 @@ function test_scenarios() {
                 for msize in ${message_sizes_array[@]}; do
                     for sleep_time in ${sleep_times_array[@]}; do
                         if [ "$estimate" = true ]; then
-                            record_scenario_duration $scenario_name $test_duration
+                            record_scenario_duration $scenario_name $(($test_duration + $estimated_processing_time_in_between_tests))
                             continue
                         fi
                         local start_time=$(date +%s)
