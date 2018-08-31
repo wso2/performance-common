@@ -48,7 +48,7 @@
 #
 # Use jmeter_params array in before_execute_test_scenario to provide JMeter parameters.
 #
-# In before_execute_test_scenario JMETER_JVM_ARGS variable can be set to provide 
+# In before_execute_test_scenario JMETER_JVM_ARGS variable can be set to provide
 # additional JVM arguments to JMETER.
 #
 # Finally, execute test scenarios using the function test_scenarios
@@ -317,7 +317,7 @@ function print_durations() {
 
 function initiailize_test() {
     # Filter scenarios
-    if [[  ${#include_scenario_names[@]} -gt 0 ]] || [[  ${#exclude_scenario_names[@]} -gt 0 ]]; then
+    if [[ ${#include_scenario_names[@]} -gt 0 ]] || [[ ${#exclude_scenario_names[@]} -gt 0 ]]; then
         declare -n scenario
         for scenario in ${!test_scenario@}; do
             scenario[skip]=true
@@ -347,7 +347,11 @@ function initiailize_test() {
         fi
 
         if [[ -d results ]]; then
-            echo "Results directory already exists"
+            echo "Results directory already exists. Please backup."
+            exit 1
+        fi
+        if [[ -f results.zip ]]; then
+            echo "The results.zip file already exists. Please backup."
             exit 1
         fi
         mkdir results
@@ -485,6 +489,9 @@ function test_scenarios() {
             done
         done
     done
-
+    if [[ "$estimate" == false ]] && [[ -d results ]]; then
+        echo "Zipping results directory..."
+        zip -9qr results.zip results/
+    fi
     print_durations
 }
