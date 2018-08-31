@@ -416,7 +416,7 @@ function test_scenarios() {
 
                         if [[ $sleep_time -ge 0 ]]; then
                             echo "Starting Backend Service. Sleep Time: $sleep_time"
-                            ssh $backend_ssh_host "./netty-service/netty-start.sh -t $sleep_time"
+                            ssh $backend_ssh_host "./netty-service/netty-start.sh --worker-threads 2000 --sleep-time $sleep_time"
                         fi
 
                         declare -ag jmeter_params=("users=$users" "duration=$test_duration")
@@ -458,13 +458,7 @@ function test_scenarios() {
                         write_server_metrics jmeter1 $jmeter1_ssh_host
                         write_server_metrics jmeter2 $jmeter2_ssh_host
 
-                        $HOME/jtl-splitter/jtl-splitter.sh -f ${report_location}/results.jtl -t $warmup_time
-                        echo "Generating Dashboard for Warmup Period"
-                        mkdir $report_location/dashboard-warmup
-                        jmeter -g ${report_location}/results-warmup.jtl -o $report_location/dashboard-warmup
-                        echo "Generating Dashboard for Measurement Period"
-                        mkdir $report_location/dashboard-measurement
-                        jmeter -g ${report_location}/results-measurement.jtl -o $report_location/dashboard-measurement
+                        $HOME/jtl-splitter/jtl-splitter.sh -f ${report_location}/results.jtl -t $warmup_time -s
 
                         echo "Zipping JTL files in ${report_location}"
                         zip -jm ${report_location}/jtls.zip ${report_location}/results*.jtl
