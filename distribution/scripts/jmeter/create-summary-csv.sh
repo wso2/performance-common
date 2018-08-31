@@ -39,7 +39,8 @@ include_all=false
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 -n <application_name> [-g <gcviewer_jar_path>] [-w] [-i]"
+    echo "$0 -n <application_name> [-p <file_prefix>] [-g <gcviewer_jar_path>] [-d <results_dir>]"
+    echo "   [-j <jmeter_servers>] [-w] [-i] [-h]"
     echo ""
     echo "-n: Name of the application to be used in column headers."
     echo " p: Prefix of the files to get metrics (Load Average, GC, etc)."
