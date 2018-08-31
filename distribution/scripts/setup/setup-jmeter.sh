@@ -61,6 +61,8 @@ function setup() {
     declare -a jmeter_plugins_array=($jmeter_plugins)
     echo "Setting up JMeter in $PWD"
     $script_dir/../jmeter/install-jmeter.sh -d -i $PWD "${jmeter_plugins_array[@]}"
+    # Move jmeter.log
+    mv -v $script_dir/../jmeter/jmeter.log /tmp/jmeter_install.log
 }
 export -f setup
 
