@@ -129,3 +129,14 @@ FUNC=$(declare -f setup)
 if [[ ! -z $FUNC ]]; then
     bash -c "$FUNC; setup"
 fi
+
+# Move all logs files
+function move_log() {
+    local filename=$(basename $1)
+    mv -v $1 $(mktemp /tmp/$filename.XXXXXXXXX)
+}
+
+while IFS= read -r -d $'\0' file; do
+    echo "Moving $file"
+    move_log $file
+done < <(find . -type f -name '*.log' -print0)
