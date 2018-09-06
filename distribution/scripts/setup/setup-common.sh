@@ -87,6 +87,10 @@ if declare -F validate >/dev/null 2>&1; then
     validate
 fi
 
+# Add host entry for the hostname
+echo "127.0.0.1 $(hostname)" >>/etc/hosts
+echo -ne "\n"
+
 # Update packages
 echo "Updating packages"
 apt-get update
