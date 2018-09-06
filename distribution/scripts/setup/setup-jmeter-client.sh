@@ -27,7 +27,7 @@ if [ "$UID" -ne "0" ]; then
 fi
 
 export script_name="$0"
-export key_file_url=""
+export key_file=""
 export script_dir=$(dirname "$0")
 
 declare -a ssh_aliases_array
@@ -35,12 +35,12 @@ declare -a ssh_hostnames_array
 declare -a jmeter_plugins_array
 
 function usageCommand() {
-    echo "-k <key_file_url> -a <ssh_alias> -n <ssh_hostname> [-j <jmeter_plugin>]"
+    echo "-k <key_file> -a <ssh_alias> -n <ssh_hostname> [-j <jmeter_plugin>]"
 }
 export -f usageCommand
 
 function usageHelp() {
-    echo "-k: The URL to download the private key."
+    echo "-k: The key file location."
     echo "-a: SSH Alias. You can give multiple ssh aliases."
     echo "-n: SSH Hostname. You can give multiple ssh hostnames for a given set of ssh aliases."
     echo "-j: The JMeter plugin name. You can give multiple JMeter plugins to install."
@@ -50,7 +50,7 @@ export -f usageHelp
 while getopts "gp:w:o:hk:a:n:j:" opt; do
     case "${opt}" in
     k)
-        key_file_url=${OPTARG}
+        key_file=${OPTARG}
         ;;
     a)
         ssh_aliases_array+=("${OPTARG}")
@@ -78,8 +78,8 @@ function validate() {
     declare -a ssh_aliases_array=($ssh_aliases)
     declare -a ssh_hostnames_array=($ssh_hostnames)
 
-    if [[ -z $key_file_url ]]; then
-        echo "Please provide the URL to download the private key."
+    if [[ ! -f $key_file ]]; then
+        echo "Please provide the private key location."
         exit 1
     fi
     if [ ! "${#ssh_aliases_array[@]}" -eq "${#ssh_hostnames_array[@]}" ]; then
@@ -95,12 +95,6 @@ function setup() {
     declare -a jmeter_plugins_array=($jmeter_plugins)
 
     echo "Setting up JMeter in $PWD"
-    key_file_name="private_key.pem"
-    if [[ ! -f $key_file_name ]]; then
-        wget -q ${key_file_url} -O $key_file_name
-    fi
-
-    chmod 600 $key_file_name
 
     ssh_config_file=.ssh/config
     if [[ -f ${ssh_config_file} ]]; then
@@ -116,7 +110,7 @@ function setup() {
     for ix in ${!ssh_aliases_array[*]}; do
         echo "Host ${ssh_aliases_array[$ix]}" >>${ssh_config_file}
         echo "    HostName ${ssh_hostnames_array[$ix]}" >>${ssh_config_file}
-        echo "    IdentityFile $PWD/$key_file_name" >>${ssh_config_file}
+        echo "    IdentityFile $key_file" >>${ssh_config_file}
         echo -ne "\n" >>${ssh_config_file}
     done
 
