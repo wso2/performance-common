@@ -27,7 +27,7 @@ if [ "$UID" -ne "0" ]; then
 fi
 
 script_dir=$(dirname "$0")
-dist_upgrade=false
+upgrade=false
 declare -a packages
 declare -a download_urls
 declare -a download_output_names
@@ -56,7 +56,7 @@ function usage() {
 while getopts "gp:w:o:h" opts; do
     case $opts in
     g)
-        dist_upgrade=true
+        upgrade=true
         ;;
     p)
         packages+=("${OPTARG}")
@@ -98,10 +98,14 @@ apt-get update
 echo -ne "\n"
 
 # Upgrade distribution
-if [ "$dist_upgrade" = true ]; then
+if [ "$upgrade" = true ]; then
     echo "Upgrading the distribution"
-    apt-get -y dist-upgrade
-    apt-get -y autoremove
+    # Use upgrade instead of dist-upgrade
+    echo "Running upgrade command..."
+    DEBIAN_FRONTEND='noninteractive' apt-get -y -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' upgrade
+    echo "Running clean command..."
+    apt-get -y clean
+    echo "Running autoclean command..."
     apt-get -y autoclean
 fi
 
@@ -125,8 +129,11 @@ $script_dir/../sar/install-sar.sh
 
 echo -ne "\n"
 
-FUNC=$(declare -f setup)
+# declare -f will not return a successful exit code if the setup function is not available.
+# But setup function is optional, therefore, handle the exit code gracefully.
+FUNC=$(declare -f setup || echo "")
 if [[ ! -z $FUNC ]]; then
+    echo "Running the setup function"
     bash -c "$FUNC; setup"
 fi
 
