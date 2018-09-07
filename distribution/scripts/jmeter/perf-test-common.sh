@@ -79,6 +79,10 @@ jmeter_client_heap_size=$default_jmeter_client_heap_size
 default_jmeter_server_heap_size=4g
 jmeter_server_heap_size=$default_jmeter_server_heap_size
 
+# Heap size of Netty Service
+default_netty_service_heap_size=4g
+netty_service_heap_size=$default_netty_service_heap_size
+
 # Scenario names to include
 declare -a include_scenario_names
 # Scenario names to exclude
@@ -115,7 +119,7 @@ function usage() {
     echo ""
     echo "Usage: "
     echo "$0 [-u <concurrent_users>] [-b <message_sizes>] [-s <sleep_times>] [-m <heap_sizes>] [-d <test_duration>] [-w <warmup_time>]"
-    echo "   [-n <jmeter_servers>] [-j <jmeter_server_heap_size>] [-k <jmeter_client_heap_size>]"
+    echo "   [-n <jmeter_servers>] [-j <jmeter_server_heap_size>] [-k <jmeter_client_heap_size>] [-l <netty_service_heap_size>]"
     echo "   [-i <include_scenario_name>] [-e <include_scenario_name>] [-t] [-p <estimated_processing_time_in_between_tests>] [-h]"
     echo ""
     echo "-u: Concurrent Users to test. Multiple users must be separated by spaces. Default \"$default_concurrent_users\"."
@@ -127,6 +131,7 @@ function usage() {
     echo "-n: Number of JMeter servers. If n=1, only client will be used. If n > 1, remote JMeter servers will be used. Default $default_jmeter_servers."
     echo "-j: Heap Size of JMeter Server. Default $default_jmeter_server_heap_size."
     echo "-k: Heap Size of JMeter Client. Default $default_jmeter_client_heap_size."
+    echo "-l: Heap Size of Netty Service. Default $default_netty_service_heap_size."
     echo "-i: Scenario name to to be included. You can give multiple options to filter scenarios."
     echo "-e: Scenario name to to be excluded. You can give multiple options to filter scenarios."
     echo "-t: Estimate time without executing tests."
@@ -135,7 +140,7 @@ function usage() {
     echo ""
 }
 
-while getopts "u:b:s:m:d:w:n:j:k:i:e:tp:h" opts; do
+while getopts "u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts; do
     case $opts in
     u)
         concurrent_users=${OPTARG}
@@ -163,6 +168,9 @@ while getopts "u:b:s:m:d:w:n:j:k:i:e:tp:h" opts; do
         ;;
     k)
         jmeter_client_heap_size=${OPTARG}
+        ;;
+    l)
+        netty_service_heap_size=${OPTARG}
         ;;
     i)
         include_scenario_names+=("${OPTARG}")
@@ -427,7 +435,8 @@ function test_scenarios() {
 
                         if [[ $sleep_time -ge 0 ]]; then
                             echo "Starting Backend Service. Sleep Time: $sleep_time"
-                            ssh $backend_ssh_host "./netty-service/netty-start.sh --worker-threads 2000 --sleep-time $sleep_time"
+                            ssh $backend_ssh_host "./netty-service/netty-start.sh -m $netty_service_heap_size \
+                                -- --worker-threads $total_users --sleep-time $sleep_time"
                         fi
 
                         declare -ag jmeter_params=("users=$users" "duration=$test_duration")
