@@ -146,4 +146,4 @@ function move_log() {
 while IFS= read -r -d $'\0' file; do
     echo "Moving $file"
     move_log $file
-done < <(find . -type f -name '*.log' -print0)
+done < <(find $script_dir/.. -type f -name '*.log' -print0)
