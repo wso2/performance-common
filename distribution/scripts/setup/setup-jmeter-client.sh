@@ -29,28 +29,38 @@ fi
 export script_name="$0"
 export key_file=""
 export script_dir=$(dirname "$0")
+export installation_dir=""
+export ssh_config_location=""
 
 declare -a ssh_aliases_array
 declare -a ssh_hostnames_array
 declare -a jmeter_plugins_array
 
 function usageCommand() {
-    echo "-k <key_file> -a <ssh_alias> -n <ssh_hostname> [-j <jmeter_plugin>]"
+    echo "-k <key_file> -i <installation_dir> -c <ssh_config_location> -a <ssh_alias> -n <ssh_hostname> [-j <jmeter_plugin>]"
 }
 export -f usageCommand
 
 function usageHelp() {
     echo "-k: The key file location."
+    echo "-i: The JMeter installation directory."
+    echo "-c: The SSH config location."
     echo "-a: SSH Alias. You can give multiple ssh aliases."
     echo "-n: SSH Hostname. You can give multiple ssh hostnames for a given set of ssh aliases."
     echo "-j: The JMeter plugin name. You can give multiple JMeter plugins to install."
 }
 export -f usageHelp
 
-while getopts "gp:w:o:hk:a:n:j:" opt; do
+while getopts "gp:w:o:hk:i:c:a:n:j:" opt; do
     case "${opt}" in
     k)
         key_file=${OPTARG}
+        ;;
+    i)
+        installation_dir=${OPTARG}
+        ;;
+    c)
+        ssh_config_location=${OPTARG}
         ;;
     a)
         ssh_aliases_array+=("${OPTARG}")
@@ -82,6 +92,14 @@ function validate() {
         echo "Please provide the private key location."
         exit 1
     fi
+    if [[ ! -d $installation_dir ]]; then
+        echo "Please provide the JMeter installation directory."
+        exit 1
+    fi
+    if [[ ! -d $ssh_config_location ]]; then
+        echo "Please provide the SSH config location."
+        exit 1
+    fi
     if [ ! "${#ssh_aliases_array[@]}" -eq "${#ssh_hostnames_array[@]}" ]; then
         echo "Number of SSH aliases should be equal to number of SSH hostnames."
         exit 1
@@ -94,9 +112,10 @@ function setup() {
     declare -a ssh_hostnames_array=($ssh_hostnames)
     declare -a jmeter_plugins_array=($jmeter_plugins)
 
-    echo "Setting up JMeter in $PWD"
+    ssh_config_file=$ssh_config_location/.ssh/config
 
-    ssh_config_file=.ssh/config
+    echo "Creating SSH configs in $ssh_config_file"
+
     if [[ -f ${ssh_config_file} ]]; then
         echo "WARNING: Replacing existing SSH config file."
         mv ${ssh_config_file}{,.bak$(date +%s)}
@@ -114,7 +133,8 @@ function setup() {
         echo -ne "\n" >>${ssh_config_file}
     done
 
-    $script_dir/../jmeter/install-jmeter.sh -d -i $PWD "${jmeter_plugins_array[@]}"
+    echo "Setting up JMeter in $installation_dir"
+    $script_dir/../jmeter/install-jmeter.sh -d -i $installation_dir "${jmeter_plugins_array[@]}"
 }
 export -f setup
 

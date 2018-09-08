@@ -28,21 +28,26 @@ fi
 
 export script_name="$0"
 export script_dir=$(dirname "$0")
+export installation_dir=""
 
 declare -a jmeter_plugins_array
 
 function usageCommand() {
-    echo "[-j <jmeter_plugin>]"
+    echo "-i <installation_dir> [-j <jmeter_plugin>]"
 }
 export -f usageCommand
 
 function usageHelp() {
+    echo "-i: The JMeter installation directory."
     echo "-j: The JMeter plugin name. You can give multiple JMeter plugins to install."
 }
 export -f usageHelp
 
-while getopts "gp:w:o:hj:" opt; do
+while getopts "gp:w:o:hi:j:" opt; do
     case "${opt}" in
+    i)
+        installation_dir=${OPTARG}
+        ;;
     j)
         jmeter_plugins_array+=("-p" "${OPTARG}")
         ;;
@@ -54,13 +59,21 @@ while getopts "gp:w:o:hj:" opt; do
 done
 shift "$((OPTIND - 1))"
 
+function validate() {
+    if [[ ! -d $installation_dir ]]; then
+        echo "Please provide the JMeter installation directory."
+        exit 1
+    fi
+}
+export -f validate
+
 # Bash does not support exporting arrays
 export jmeter_plugins="${jmeter_plugins_array[*]}"
 
 function setup() {
     declare -a jmeter_plugins_array=($jmeter_plugins)
-    echo "Setting up JMeter in $PWD"
-    $script_dir/../jmeter/install-jmeter.sh -d -i $PWD "${jmeter_plugins_array[@]}"
+    echo "Setting up JMeter in $installation_dir"
+    $script_dir/../jmeter/install-jmeter.sh -d -i $installation_dir "${jmeter_plugins_array[@]}"
 }
 export -f setup
 
