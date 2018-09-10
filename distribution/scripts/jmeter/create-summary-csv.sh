@@ -190,9 +190,9 @@ function write_loadavg_details() {
         echo "Reading $loadavg_file"
         local loadavg_values=$(tail -2 $loadavg_file | head -1)
         declare -a loadavg_array=($loadavg_values)
-        echo -n ",${loadavg_array[3]}" >>$filename
         echo -n ",${loadavg_array[4]}" >>$filename
         echo -n ",${loadavg_array[5]}" >>$filename
+        echo -n ",${loadavg_array[6]}" >>$filename
     else
         echo -n ",N/A,N/A,N/A" >>$filename
     fi
