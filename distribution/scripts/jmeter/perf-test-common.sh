@@ -206,6 +206,11 @@ if [[ -z $warmup_time ]]; then
     exit 1
 fi
 
+if [[ $(($warmup_time * 60)) -ge $test_duration ]]; then
+    echo "The warmup time must be less than the test duration."
+    exit 1
+fi
+
 if [[ -z $jmeter_servers ]]; then
     echo "Please specify the number of JMeter servers."
     exit 1
