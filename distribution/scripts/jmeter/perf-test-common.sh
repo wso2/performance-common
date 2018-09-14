@@ -55,16 +55,16 @@
 
 # Concurrent users (these will by multiplied by the number of JMeter servers)
 default_concurrent_users="50 100 150 500 1000"
-concurrent_users="$default_concurrent_users"
+declare -a concurrent_users
 # Message Sizes
 default_message_sizes="50 1024 10240"
-message_sizes="$default_message_sizes"
+declare -a message_sizes
 # Common backend sleep times (in milliseconds).
 default_backend_sleep_times="0 30 500 1000"
-backend_sleep_times="$default_backend_sleep_times"
+declare -a backend_sleep_times
 # Application heap Sizes
 default_heap_sizes="2g"
-heap_sizes="$default_heap_sizes"
+declare -a heap_sizes
 
 # Test Duration in seconds
 default_test_duration=900
@@ -122,10 +122,10 @@ function usage() {
     echo "   [-n <jmeter_servers>] [-j <jmeter_server_heap_size>] [-k <jmeter_client_heap_size>] [-l <netty_service_heap_size>]"
     echo "   [-i <include_scenario_name>] [-e <include_scenario_name>] [-t] [-p <estimated_processing_time_in_between_tests>] [-h]"
     echo ""
-    echo "-u: Concurrent Users to test. Multiple users must be separated by spaces. Default \"$default_concurrent_users\"."
-    echo "-b: Message sizes in bytes. Multiple message sizes must be separated by spaces. Default \"$default_message_sizes\"."
-    echo "-s: Backend Sleep Times in milliseconds. Multiple sleep times must be separated by spaces. Default \"$default_backend_sleep_times\"."
-    echo "-m: Application heap memory sizes. Multiple heap memory sizes must be separated by spaces. Default \"$default_heap_sizes\"."
+    echo "-u: Concurrent Users to test. You can give multiple options to specify multiple users. Default \"$default_concurrent_users\"."
+    echo "-b: Message sizes in bytes. You can give multiple options to specify multiple message sizes. Default \"$default_message_sizes\"."
+    echo "-s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times. Default \"$default_backend_sleep_times\"."
+    echo "-m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Default \"$default_heap_sizes\"."
     echo "-d: Test Duration in seconds. Default $default_test_duration."
     echo "-w: Warm-up time in minutes. Default $default_warmup_time."
     echo "-n: Number of JMeter servers. If n=1, only client will be used. If n > 1, remote JMeter servers will be used. Default $default_jmeter_servers."
@@ -143,16 +143,16 @@ function usage() {
 while getopts "u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts; do
     case $opts in
     u)
-        concurrent_users=${OPTARG}
+        concurrent_users+=("${OPTARG}")
         ;;
     b)
-        message_sizes=${OPTARG}
+        message_sizes+=("${OPTARG}")
         ;;
     s)
-        backend_sleep_times=${OPTARG}
+        backend_sleep_times+=("${OPTARG}")
         ;;
     m)
-        heap_sizes=${OPTARG}
+        heap_sizes+=("${OPTARG}")
         ;;
     d)
         test_duration=${OPTARG}
@@ -196,26 +196,6 @@ while getopts "u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts; do
 done
 
 # Validate options
-if [[ -z $concurrent_users ]]; then
-    echo "Please specify the concurrent users."
-    exit 1
-fi
-
-if [[ -z $message_sizes ]]; then
-    echo "Please specify the message sizes."
-    exit 1
-fi
-
-if [[ -z $backend_sleep_times ]]; then
-    echo "Please specify the backend sleep times."
-    exit 1
-fi
-
-if [[ -z $heap_sizes ]]; then
-    echo "Please specify the application heap memory sizes."
-    exit 1
-fi
-
 if [[ -z $test_duration ]]; then
     echo "Please provide the test duration."
     exit 1
@@ -394,9 +374,30 @@ function initiailize_test() {
 
 function test_scenarios() {
     initiailize_test
-    declare -a heap_sizes_array=($heap_sizes)
-    declare -a concurrent_users_array=($concurrent_users)
-    declare -a message_sizes_array=($message_sizes)
+    declare -a heap_sizes_array
+    if [ ${#heap_sizes[@]} -eq 0 ]; then
+        heap_sizes_array+=($default_heap_sizes)
+    else
+        heap_sizes_array+=("${heap_sizes[@]}")
+    fi
+    declare -a concurrent_users_array
+    if [ ${#concurrent_users[@]} -eq 0 ]; then
+        concurrent_users_array+=($default_concurrent_users)
+    else
+        concurrent_users_array+=("${concurrent_users[@]}")
+    fi
+    declare -a message_sizes_array
+    if [ ${#message_sizes[@]} -eq 0 ]; then
+        message_sizes_array+=($default_message_sizes)
+    else
+        message_sizes_array+=("${message_sizes[@]}")
+    fi
+    declare -a backend_sleep_times_array
+    if [ ${#backend_sleep_times[@]} -eq 0 ]; then
+        backend_sleep_times_array+=($default_backend_sleep_times)
+    else
+        backend_sleep_times_array+=("${backend_sleep_times[@]}")
+    fi
     for heap in ${heap_sizes_array[@]}; do
         declare -ng scenario
         for scenario in ${!test_scenario@}; do
@@ -408,7 +409,7 @@ function test_scenarios() {
             local jmx_file=${scenario[jmx]}
             declare -a sleep_times_array
             if [ ${scenario[use_backend]} = true ]; then
-                sleep_times_array=($backend_sleep_times)
+                sleep_times_array=("${backend_sleep_times_array[@]}")
             else
                 sleep_times_array=("-1")
             fi

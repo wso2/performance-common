@@ -172,10 +172,10 @@ Usage:
    [-n <jmeter_servers>] [-j <jmeter_server_heap_size>] [-k <jmeter_client_heap_size>] [-l <netty_service_heap_size>]
    [-i <include_scenario_name>] [-e <include_scenario_name>] [-t] [-p <estimated_processing_time_in_between_tests>] [-h]
 
--u: Concurrent Users to test. Multiple users must be separated by spaces. Default "50 100 150 500 1000".
--b: Message sizes in bytes. Multiple message sizes must be separated by spaces. Default "50 1024 10240".
--s: Backend Sleep Times in milliseconds. Multiple sleep times must be separated by spaces. Default "0 30 500 1000".
--m: Application heap memory sizes. Multiple heap memory sizes must be separated by spaces. Default "2g".
+-u: Concurrent Users to test. You can give multiple options to specify multiple users. Default "50 100 150 500 1000".
+-b: Message sizes in bytes. You can give multiple options to specify multiple message sizes. Default "50 1024 10240".
+-s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times. Default "0 30 500 1000".
+-m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Default "2g".
 -d: Test Duration in seconds. Default 900.
 -w: Warm-up time in minutes. Default 5.
 -n: Number of JMeter servers. If n=1, only client will be used. If n > 1, remote JMeter servers will be used. Default 1.
