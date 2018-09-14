@@ -25,10 +25,11 @@ java_dir=""
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 -f <java_dist> [-p <java_dir>]"
+    echo "$0 -f <java_dist> [-p <java_dir>] [-h]"
     echo ""
-    echo "-f: The jdk tar.gz file"
-    echo "-p: Java installation directory"
+    echo "-f: The jdk tar.gz file."
+    echo "-p: Java installation directory."
+    echo "-h: Display this help and exit."
     echo ""
 }
 
@@ -39,13 +40,17 @@ if [ "$UID" -ne "0" ]; then
     exit 9
 fi
 
-while getopts "f:p:" opts; do
+while getopts "f:p:h" opts; do
     case $opts in
     f)
         java_dist=${OPTARG}
         ;;
     p)
         java_dir=${OPTARG}
+        ;;
+    h)
+        usage
+        exit 0
         ;;
     \?)
         usage
