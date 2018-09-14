@@ -134,7 +134,7 @@ fi
 echo -n "Scenario Name","Heap Size","Concurrent Users","Message Size (Bytes)","Sleep Time (ms)", >$filename
 echo -n "# Samples","Error Count","Error %","Average (ms)","Standard Deviation (ms)","Min (ms)","Max (ms)", >>$filename
 echo -n "75th Percentile (ms)","90th Percentile (ms)","95th Percentile (ms)","98th Percentile (ms)", >>$filename
-echo -n "99th Percentile (ms)","99.9th Percentile (ms)","Throughput", >>$filename
+echo -n "99th Percentile (ms)","99.9th Percentile (ms)","Throughput (Requests/sec)", >>$filename
 echo -n "Received (KB/sec)","Sent (KB/sec)" >>$filename
 echo -n $(get_gc_headers "${application_name}") >>$filename
 if [ "$include_all" = true ]; then
