@@ -24,6 +24,28 @@ if [ "$UID" -ne "0" ]; then
     exit 9
 fi
 
+function usage() {
+    echo ""
+    echo "Usage: "
+    echo "$0 [-h]"
+    echo ""
+    echo "-h: Display this help and exit."
+    echo ""
+}
+
+while getopts "h" opts; do
+    case $opts in
+    h)
+        usage
+        exit 0
+        ;;
+    \?)
+        usage
+        exit 1
+        ;;
+    esac
+done
+
 #Install sysstat package
 apt-get install -y sysstat
 

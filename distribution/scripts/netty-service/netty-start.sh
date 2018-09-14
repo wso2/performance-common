@@ -21,14 +21,15 @@ script_dir=$(dirname "$0")
 # Change directory to make sure logs directory is created inside $script_dir
 cd $script_dir
 service_name=netty-http-echo-service
-heap_size=""
+default_heap_size="4g"
+heap_size="$default_heap_size"
 
 function usage() {
     echo ""
     echo "Usage: "
     echo "$0 [-m <heap_size>] [-h] -- [netty_service_flags]"
     echo ""
-    echo "-m: The heap memory size of Netty Service."
+    echo "-m: The heap memory size of Netty Service. Default: $default_heap_size"
     echo "-h: Display this help and exit."
     echo ""
 }
@@ -53,7 +54,8 @@ shift "$((OPTIND - 1))"
 netty_service_flags="$@"
 
 if [[ -z $heap_size ]]; then
-    heap_size="4G"
+    echo "Please specify the heap size."
+    exit 1
 fi
 
 if pgrep -f "$service_name" >/dev/null; then

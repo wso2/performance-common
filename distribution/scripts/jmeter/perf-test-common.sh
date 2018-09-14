@@ -478,7 +478,7 @@ function test_scenarios() {
                         write_server_metrics jmeter1 $jmeter1_ssh_host
                         write_server_metrics jmeter2 $jmeter2_ssh_host
 
-                        $HOME/jtl-splitter/jtl-splitter.sh -f ${report_location}/results.jtl -t $warmup_time -s
+                        $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -t $warmup_time -s
 
                         echo "Zipping JTL files in ${report_location}"
                         zip -jm ${report_location}/jtls.zip ${report_location}/results*.jtl

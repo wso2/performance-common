@@ -18,5 +18,41 @@
 # ----------------------------------------------------------------------------
 
 script_dir=$(dirname "$0")
+default_heap_size="1g"
+heap_size="$default_heap_size"
 
-java -jar $script_dir/jtl-splitter-${performance.common.version}.jar "$@"
+function usage() {
+    echo ""
+    echo "Usage: "
+    echo "$0 [-m <heap_size>] [-h] -- [jtl_splitter_flags]"
+    echo ""
+    echo "-m: The heap memory size. Default: $default_heap_size"
+    echo "-h: Display this help and exit."
+    echo ""
+}
+
+while getopts "m:h" opts; do
+    case $opts in
+    m)
+        heap_size=${OPTARG}
+        ;;
+    h)
+        usage
+        exit 0
+        ;;
+    \?)
+        usage
+        exit 1
+        ;;
+    esac
+done
+shift "$((OPTIND - 1))"
+
+jtl_splitter_flags="$@"
+
+if [[ -z $heap_size ]]; then
+    echo "Please specify the heap size."
+    exit 1
+fi
+
+java -Xms${heap_size} -Xmx${heap_size}  -jar $script_dir/jtl-splitter-${performance.common.version}.jar "$@"
