@@ -55,4 +55,4 @@ if [[ -z $heap_size ]]; then
     exit 1
 fi
 
-java -Xms${heap_size} -Xmx${heap_size}  -jar $script_dir/jtl-splitter-${performance.common.version}.jar "$@"
+java -Xms${heap_size} -Xmx${heap_size}  -jar $script_dir/jtl-splitter-${performance.common.version}.jar $jtl_splitter_flags
