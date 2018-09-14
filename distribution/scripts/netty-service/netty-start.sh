@@ -74,7 +74,7 @@ mkdir -p logs
 
 echo "Starting Netty"
 nohup java -Xms${heap_size} -Xmx${heap_size} -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$gc_log_file \
-    -jar $service_name-${performance.common.version}.jar "$@" >netty.out 2>&1 &
+    -jar $service_name-${performance.common.version}.jar "$netty_service_flags" >netty.out 2>&1 &
 
 sleep 1
-tail -10 netty.out
+tail -50 netty.out
