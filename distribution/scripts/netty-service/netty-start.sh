@@ -21,18 +21,44 @@ script_dir=$(dirname "$0")
 # Change directory to make sure logs directory is created inside $script_dir
 cd $script_dir
 service_name=netty-http-echo-service
-sleep_time=$1
-port=$2
+default_heap_size="4g"
+heap_size="$default_heap_size"
 
-if [ -z "$sleep_time" ]; then
-    sleep_time=0
+function usage() {
+    echo ""
+    echo "Usage: "
+    echo "$0 [-m <heap_size>] [-h] -- [netty_service_flags]"
+    echo ""
+    echo "-m: The heap memory size of Netty Service. Default: $default_heap_size"
+    echo "-h: Display this help and exit."
+    echo ""
+}
+
+while getopts "m:h" opts; do
+    case $opts in
+    m)
+        heap_size=${OPTARG}
+        ;;
+    h)
+        usage
+        exit 0
+        ;;
+    \?)
+        usage
+        exit 1
+        ;;
+    esac
+done
+shift "$((OPTIND - 1))"
+
+netty_service_flags="$@"
+
+if [[ -z $heap_size ]]; then
+    echo "Please specify the heap size."
+    exit 1
 fi
 
-if [ -z "$port" ]; then
-    port="8688"
-fi
-
-if pgrep -f "$service_name" > /dev/null; then
+if pgrep -f "$service_name" >/dev/null; then
     echo "Shutting down Netty"
     pkill -f $service_name
 fi
@@ -47,5 +73,8 @@ fi
 mkdir -p logs
 
 echo "Starting Netty"
-nohup java -Xms4g -Xmx4g -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$gc_log_file \
-    -jar $service_name-${performance.common.version}.jar --worker-threads 2000 --sleep-time $sleep_time --port $port > netty.out 2>&1 &
+nohup java -Xms${heap_size} -Xmx${heap_size} -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$gc_log_file \
+    -jar $service_name-${performance.common.version}.jar $netty_service_flags >netty.out 2>&1 &
+
+sleep 1
+tail -50 netty.out

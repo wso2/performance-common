@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 # Copyright 2017 WSO2 Inc. (http://wso2.org)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,14 +18,48 @@
 # ----------------------------------------------------------------------------
 
 script_dir=$(dirname "$0")
-payloads=$1
+payload_type=""
+declare -a payloads
 
-if [[ -z $payloads ]]; then
-    payloads="50 1024 10240 102400"
+function usage() {
+    echo ""
+    echo "Usage: "
+    echo "$0 [-p <payload_type>] [-s <payload_size>]"
+    echo ""
+    echo "-p: The Payload Type."
+    echo "-s: The Payload Size. You can give multiple payload sizes."
+    echo "-h: Display this help and exit."
+    echo ""
+}
+
+while getopts "p:s:h" opts; do
+    case $opts in
+    p)
+        payload_type=${OPTARG}
+        ;;
+    s)
+        payloads+=("${OPTARG}")
+        ;;
+    h)
+        usage
+        exit 0
+        ;;
+    \?)
+        usage
+        exit 1
+        ;;
+    esac
+done
+
+if [[ -z $payload_type ]]; then
+    payload_type="simple"
 fi
 
-for s in $payloads
-do
+if [[ ${#payloads[@]} -eq 0 ]]; then
+    payloads=("50 1024 10240 102400")
+fi
+
+for s in ${payloads[*]}; do
     echo "Generating ${s}B file"
-    java -jar $script_dir/payload-generator-${performance.common.version}.jar --size $s
+    java -jar $script_dir/payload-generator-${performance.common.version}.jar --size $s --payload-type ${payload_type}
 done

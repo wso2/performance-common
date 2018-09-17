@@ -15,21 +15,65 @@
 #
 # ----------------------------------------------------------------------------
 # Installation script for setting up Java on Linux.
-# This is a simplified version of the script in 
+# This is a simplified version of the script in
 # https://github.com/chrishantha/install-java
 # ----------------------------------------------------------------------------
 
-java_dist="$1"
+java_dist=""
+java_dir=""
+
+function usage() {
+    echo ""
+    echo "Usage: "
+    echo "$0 -f <java_dist> [-p <java_dir>] [-h]"
+    echo ""
+    echo "-f: The jdk tar.gz file."
+    echo "-p: Java installation directory."
+    echo "-h: Display this help and exit."
+    echo ""
+}
 
 # Make sure the script is running as root.
 if [ "$UID" -ne "0" ]; then
-    echo "You must be root to run $0. Try following"; echo "sudo $0";
+    echo "You must be root to run $0. Try following"
+    echo "sudo $0"
     exit 9
 fi
+
+while getopts "f:p:h" opts; do
+    case $opts in
+    f)
+        java_dist=${OPTARG}
+        ;;
+    p)
+        java_dir=${OPTARG}
+        ;;
+    h)
+        usage
+        exit 0
+        ;;
+    \?)
+        usage
+        exit 1
+        ;;
+    esac
+done
 
 if [[ ! -f $java_dist ]]; then
     echo "Please specify the java distribution file (tar.gz)"
     help
+    exit 1
+fi
+
+#If no directory was provided, we need to create the default one
+if [[ -z $java_dir ]]; then
+    java_dir="/usr/lib/jvm"
+    mkdir -p $java_dir
+fi
+
+#Validate java directory
+if [[ ! -d $java_dir ]]; then
+    echo "Please specify a valid java installation directory"
     exit 1
 fi
 
@@ -38,9 +82,6 @@ if ! command -v unzip >/dev/null 2>&1; then
     echo "Please install unzip (sudo apt -y install unzip)"
     exit 1
 fi
-
-java_dir="/usr/lib/jvm"
-mkdir -p $java_dir
 
 # Extract Java Distribution
 java_dist_filename=$(basename $java_dist)
@@ -53,10 +94,9 @@ if [[ ! -d $extracted_dirname ]]; then
     echo "Extracting $java_dist to $java_dir"
     tar -xof $java_dist -C $java_dir
     echo "JDK is extracted to $extracted_dirname"
-else 
+else
     echo "JDK is already extracted to $extracted_dirname"
 fi
-
 
 if [[ ! -f $extracted_dirname"/bin/java" ]]; then
     echo "Couldn't check the extracted directory. Please check the installation script"
@@ -69,7 +109,7 @@ unlimited_jce_policy_dist=""
 
 if [[ "$java_dist_filename" =~ ^jdk-7.* ]]; then
     unlimited_jce_policy_dist="$(dirname $java_dist)/UnlimitedJCEPolicyJDK7.zip"
-elif [[ "$java_dist_filename" =~ ^jdk-8.*  ]]; then
+elif [[ "$java_dist_filename" =~ ^jdk-8.* ]]; then
     unlimited_jce_policy_dist="$(dirname $java_dist)/jce_policy-8.zip"
 fi
 
@@ -78,12 +118,11 @@ if [[ -f $unlimited_jce_policy_dist ]]; then
     unzip -j -o $unlimited_jce_policy_dist *.jar -d $extracted_dirname/jre/lib/security
 fi
 
-commands=( "jar" "java" "javac" "javadoc" "javah" "javap" "javaws" "jcmd" "jconsole" "jarsigner" "jhat" "jinfo" "jmap" "jmc" "jps" "jstack" "jstat" "jstatd" "jvisualvm" "keytool" "policytool" "wsgen" "wsimport" )
+commands=("jar" "java" "javac" "javadoc" "javah" "javap" "javaws" "jcmd" "jconsole" "jarsigner" "jhat" "jinfo" "jmap" "jmc" "jps" "jstack" "jstat" "jstatd" "jvisualvm" "keytool" "policytool" "wsgen" "wsimport")
 
 echo "Running update-alternatives --install and --config for ${commands[@]}"
 
-for i in "${commands[@]}"
-do
+for i in "${commands[@]}"; do
     command_path=$extracted_dirname/bin/$i
     sudo update-alternatives --install "/usr/bin/$i" "$i" "$command_path" 10000
     sudo update-alternatives --set "$i" "$command_path"
@@ -100,6 +139,6 @@ fi
 if grep -q "export JAVA_HOME=.*" $HOME/.bashrc; then
     sed -i "s|export JAVA_HOME=.*|export JAVA_HOME=$extracted_dirname|" $HOME/.bashrc
 else
-    echo "export JAVA_HOME=$extracted_dirname" >> $HOME/.bashrc
+    echo "export JAVA_HOME=$extracted_dirname" >>$HOME/.bashrc
 fi
 source $HOME/.bashrc

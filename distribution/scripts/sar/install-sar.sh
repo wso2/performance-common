@@ -19,12 +19,35 @@
 
 # Make sure the script is running as root.
 if [ "$UID" -ne "0" ]; then
-    echo "You must be root to run $0. Try following"; echo "sudo $0";
+    echo "You must be root to run $0. Try following"
+    echo "sudo $0"
     exit 9
 fi
 
+function usage() {
+    echo ""
+    echo "Usage: "
+    echo "$0 [-h]"
+    echo ""
+    echo "-h: Display this help and exit."
+    echo ""
+}
+
+while getopts "h" opts; do
+    case $opts in
+    h)
+        usage
+        exit 0
+        ;;
+    \?)
+        usage
+        exit 1
+        ;;
+    esac
+done
+
 #Install sysstat package
-apt install sysstat
+apt-get install -y sysstat
 
 #Enable
 sed -i "s|ENABLED=\"false\"|ENABLED=\"true\"|" /etc/default/sysstat
