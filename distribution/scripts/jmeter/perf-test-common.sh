@@ -196,13 +196,25 @@ while getopts "u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts; do
 done
 
 # Validate options
+number_regex='^[0-9]+$'
+
 if [[ -z $test_duration ]]; then
     echo "Please provide the test duration."
     exit 1
 fi
 
+if ! [[ $test_duration =~ $number_regex ]]; then
+    echo "Test duration must be a positive number."
+    exit 1
+fi
+
 if [[ -z $warmup_time ]]; then
     echo "Please provide the warmup time."
+    exit 1
+fi
+
+if ! [[ $warmup_time =~ $number_regex ]]; then
+    echo "Warmup time must be a positive number."
     exit 1
 fi
 
@@ -213,6 +225,28 @@ fi
 
 if [[ -z $jmeter_servers ]]; then
     echo "Please specify the number of JMeter servers."
+    exit 1
+fi
+
+if ! [[ $jmeter_servers =~ $number_regex ]]; then
+    echo "JMeter Servers must be a positive number."
+    exit 1
+fi
+
+heap_regex='^[0-9]+[mg]$'
+
+if ! [[ $jmeter_server_heap_size =~ $heap_regex ]]; then
+    echo "Please specify a valid heap for JMeter Server."
+    exit 1
+fi
+
+if ! [[ $jmeter_client_heap_size =~ $heap_regex ]]; then
+    echo "Please specify a valid heap for JMeter Client."
+    exit 1
+fi
+
+if ! [[ $netty_service_heap_size =~ $heap_regex ]]; then
+    echo "Please specify a valid heap for Netty Service."
     exit 1
 fi
 
