@@ -377,6 +377,16 @@ function initiailize_test() {
     fi
 }
 
+function exit_handler() {
+    if [[ "$estimate" == false ]] && [[ -d results ]]; then
+        echo "Zipping results directory..."
+        zip -9qr results.zip results/
+    fi
+    print_durations
+}
+
+trap exit_handler EXIT
+
 function test_scenarios() {
     initiailize_test
     declare -a heap_sizes_array
@@ -511,9 +521,4 @@ function test_scenarios() {
             done
         done
     done
-    if [[ "$estimate" == false ]] && [[ -d results ]]; then
-        echo "Zipping results directory..."
-        zip -9qr results.zip results/
-    fi
-    print_durations
 }
