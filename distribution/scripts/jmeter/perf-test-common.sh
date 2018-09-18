@@ -289,8 +289,8 @@ function write_server_metrics() {
     fi
     $command_prefix ss -s >${report_location}/${server}_ss.txt
     $command_prefix uptime >${report_location}/${server}_uptime.txt
-    $command_prefix sar -q >${report_location}/${server}_loadavg.txt
-    $command_prefix sar -A >${report_location}/${server}_sar.txt
+    $command_prefix LC_TIME=C sar -q >${report_location}/${server}_loadavg.txt
+    $command_prefix LC_TIME=C sar -A >${report_location}/${server}_sar.txt
     $command_prefix top -bn 1 >${report_location}/${server}_top.txt
     if [[ ! -z $pgrep_pattern ]]; then
         $command_prefix ps u -p \`pgrep -f $pgrep_pattern\` >${report_location}/${server}_ps.txt
