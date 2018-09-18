@@ -83,7 +83,7 @@ nohup java -Xms${heap_size} -Xmx${heap_size} -XX:+PrintGC -XX:+PrintGCDetails -X
 
 if [ "$wait_listen" = true ]; then
     # Find the port:
-    port=$(echo "$netty_service_flags" | sed -nE "s/--port[[:blank:]=]([[:digit:]]+)/\1/p")
+    port=$(echo "$netty_service_flags" | sed -nE "s/--port[[:blank:]]([[:digit:]]+)/\1/p")
     if [[ -z $port ]]; then
         # Default port
         port=8688
