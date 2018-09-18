@@ -75,8 +75,15 @@ public class StatCalculator {
     public synchronized SummaryStats calculate() {
         recorder.getIntervalHistogramInto(intervalHistogram);
         accumulatedHistogram.add(intervalHistogram);
-        RoundingMode roundingMode = RoundingMode.HALF_EVEN;
         long samples = accumulatedHistogram.getTotalCount();
+        if (samples == 0) {
+            // There are no samples
+            return new SummaryStats(-1L, -1L, new BigDecimal(-1), new BigDecimal(-1), -1L, -1L,
+                    new BigDecimal(-1), new BigDecimal(-1), new BigDecimal(-1), new BigDecimal(-1),
+                    new BigDecimal(-1), new BigDecimal(-1), new BigDecimal(-1), new BigDecimal(-1),
+                    new BigDecimal(-1), new BigDecimal(-1), new BigDecimal(-1));
+        }
+        RoundingMode roundingMode = RoundingMode.HALF_EVEN;
         double duration = (endTimestamp - startTimestamp) / 1_000D;
         return new SummaryStats(samples, errors,
                 new BigDecimal((samples > 0) ? ((double) errors / samples) * 100D : 0)
