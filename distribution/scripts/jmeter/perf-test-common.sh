@@ -281,16 +281,18 @@ function measure_time() {
 
 function write_server_metrics() {
     local server=$1
+    echo "Collecting server metrics for $server."
     local ssh_host=$2
     local pgrep_pattern=$3
     local command_prefix=""
+    export LC_TIME=C
     if [[ ! -z $ssh_host ]]; then
-        command_prefix="ssh $ssh_host"
+        command_prefix="ssh -o SendEnv=LC_TIME $ssh_host"
     fi
     $command_prefix ss -s >${report_location}/${server}_ss.txt
     $command_prefix uptime >${report_location}/${server}_uptime.txt
-    $command_prefix LC_TIME=C sar -q >${report_location}/${server}_loadavg.txt
-    $command_prefix LC_TIME=C sar -A >${report_location}/${server}_sar.txt
+    $command_prefix sar -q >${report_location}/${server}_loadavg.txt
+    $command_prefix sar -A >${report_location}/${server}_sar.txt
     $command_prefix top -bn 1 >${report_location}/${server}_top.txt
     if [[ ! -z $pgrep_pattern ]]; then
         $command_prefix ps u -p \`pgrep -f $pgrep_pattern\` >${report_location}/${server}_ps.txt
