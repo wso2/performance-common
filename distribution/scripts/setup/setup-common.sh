@@ -87,8 +87,13 @@ if declare -F validate >/dev/null 2>&1; then
     validate
 fi
 
+echo "Working directory: $PWD"
+
 # Add host entry for the hostname
 echo "127.0.0.1 $(hostname)" >>/etc/hosts
+echo "Updated host entries"
+cat /etc/hosts
+
 echo -ne "\n"
 
 # Update packages
