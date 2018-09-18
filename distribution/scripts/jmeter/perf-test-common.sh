@@ -485,7 +485,7 @@ function test_scenarios() {
 
                         if [[ $sleep_time -ge 0 ]]; then
                             echo "Starting Backend Service. Sleep Time: $sleep_time"
-                            ssh $backend_ssh_host "./netty-service/netty-start.sh -m $netty_service_heap_size \
+                            ssh $backend_ssh_host "./netty-service/netty-start.sh -m $netty_service_heap_size -w \
                                 -- --worker-threads $total_users --sleep-time $sleep_time"
                         fi
 
