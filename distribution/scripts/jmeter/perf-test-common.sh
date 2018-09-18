@@ -196,13 +196,25 @@ while getopts "u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts; do
 done
 
 # Validate options
+number_regex='^[0-9]+$'
+
 if [[ -z $test_duration ]]; then
     echo "Please provide the test duration."
     exit 1
 fi
 
+if ! [[ $test_duration =~ $number_regex ]]; then
+    echo "Test duration must be a positive number."
+    exit 1
+fi
+
 if [[ -z $warmup_time ]]; then
     echo "Please provide the warmup time."
+    exit 1
+fi
+
+if ! [[ $warmup_time =~ $number_regex ]]; then
+    echo "Warmup time must be a positive number."
     exit 1
 fi
 
@@ -213,6 +225,28 @@ fi
 
 if [[ -z $jmeter_servers ]]; then
     echo "Please specify the number of JMeter servers."
+    exit 1
+fi
+
+if ! [[ $jmeter_servers =~ $number_regex ]]; then
+    echo "JMeter Servers must be a positive number."
+    exit 1
+fi
+
+heap_regex='^[0-9]+[mg]$'
+
+if ! [[ $jmeter_server_heap_size =~ $heap_regex ]]; then
+    echo "Please specify a valid heap for JMeter Server."
+    exit 1
+fi
+
+if ! [[ $jmeter_client_heap_size =~ $heap_regex ]]; then
+    echo "Please specify a valid heap for JMeter Client."
+    exit 1
+fi
+
+if ! [[ $netty_service_heap_size =~ $heap_regex ]]; then
+    echo "Please specify a valid heap for Netty Service."
     exit 1
 fi
 
@@ -255,8 +289,8 @@ function write_server_metrics() {
     fi
     $command_prefix ss -s >${report_location}/${server}_ss.txt
     $command_prefix uptime >${report_location}/${server}_uptime.txt
-    $command_prefix sar -q >${report_location}/${server}_loadavg.txt
-    $command_prefix sar -A >${report_location}/${server}_sar.txt
+    $command_prefix LC_TIME=C sar -q >${report_location}/${server}_loadavg.txt
+    $command_prefix LC_TIME=C sar -A >${report_location}/${server}_sar.txt
     $command_prefix top -bn 1 >${report_location}/${server}_top.txt
     if [[ ! -z $pgrep_pattern ]]; then
         $command_prefix ps u -p \`pgrep -f $pgrep_pattern\` >${report_location}/${server}_ps.txt
@@ -451,7 +485,7 @@ function test_scenarios() {
 
                         if [[ $sleep_time -ge 0 ]]; then
                             echo "Starting Backend Service. Sleep Time: $sleep_time"
-                            ssh $backend_ssh_host "./netty-service/netty-start.sh -m $netty_service_heap_size \
+                            ssh $backend_ssh_host "./netty-service/netty-start.sh -m $netty_service_heap_size -w \
                                 -- --worker-threads $total_users --sleep-time $sleep_time"
                         fi
 
@@ -485,6 +519,7 @@ function test_scenarios() {
                         fi
                         jmeter_command+=" -l ${report_location}/results.jtl"
 
+                        echo "Starting JMeter Client with JVM_ARGS=$JVM_ARGS"
                         echo "$jmeter_command"
                         # Run JMeter
                         $jmeter_command

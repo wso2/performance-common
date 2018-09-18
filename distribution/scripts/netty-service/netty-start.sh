@@ -23,21 +23,26 @@ cd $script_dir
 service_name=netty-http-echo-service
 default_heap_size="4g"
 heap_size="$default_heap_size"
+wait_listen=false
 
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 [-m <heap_size>] [-h] -- [netty_service_flags]"
+    echo "$0 [-m <heap_size>] [-w] [-h] -- [netty_service_flags]"
     echo ""
     echo "-m: The heap memory size of Netty Service. Default: $default_heap_size"
+    echo "-w: Wait till the port starts to listen."
     echo "-h: Display this help and exit."
     echo ""
 }
 
-while getopts "m:h" opts; do
+while getopts "m:wh" opts; do
     case $opts in
     m)
         heap_size=${OPTARG}
+        ;;
+    w)
+        wait_listen=true
         ;;
     h)
         usage
@@ -75,6 +80,22 @@ mkdir -p logs
 echo "Starting Netty"
 nohup java -Xms${heap_size} -Xmx${heap_size} -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$gc_log_file \
     -jar $service_name-${performance.common.version}.jar $netty_service_flags >netty.out 2>&1 &
+
+if [ "$wait_listen" = true ]; then
+    # Find the port:
+    port=$(echo "$netty_service_flags" | sed -nE "s/--port[[:blank:]]([[:digit:]]+)/\1/p")
+    if [[ -z $port ]]; then
+        # Default port
+        port=8688
+    fi
+    echo "Waiting till the port $port starts to listen."
+    n=0
+    until [ $n -ge 60 ]; do
+        nc -zv localhost $port && break
+        n=$(($n + 1))
+        sleep 1
+    done
+fi
 
 sleep 1
 tail -50 netty.out

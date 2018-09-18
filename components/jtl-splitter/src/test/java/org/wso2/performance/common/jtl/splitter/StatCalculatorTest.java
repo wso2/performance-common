@@ -111,4 +111,26 @@ public class StatCalculatorTest {
         Assert.assertEquals(summaryStats.getSentKBytesRate().doubleValue(),
                 samplingStatCalculator.getSentKBPerSecond(), 0.1);
     }
+
+    @Test
+    public void testStatisticsWithNoSamples() {
+        final StatCalculator statCalculator = new StatCalculator(2);
+        final SummaryStats summaryStats = statCalculator.calculate();
+        Assert.assertEquals(summaryStats.getSamples(), -1);
+        Assert.assertEquals(summaryStats.getErrors(), -1);
+        Assert.assertEquals(summaryStats.getErrorPercentage().doubleValue(), -1.0D);
+        Assert.assertEquals(summaryStats.getThroughput().doubleValue(), -1.0D);
+        Assert.assertEquals(summaryStats.getMin(), -1);
+        Assert.assertEquals(summaryStats.getMax(), -1);
+        Assert.assertEquals(summaryStats.getMean().doubleValue(), -1.0D);
+        Assert.assertEquals(summaryStats.getStddev().doubleValue(), -1.0D);
+        Assert.assertEquals(summaryStats.getP75().doubleValue(), -1.0D);
+        Assert.assertEquals(summaryStats.getP90().doubleValue(), -1.0D);
+        Assert.assertEquals(summaryStats.getP95().doubleValue(), -1.0D);
+        Assert.assertEquals(summaryStats.getP98().doubleValue(), -1.0D);
+        Assert.assertEquals(summaryStats.getP99().doubleValue(), -1.0D);
+        Assert.assertEquals(summaryStats.getP999().doubleValue(), -1.0D);
+        Assert.assertEquals(summaryStats.getReceivedKBytesRate().doubleValue(), -1.0D);
+        Assert.assertEquals(summaryStats.getSentKBytesRate().doubleValue(), -1.0D);
+    }
 }
