@@ -72,15 +72,20 @@ if [ "$download" = true ]; then
         echo "Do not specify JMeter distribution file with download option."
         exit 1
     fi
-    jmeter_dist="apache-jmeter-4.0.tgz"
+    jmeter_version="4.0"
+    jmeter_dist="apache-jmeter-${jmeter_version}.tgz"
+    jmeter_download_url="https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${jmeter_version}.tgz"
     if [[ ! -f $jmeter_dist ]]; then
         # Download JMeter
         echo "Downloading JMeter distribution"
-        wget -q http://www-us.apache.org/dist//jmeter/binaries/apache-jmeter-4.0.tgz -O $jmeter_dist
+        if ! wget -q $jmeter_download_url -O $jmeter_dist; then
+            echo "Failed to download JMeter!"
+            exit 1
+        fi
     fi
     # Verify JMeter
     echo "Verifying JMeter distribution"
-    curl -s http://www-us.apache.org/dist//jmeter/binaries/apache-jmeter-4.0.tgz.sha512 | sha512sum -c
+    curl -s ${jmeter_download_url}.sha512 | sha512sum -c
 fi
 
 if [[ ! -f $jmeter_dist ]]; then
