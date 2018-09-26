@@ -299,6 +299,18 @@ function write_server_metrics() {
     fi
 }
 
+function download_file() {
+    local server=$1
+    local remote_file=$2
+    local local_file_name=$3
+    echo "Downloading $remote_file from $server to $local_file_name"
+    if scp -qp $server:$remote_file ${report_location}/$local_file_name; then
+        echo "File transfer succeeded."
+    else
+        echo "WARN: File transfer failed!"
+    fi
+}
+
 function record_scenario_duration() {
     local scenario_name="$1"
     local duration="$2"
@@ -393,7 +405,12 @@ function initiailize_test() {
         mkdir results
         cp $0 results
 
-        declare -a message_sizes_array=($message_sizes)
+        declare -a message_sizes_array
+        if [ ${#message_sizes[@]} -eq 0 ]; then
+            message_sizes_array+=($default_message_sizes)
+        else
+            message_sizes_array+=("${message_sizes[@]}")
+        fi
         declare -a payload_sizes
         for msize in ${message_sizes_array[@]}; do
             payload_sizes+=("-s" "$msize")
@@ -537,12 +554,12 @@ function test_scenarios() {
                         zip -jm ${report_location}/jtls.zip ${report_location}/results*.jtl
 
                         if [[ $sleep_time -ge 0 ]]; then
-                            scp -q $backend_ssh_host:netty-service/logs/netty.log ${report_location}/netty.log
-                            scp -q $backend_ssh_host:netty-service/logs/nettygc.log ${report_location}/netty_gc.log
+                            download_file $backend_ssh_host netty-service/logs/netty.log netty.log
+                            download_file $backend_ssh_host netty-service/logs/nettygc.log netty_gc.log
                         fi
                         if [[ $jmeter_servers -gt 1 ]]; then
                             for jmeter_ssh_host in ${jmeter_ssh_hosts[@]}; do
-                                scp -q $jmeter_ssh_host:jmetergc.log ${report_location}/${jmeter_ssh_host}_gc.log
+                                download_file $jmeter_ssh_host jmetergc.log ${jmeter_ssh_host}_gc.log
                             done
                         fi
 
