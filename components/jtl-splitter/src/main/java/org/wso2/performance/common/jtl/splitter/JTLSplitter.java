@@ -133,7 +133,8 @@ public final class JTLSplitter {
                 standardOutput.print("Started splitting...\r");
             }
 
-            final int columnLimit = 16;
+            // Support JMeter 5.0
+            final int columnLimit = 17;
 
             lineLoop:
             while ((line = br.readLine()) != null) {
@@ -145,8 +146,7 @@ public final class JTLSplitter {
                         values[i++] = line.substring(pos, end);
                         pos = end + 1;
                     } else {
-                        // Validate line
-                        // JTL file usually has 16 columns
+                        // Validate number of columns
                         errorOutput.format("Line %d has more columns than expected: %s%n", lineNumber, line);
                         continue lineLoop;
                     }
