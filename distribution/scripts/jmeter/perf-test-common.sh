@@ -69,8 +69,8 @@ declare -a heap_sizes
 # Test Duration in seconds
 default_test_duration=900
 test_duration=$default_test_duration
-# Warm-up time in minutes
-default_warmup_time=5
+# Warm-up time in seconds
+default_warmup_time=300
 warmup_time=$default_warmup_time
 # Heap size of JMeter Client
 default_jmeter_client_heap_size=2g
@@ -127,7 +127,7 @@ function usage() {
     echo "-s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times. Default \"$default_backend_sleep_times\"."
     echo "-m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Default \"$default_heap_sizes\"."
     echo "-d: Test Duration in seconds. Default $default_test_duration."
-    echo "-w: Warm-up time in minutes. Default $default_warmup_time."
+    echo "-w: Warm-up time in seconds. Default $default_warmup_time."
     echo "-n: Number of JMeter servers. If n=1, only client will be used. If n > 1, remote JMeter servers will be used. Default $default_jmeter_servers."
     echo "-j: Heap Size of JMeter Server. Default $default_jmeter_server_heap_size."
     echo "-k: Heap Size of JMeter Client. Default $default_jmeter_client_heap_size."
@@ -218,7 +218,7 @@ if ! [[ $warmup_time =~ $number_regex ]]; then
     exit 1
 fi
 
-if [[ $(($warmup_time * 60)) -ge $test_duration ]]; then
+if [[ $warmup_time -ge $test_duration ]]; then
     echo "The warmup time must be less than the test duration."
     exit 1
 fi
@@ -548,7 +548,7 @@ function test_scenarios() {
                         write_server_metrics jmeter1 $jmeter1_ssh_host
                         write_server_metrics jmeter2 $jmeter2_ssh_host
 
-                        $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -t $warmup_time -s
+                        $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -t $warmup_time -u SECONDS -s
 
                         echo "Zipping JTL files in ${report_location}"
                         zip -jm ${report_location}/jtls.zip ${report_location}/results*.jtl
