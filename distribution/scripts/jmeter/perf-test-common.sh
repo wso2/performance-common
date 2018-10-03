@@ -545,8 +545,11 @@ function test_scenarios() {
 
                         write_server_metrics jmeter
                         write_server_metrics netty $backend_ssh_host netty
-                        write_server_metrics jmeter1 $jmeter1_ssh_host
-                        write_server_metrics jmeter2 $jmeter2_ssh_host
+                        if [[ $jmeter_servers -gt 1 ]]; then
+                            for jmeter_ssh_host in ${jmeter_ssh_hosts[@]}; do
+                                write_server_metrics $jmeter_ssh_host $jmeter_ssh_host
+                            done
+                        fi
 
                         $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -t $warmup_time -u SECONDS -s
 
