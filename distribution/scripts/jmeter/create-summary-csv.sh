@@ -43,7 +43,7 @@ function usage() {
     echo "   [-j <jmeter_servers>] [-w] [-i] [-h]"
     echo ""
     echo "-n: Name of the application to be used in column headers."
-    echo " p: Prefix of the files to get metrics (Load Average, GC, etc)."
+    echo "-p: Prefix of the files to get metrics (Load Average, GC, etc)."
     echo "-g: Path of GCViewer Jar file, which will be used to analyze GC logs."
     echo "-d: Results directory. Default $default_results_dir."
     echo "-j: Number of JMeter servers. If n=1, only client was used. If n > 1, remote JMeter servers were used. Default $default_jmeter_servers."
@@ -114,8 +114,8 @@ if [[ -z $jmeter_servers ]]; then
 fi
 
 function get_gc_headers() {
-    echo -ne ",$1 GC Throughput (%),$1 Footprint (M),$1 Average of Footprint After Full GC (M)"
-    echo -ne ",$1 Standard Deviation of Footprint After Full GC (M)"
+    echo -ne ",$1 GC Throughput (%),$1 Memory Footprint (M),Average of $1 Memory Footprint After Full GC (M)"
+    echo -ne ",Standard Deviation of $1 Memory Footprint After Full GC (M)"
 }
 
 function get_loadavg_headers() {
@@ -131,7 +131,7 @@ if [[ -f $filename ]]; then
 fi
 
 # Create file and save headers
-echo -n "Scenario Name","Heap Size","Concurrent Users","Message Size (Bytes)","Sleep Time (ms)", >$filename
+echo -n "Scenario Name","Heap Size","Concurrent Users","Message Size (Bytes)","Back-end Service Delay (ms)", >$filename
 echo -n "# Samples","Error Count","Error %","Average (ms)","Standard Deviation (ms)","Min (ms)","Max (ms)", >>$filename
 echo -n "75th Percentile (ms)","90th Percentile (ms)","95th Percentile (ms)","98th Percentile (ms)", >>$filename
 echo -n "99th Percentile (ms)","99.9th Percentile (ms)","Throughput (Requests/sec)", >>$filename
