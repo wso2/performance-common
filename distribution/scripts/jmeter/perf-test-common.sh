@@ -434,6 +434,7 @@ function exit_handler() {
     if [[ "$estimate" == false ]] && [[ -d results ]]; then
         echo "Zipping results directory..."
         zip -9qr results.zip results/
+        zip -9qr results-without-jtls.zip results/ -x '*jtls.zip'
     fi
     print_durations
 }
