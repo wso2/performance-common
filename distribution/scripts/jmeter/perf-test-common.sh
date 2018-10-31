@@ -23,20 +23,25 @@
 #
 # declare -A test_scenario0=(
 #     [name]="test_scenario_name1"
+#     [display_name]="Test Scenario 1"
+#     [description]="Description of Test Scenario 1"
 #     [jmx]="test_scenario_name1.jmx"
 #     [use_backend]=true
 #     [skip]=false
 # )
 # declare -A test_scenario1=(
 #     [name]="test_scenario_name2"
+#     [display_name]="Test Scenario 2"
+#     [description]="Description of Test Scenario 2"
 #     [jmx]="test_scenario_name2.jmx"
 #     [use_backend]=true
 #     [skip]=false
 # )
 #
 # Then define following functions in the script
-# 1. before_execute_test_scenario
-# 2. after_execute_test_scenario
+# 1. initialize
+# 2. before_execute_test_scenario
+# 3. after_execute_test_scenario
 #
 # In above functions, following variables may be used
 # 1. scenario_name
@@ -63,24 +68,24 @@ declare -a message_sizes
 default_backend_sleep_times="0 30 500 1000"
 declare -a backend_sleep_times
 # Application heap Sizes
-default_heap_sizes="2g"
+default_heap_sizes="2G"
 declare -a heap_sizes
 
 # Test Duration in seconds
 default_test_duration=900
 test_duration=$default_test_duration
-# Warm-up time in minutes
-default_warmup_time=5
+# Warm-up time in seconds
+default_warmup_time=300
 warmup_time=$default_warmup_time
 # Heap size of JMeter Client
-default_jmeter_client_heap_size=2g
+default_jmeter_client_heap_size=2G
 jmeter_client_heap_size=$default_jmeter_client_heap_size
 # Heap size of JMeter Server
-default_jmeter_server_heap_size=4g
+default_jmeter_server_heap_size=4G
 jmeter_server_heap_size=$default_jmeter_server_heap_size
 
 # Heap size of Netty Service
-default_netty_service_heap_size=4g
+default_netty_service_heap_size=4G
 netty_service_heap_size=$default_netty_service_heap_size
 
 # Scenario names to include
@@ -127,7 +132,7 @@ function usage() {
     echo "-s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times. Default \"$default_backend_sleep_times\"."
     echo "-m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Default \"$default_heap_sizes\"."
     echo "-d: Test Duration in seconds. Default $default_test_duration."
-    echo "-w: Warm-up time in minutes. Default $default_warmup_time."
+    echo "-w: Warm-up time in seconds. Default $default_warmup_time."
     echo "-n: Number of JMeter servers. If n=1, only client will be used. If n > 1, remote JMeter servers will be used. Default $default_jmeter_servers."
     echo "-j: Heap Size of JMeter Server. Default $default_jmeter_server_heap_size."
     echo "-k: Heap Size of JMeter Client. Default $default_jmeter_client_heap_size."
@@ -218,7 +223,7 @@ if ! [[ $warmup_time =~ $number_regex ]]; then
     exit 1
 fi
 
-if [[ $(($warmup_time * 60)) -ge $test_duration ]]; then
+if [[ $warmup_time -ge $test_duration ]]; then
     echo "The warmup time must be less than the test duration."
     exit 1
 fi
@@ -233,7 +238,7 @@ if ! [[ $jmeter_servers =~ $number_regex ]]; then
     exit 1
 fi
 
-heap_regex='^[0-9]+[mg]$'
+heap_regex='^[0-9]+[mgMG]$'
 
 if ! [[ $jmeter_server_heap_size =~ $heap_regex ]]; then
     echo "Please specify a valid heap for JMeter Server."
@@ -307,7 +312,7 @@ function download_file() {
     if scp -qp $server:$remote_file ${report_location}/$local_file_name; then
         echo "File transfer succeeded."
     else
-        echo "WARN: File transfer failed!"
+        echo "WARNING: File transfer failed!"
     fi
 }
 
@@ -358,12 +363,12 @@ function print_durations() {
         done
         printf "%40s  %20s  %50s\n" "Total" "$total_counter" "$(format_time $total_duration)"
     else
-        echo "WARNING: There were no scenarios to test."
+        echo "WARNING: None of the test scenarios were executed."
     fi
     printf "Script execution time: %s\n" "$(format_time $(measure_time $test_start_time))"
 }
 
-function initiailize_test() {
+function initialize_test() {
     # Filter scenarios
     if [[ ${#include_scenario_names[@]} -gt 0 ]] || [[ ${#exclude_scenario_names[@]} -gt 0 ]]; then
         declare -n scenario
@@ -381,6 +386,72 @@ function initiailize_test() {
             done
         done
     fi
+
+    declare -ag heap_sizes_array
+    if [ ${#heap_sizes[@]} -eq 0 ]; then
+        heap_sizes_array+=($default_heap_sizes)
+    else
+        heap_sizes_array+=("${heap_sizes[@]}")
+    fi
+    declare -ag concurrent_users_array
+    if [ ${#concurrent_users[@]} -eq 0 ]; then
+        concurrent_users_array+=($default_concurrent_users)
+    else
+        concurrent_users_array+=("${concurrent_users[@]}")
+    fi
+    declare -ag message_sizes_array
+    if [ ${#message_sizes[@]} -eq 0 ]; then
+        message_sizes_array+=($default_message_sizes)
+    else
+        message_sizes_array+=("${message_sizes[@]}")
+    fi
+    declare -ag backend_sleep_times_array
+    if [ ${#backend_sleep_times[@]} -eq 0 ]; then
+        backend_sleep_times_array+=($default_backend_sleep_times)
+    else
+        backend_sleep_times_array+=("${backend_sleep_times[@]}")
+    fi
+
+    # Save test metadata
+    declare -n scenario
+    local all_scenarios=""
+    for scenario in ${!test_scenario@}; do
+        local skip=${scenario[skip]}
+        if [ $skip = true ]; then
+            continue
+        fi
+        all_scenarios+=$(jq -n \
+        --arg name "${scenario[name]}" \
+        --arg display_name "${scenario[display_name]}" \
+        --arg description "${scenario[description]}"  \
+        --arg jmx "${scenario[jmx]}" \
+        --arg use_backend "${scenario[use_backend]}" \
+        '. | .["name"]=$name | .["display_name"]=$display_name | .["description"]=$description | .["jmx"]=$jmx | .["use_backend"]=$use_backend')
+    done
+
+    local test_parameters_json='.'
+    test_parameters_json+=' | .["test_duration"]=$test_duration'
+    test_parameters_json+=' | .["warmup_time"]=$warmup_time'
+    test_parameters_json+=' | .["jmeter_servers"]=$jmeter_servers'
+    test_parameters_json+=' | .["jmeter_client_heap_size"]=$jmeter_client_heap_size'
+    test_parameters_json+=' | .["jmeter_server_heap_size"]=$jmeter_server_heap_size'
+    test_parameters_json+=' | .["netty_service_heap_size"]=$netty_service_heap_size'
+    test_parameters_json+=' | .["test_scenarios"]=$test_scenarios'
+    test_parameters_json+=' | .["heap_sizes"]=$heap_sizes | .["concurrent_users"]=$concurrent_users'
+    test_parameters_json+=' | .["message_sizes"]=$message_sizes | .["backend_sleep_times"]=$backend_sleep_times'
+    jq -n \
+        --arg test_duration "$test_duration" \
+        --arg warmup_time "$warmup_time" \
+        --arg jmeter_servers "$jmeter_servers" \
+        --arg jmeter_client_heap_size "$jmeter_client_heap_size" \
+        --arg jmeter_server_heap_size "$jmeter_server_heap_size" \
+        --arg netty_service_heap_size "$netty_service_heap_size" \
+        --argjson test_scenarios "$(echo "$all_scenarios" | jq -s '.')" \
+        --argjson heap_sizes "$(printf '%s\n' "${heap_sizes_array[@]}" | jq -nR '[inputs]')" \
+        --argjson concurrent_users "$(printf '%s\n' "${concurrent_users_array[@]}" | jq -nR '[inputs]')" \
+        --argjson message_sizes "$(printf '%s\n' "${message_sizes_array[@]}" | jq -nR '[inputs]')" \
+        --argjson backend_sleep_times "$(printf '%s\n' "${backend_sleep_times_array[@]}" | jq -nR '[inputs]')" \
+        "$test_parameters_json" >test_metadata.json
 
     if [ "$estimate" = false ]; then
         jmeter_dir=""
@@ -403,14 +474,9 @@ function initiailize_test() {
             exit 1
         fi
         mkdir results
-        cp $0 results
+        cp $0 results/
+        mv test_metadata.json results/
 
-        declare -a message_sizes_array
-        if [ ${#message_sizes[@]} -eq 0 ]; then
-            message_sizes_array+=($default_message_sizes)
-        else
-            message_sizes_array+=("${message_sizes[@]}")
-        fi
         declare -a payload_sizes
         for msize in ${message_sizes_array[@]}; do
             payload_sizes+=("-s" "$msize")
@@ -424,8 +490,14 @@ function initiailize_test() {
         else
             pushd $HOME
             # Payloads should be created in the $HOME directory
-            ./payloads/generate-payloads.sh -p $payload_type ${payload_sizes[@]}
+            if ! ./payloads/generate-payloads.sh -p $payload_type ${payload_sizes[@]}; then
+                echo "WARNING: Failed to generate payloads!"
+            fi
             popd
+        fi
+
+        if declare -F initialize >/dev/null 2>&1; then
+            initialize
         fi
     fi
 }
@@ -434,6 +506,7 @@ function exit_handler() {
     if [[ "$estimate" == false ]] && [[ -d results ]]; then
         echo "Zipping results directory..."
         zip -9qr results.zip results/
+        zip -9qr results-without-jtls.zip results/ -x '*jtls.zip'
     fi
     print_durations
 }
@@ -441,31 +514,7 @@ function exit_handler() {
 trap exit_handler EXIT
 
 function test_scenarios() {
-    initiailize_test
-    declare -a heap_sizes_array
-    if [ ${#heap_sizes[@]} -eq 0 ]; then
-        heap_sizes_array+=($default_heap_sizes)
-    else
-        heap_sizes_array+=("${heap_sizes[@]}")
-    fi
-    declare -a concurrent_users_array
-    if [ ${#concurrent_users[@]} -eq 0 ]; then
-        concurrent_users_array+=($default_concurrent_users)
-    else
-        concurrent_users_array+=("${concurrent_users[@]}")
-    fi
-    declare -a message_sizes_array
-    if [ ${#message_sizes[@]} -eq 0 ]; then
-        message_sizes_array+=($default_message_sizes)
-    else
-        message_sizes_array+=("${message_sizes[@]}")
-    fi
-    declare -a backend_sleep_times_array
-    if [ ${#backend_sleep_times[@]} -eq 0 ]; then
-        backend_sleep_times_array+=($default_backend_sleep_times)
-    else
-        backend_sleep_times_array+=("${backend_sleep_times[@]}")
-    fi
+    initialize_test
     for heap in ${heap_sizes_array[@]}; do
         declare -ng scenario
         for scenario in ${!test_scenario@}; do
@@ -545,10 +594,13 @@ function test_scenarios() {
 
                         write_server_metrics jmeter
                         write_server_metrics netty $backend_ssh_host netty
-                        write_server_metrics jmeter1 $jmeter1_ssh_host
-                        write_server_metrics jmeter2 $jmeter2_ssh_host
+                        if [[ $jmeter_servers -gt 1 ]]; then
+                            for jmeter_ssh_host in ${jmeter_ssh_hosts[@]}; do
+                                write_server_metrics $jmeter_ssh_host $jmeter_ssh_host
+                            done
+                        fi
 
-                        $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -t $warmup_time -s
+                        $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -t $warmup_time -u SECONDS -s
 
                         echo "Zipping JTL files in ${report_location}"
                         zip -jm ${report_location}/jtls.zip ${report_location}/results*.jtl
