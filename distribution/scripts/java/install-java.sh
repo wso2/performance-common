@@ -59,6 +59,12 @@ while getopts "f:p:h" opts; do
     esac
 done
 
+#Check whether unzip command exsits
+if ! command -v unzip >/dev/null 2>&1; then
+    echo "unzip command not found! Please install unzip."
+    exit 1
+fi
+
 if [[ ! -f $java_dist ]]; then
     echo "Please specify the java distribution file (tar.gz)"
     help
@@ -77,16 +83,10 @@ if [[ ! -d $java_dir ]]; then
     exit 1
 fi
 
-#Check whether unzip command exsits
-if ! command -v unzip >/dev/null 2>&1; then
-    echo "Please install unzip (sudo apt -y install unzip)"
-    exit 1
-fi
-
 # Extract Java Distribution
 java_dist_filename=$(basename $java_dist)
 
-dirname=$(echo $java_dist_filename | sed 's/jdk-\([78]\)u\([0-9]\{2,3\}\)-linux.*/jdk1.\1.0_\2/')
+dirname=$(tar -tf $java_dist | head -1 | sed -e 's@/.*@@')
 
 extracted_dirname=$java_dir"/"$dirname
 
@@ -124,21 +124,30 @@ echo "Running update-alternatives --install and --config for ${commands[@]}"
 
 for i in "${commands[@]}"; do
     command_path=$extracted_dirname/bin/$i
-    sudo update-alternatives --install "/usr/bin/$i" "$i" "$command_path" 10000
-    sudo update-alternatives --set "$i" "$command_path"
+    if [[ -f $command_path ]]; then
+        update-alternatives --install "/usr/bin/$i" "$i" "$command_path" 10000
+        update-alternatives --set "$i" "$command_path"
+    fi
 done
 
 # Create system preferences directory
 java_system_prefs_dir="/etc/.java/.systemPrefs"
 if [[ ! -d $java_system_prefs_dir ]]; then
-    echo "Creating $java_system_prefs_dir"
+    echo "Creating $java_system_prefs_dir and changing ownership to $SUDO_USER:$SUDO_USER"
     mkdir -p $java_system_prefs_dir
     chown -R $SUDO_USER:$SUDO_USER $java_system_prefs_dir
 fi
 
-if grep -q "export JAVA_HOME=.*" $HOME/.bashrc; then
-    sed -i "s|export JAVA_HOME=.*|export JAVA_HOME=$extracted_dirname|" $HOME/.bashrc
-else
-    echo "export JAVA_HOME=$extracted_dirname" >>$HOME/.bashrc
+user_bashrc_file=/home/$SUDO_USER/.bashrc
+
+if [[ ! -f $user_bashrc_file ]]; then
+    echo "Creating $user_bashrc_file"
+    touch $user_bashrc_file
 fi
-source $HOME/.bashrc
+
+if grep -q "export JAVA_HOME=.*" $user_bashrc_file; then
+    sed -i "s|export JAVA_HOME=.*|export JAVA_HOME=$extracted_dirname|" $user_bashrc_file
+else
+    echo "export JAVA_HOME=$extracted_dirname" >>$user_bashrc_file
+fi
+source $user_bashrc_file
