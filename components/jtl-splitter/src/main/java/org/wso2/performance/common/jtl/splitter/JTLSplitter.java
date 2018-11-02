@@ -133,21 +133,22 @@ public final class JTLSplitter {
                 standardOutput.print("Started splitting...\r");
             }
 
+            final int minimumColumns = 11;
             // Support JMeter 5.0
-            final int columnLimit = 17;
+            final int maximumColumns = 17;
 
             lineLoop:
             while ((line = br.readLine()) != null) {
                 int i = 0;
-                String[] values = new String[columnLimit];
+                String[] values = new String[maximumColumns];
                 int pos = 0, end;
                 while ((end = line.indexOf(',', pos)) >= 0) {
-                    if (i < columnLimit - 1) {
+                    if (i < maximumColumns - 1) {
                         values[i++] = line.substring(pos, end);
                         pos = end + 1;
                     } else {
                         // Validate number of columns
-                        errorOutput.format("Line %d has more columns than expected: %s%n", lineNumber, line);
+                        errorOutput.format("WARNING: Line %d has more columns than expected: %s%n", lineNumber, line);
                         continue lineLoop;
                     }
                 }
@@ -155,6 +156,11 @@ public final class JTLSplitter {
                 values[i] = line.substring(pos);
                 if (showProgress && lineNumber % 10_000 == 0) {
                     standardOutput.print("Processed " + lineNumber + " lines.\r");
+                }
+                if (values.length < minimumColumns) {
+                    // Validate number of columns
+                    errorOutput.format("WARNING: Line %d has less columns than expected: %s%n", lineNumber, line);
+                    continue;
                 }
                 long timestamp = Long.parseLong(values[0]);
                 if (startTimestamp > timestamp) {
