@@ -478,7 +478,7 @@ function initialize_test() {
         --argjson concurrent_users "$(printf '%s\n' "${concurrent_users_array[@]}" | jq -nR '[inputs]')" \
         --argjson message_sizes "$(printf '%s\n' "${message_sizes_array[@]}" | jq -nR '[inputs]')" \
         --argjson backend_sleep_times "$(printf '%s\n' "${backend_sleep_times_array[@]}" | jq -nR '[inputs]')" \
-        "$test_parameters_json" >test_metadata.json
+        "$test_parameters_json" >test-metadata.json
 
     if [ "$estimate" = false ]; then
         jmeter_dir=""
@@ -502,7 +502,7 @@ function initialize_test() {
         fi
         mkdir results
         cp $0 results/
-        mv test_metadata.json results/
+        mv test-metadata.json results/
 
         declare -a payload_sizes
         for msize in ${message_sizes_array[@]}; do
@@ -598,7 +598,7 @@ function test_scenarios() {
 
                         export JVM_ARGS="-Xms$jmeter_client_heap_size -Xmx$jmeter_client_heap_size -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$report_location/jmeter_gc.log $JMETER_JVM_ARGS"
 
-                        local jmeter_command="jmeter -n -t $script_dir/${jmx_file} $jmeter_remote_args"
+                        local jmeter_command="jmeter -n -t $script_dir/${jmx_file} -j $report_location/jmeter.log $jmeter_remote_args"
                         if [[ $jmeter_servers -gt 1 ]]; then
                             jmeter_command+=" -R $(
                                 IFS=","
@@ -639,6 +639,8 @@ function test_scenarios() {
                         if [[ $jmeter_servers -gt 1 ]]; then
                             for jmeter_ssh_host in ${jmeter_ssh_hosts[@]}; do
                                 download_file $jmeter_ssh_host jmetergc.log ${jmeter_ssh_host}_gc.log
+                                download_file $jmeter_ssh_host server.out ${jmeter_ssh_host}_server.out
+                                download_file $jmeter_ssh_host jmeter-server.log ${jmeter_ssh_host}_server.log
                             done
                         fi
 

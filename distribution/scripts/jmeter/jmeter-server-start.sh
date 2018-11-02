@@ -79,18 +79,18 @@ fi
 if pgrep -f "$jar_name" >/dev/null; then
     echo "Stopping JMeter Server"
     pkill -f $jar_name
+
+    echo "Waiting for JMeter Server to stop"
+
+    while true; do
+        if ! pgrep -f "$jar_name" >/dev/null; then
+            echo "JMeter Server stopped"
+            break
+        else
+            sleep 1
+        fi
+    done
 fi
-
-echo "Waiting for JMeter Server to stop"
-
-while true; do
-    if ! pgrep -f "$jar_name" >/dev/null; then
-        echo "JMeter Server stopped"
-        break
-    else
-        sleep 1
-    fi
-done
 
 gc_log_file=$HOME/jmetergc.log
 
@@ -111,6 +111,16 @@ nohup $JMETER_HOME/bin/jmeter-server >server.out 2>&1 &
 
 # Sleep for 10 seconds and make sure the JMeter server is ready to run the tests
 sleep 10
+log_files=("server.out" "jmeter.log" "jmeter-server.log")
+
+for log_file in "${log_files[@]}"; do
+    if [[ -s $log_file ]]; then
+        echo "Viewing log file: $log_file"
+        echo -ne "----\n"
+        cat $log_file
+        echo -ne "----\n"
+    fi
+done
 
 if pgrep -f "$jar_name" >/dev/null; then
     echo "Started JMeter server."
