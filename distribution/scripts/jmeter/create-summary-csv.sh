@@ -20,6 +20,7 @@
 script_dir=$(dirname "$0")
 # Application Name to be used in column headers
 application_name=""
+print_column_names=false
 # Prefix of files
 file_prefix=""
 # Results directory
@@ -39,10 +40,11 @@ include_all=false
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 -n <application_name> [-p <file_prefix>] [-g <gcviewer_jar_path>] [-d <results_dir>]"
+    echo "$0 -n <application_name> [-x] [-p <file_prefix>] [-g <gcviewer_jar_path>] [-d <results_dir>]"
     echo "   [-j <jmeter_servers>] [-w] [-i] [-h]"
     echo ""
     echo "-n: Name of the application to be used in column headers."
+    echo "-x: Print column names and exit."
     echo "-p: Prefix of the files to get metrics (Load Average, GC, etc)."
     echo "-g: Path of GCViewer Jar file, which will be used to analyze GC logs."
     echo "-d: Results directory. Default $default_results_dir."
@@ -53,10 +55,13 @@ function usage() {
     echo ""
 }
 
-while getopts "n:p:g:d:j:wih" opts; do
+while getopts "n:xp:g:d:j:wih" opts; do
     case $opts in
     n)
         application_name=${OPTARG}
+        ;;
+    x)
+        print_column_names=true
         ;;
     p)
         file_prefix=${OPTARG}
@@ -93,21 +98,6 @@ if [[ -z $application_name ]]; then
     exit 1
 fi
 
-if [[ -z $file_prefix ]]; then
-    echo "Please specify the prefix of the files."
-    exit 1
-fi
-
-if [[ ! -d $results_dir ]]; then
-    echo "Please specify the results directory."
-    exit 1
-fi
-
-if [[ ! -f $gcviewer_jar_path ]]; then
-    echo "Please specify the path to GCViewer JAR file."
-    exit 1
-fi
-
 if [[ -z $jmeter_servers ]]; then
     echo "Please specify the number of JMeter servers."
     exit 1
@@ -126,25 +116,6 @@ function add_loadavg_headers() {
     headers+=("$1 Load Average - Last 15 minutes")
 }
 
-# Output file name
-filename="summary.csv"
-
-if [[ -f $filename ]]; then
-    echo "$filename already exists"
-    exit 1
-fi
-
-declare -A scenario_display_names
-
-# Check test_metadata.json file
-if [[ -f ${results_dir}/test_metadata.json ]]; then
-    while IFS='=' read -r key value; do
-        scenario_display_names["$key"]="$value"
-    done < <(jq -r '.test_scenarios[] | "\(.name)=\(.display_name)"' ${results_dir}/test_metadata.json)
-else
-    echo "WARNING: Could not find test metadata."
-fi
-
 declare -ag headers
 headers+=("Scenario Name")
 headers+=("Heap Size")
@@ -158,7 +129,7 @@ headers+=("Throughput (Requests/sec)")
 headers+=("Average Response Time (ms)")
 headers+=("Standard Deviation of Response Time (ms)")
 headers+=("Minimum Response Time (ms)")
-headers+=("Maximum Response Time (ms) (ms)")
+headers+=("Maximum Response Time (ms)")
 headers+=("75th Percentile of Response Time (ms)")
 headers+=("90th Percentile of Response Time (ms)")
 headers+=("95th Percentile of Response Time (ms)")
@@ -186,6 +157,47 @@ if [ "$include_all" = true ]; then
             add_loadavg_headers "JMeter Server $c"
         done
     fi
+fi
+
+if [ "$print_column_names" = true ]; then
+    for ((i = 0; i < ${#headers[@]}; i++)); do
+        echo "${headers[$i]}"
+    done
+    exit 0;
+fi
+
+if [[ -z $file_prefix ]]; then
+    echo "Please specify the prefix of the files."
+    exit 1
+fi
+
+if [[ ! -d $results_dir ]]; then
+    echo "Please specify the results directory."
+    exit 1
+fi
+
+if [[ ! -f $gcviewer_jar_path ]]; then
+    echo "Please specify the path to GCViewer JAR file."
+    exit 1
+fi
+
+# Output file name
+filename="summary.csv"
+
+if [[ -f $filename ]]; then
+    echo "$filename already exists"
+    exit 1
+fi
+
+declare -A scenario_display_names
+
+# Check test-metadata.json file
+if [[ -f ${results_dir}/test-metadata.json ]]; then
+    while IFS='=' read -r key value; do
+        scenario_display_names["$key"]="$value"
+    done < <(jq -r '.test_scenarios[] | "\(.name)=\(.display_name)"' ${results_dir}/test-metadata.json)
+else
+    echo "WARNING: Could not find test metadata."
 fi
 
 header_row=""

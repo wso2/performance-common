@@ -30,6 +30,8 @@ export script_name="$0"
 export key_file=""
 export script_dir=$(dirname "$0")
 export installation_dir=""
+export jmeter_dist=""
+export oracle_jdk_dist=""
 export ssh_config_location=""
 
 declare -a ssh_aliases_array
@@ -37,13 +39,15 @@ declare -a ssh_hostnames_array
 declare -a jmeter_plugins_array
 
 function usageCommand() {
-    echo "-k <key_file> -i <installation_dir> -c <ssh_config_location> -a <ssh_alias> -n <ssh_hostname> [-j <jmeter_plugin>]"
+    echo "-k <key_file> -i <installation_dir> -f <jmeter_dist> -d <oracle_jdk_dist> -c <ssh_config_location> -a <ssh_alias> -n <ssh_hostname> [-j <jmeter_plugin>]"
 }
 export -f usageCommand
 
 function usageHelp() {
     echo "-k: The key file location."
     echo "-i: The JMeter installation directory."
+    echo "-f: Apache JMeter tgz distribution."
+    echo "-d: Oracle JDK distribution. (If not provided, OpenJDK will be installed)"
     echo "-c: The SSH config location."
     echo "-a: SSH Alias. You can give multiple ssh aliases."
     echo "-n: SSH Hostname. You can give multiple ssh hostnames for a given set of ssh aliases."
@@ -51,13 +55,19 @@ function usageHelp() {
 }
 export -f usageHelp
 
-while getopts "gp:w:o:hk:i:c:a:n:j:" opt; do
+while getopts "gp:w:o:hk:i:f:d:c:a:n:j:" opt; do
     case "${opt}" in
     k)
         key_file=${OPTARG}
         ;;
     i)
         installation_dir=${OPTARG}
+        ;;
+    f)
+        jmeter_dist=${OPTARG}
+        ;;
+    d)
+        oracle_jdk_dist=${OPTARG}
         ;;
     c)
         ssh_config_location=${OPTARG}
@@ -94,6 +104,14 @@ function validate() {
     fi
     if [[ ! -d $installation_dir ]]; then
         echo "Please provide the JMeter installation directory."
+        exit 1
+    fi
+    if [[ ! -f $jmeter_dist ]]; then
+        echo "Please specify the JMeter distribution file (*.tgz)"
+        exit 1
+    fi
+    if [[ ! $jmeter_dist =~ ^.*\.tgz$ ]]; then
+        echo "Please provide the JMeter tgz distribution file (*.tgz)"
         exit 1
     fi
     if [[ ! -d $ssh_config_location ]]; then
@@ -133,9 +151,18 @@ function setup() {
         echo -ne "\n" >>${ssh_config_file}
     done
 
+    if [[ -f $oracle_jdk_dist ]]; then
+        echo "Installing Oracle JDK from $oracle_jdk_dist"
+        $script_dir/../java/install-java.sh -f $oracle_jdk_dist
+    fi
+
     echo "Setting up JMeter in $installation_dir"
-    $script_dir/../jmeter/install-jmeter.sh -d -i $installation_dir "${jmeter_plugins_array[@]}"
+    $script_dir/../jmeter/install-jmeter.sh -f $jmeter_dist -i $installation_dir "${jmeter_plugins_array[@]}"
 }
 export -f setup
 
-$script_dir/setup-common.sh "${opts[@]}" "$@" -p openjdk-8-jdk -p zip -p jq -p bc
+if [[ ! -f $oracle_jdk_dist ]]; then
+    SETUP_COMMON_ARGS+="-p openjdk-8-jdk"
+fi
+
+$script_dir/setup-common.sh "${opts[@]}" "$@" $SETUP_COMMON_ARGS -p zip -p unzip -p jq -p bc

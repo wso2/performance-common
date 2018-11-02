@@ -130,13 +130,13 @@ function usage() {
     echo "-u: Concurrent Users to test. You can give multiple options to specify multiple users. Default \"$default_concurrent_users\"."
     echo "-b: Message sizes in bytes. You can give multiple options to specify multiple message sizes. Default \"$default_message_sizes\"."
     echo "-s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times. Default \"$default_backend_sleep_times\"."
-    echo "-m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Default \"$default_heap_sizes\"."
+    echo "-m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Allowed suffixes: M, G. Default \"$default_heap_sizes\"."
     echo "-d: Test Duration in seconds. Default $default_test_duration."
     echo "-w: Warm-up time in seconds. Default $default_warmup_time."
     echo "-n: Number of JMeter servers. If n=1, only client will be used. If n > 1, remote JMeter servers will be used. Default $default_jmeter_servers."
-    echo "-j: Heap Size of JMeter Server. Default $default_jmeter_server_heap_size."
-    echo "-k: Heap Size of JMeter Client. Default $default_jmeter_client_heap_size."
-    echo "-l: Heap Size of Netty Service. Default $default_netty_service_heap_size."
+    echo "-j: Heap Size of JMeter Server. Allowed suffixes: M, G. Default $default_jmeter_server_heap_size."
+    echo "-k: Heap Size of JMeter Client. Allowed suffixes: M, G. Default $default_jmeter_client_heap_size."
+    echo "-l: Heap Size of Netty Service. Allowed suffixes: M, G. Default $default_netty_service_heap_size."
     echo "-i: Scenario name to to be included. You can give multiple options to filter scenarios."
     echo "-e: Scenario name to to be excluded. You can give multiple options to filter scenarios."
     echo "-t: Estimate time without executing tests."
@@ -202,6 +202,7 @@ done
 
 # Validate options
 number_regex='^[0-9]+$'
+heap_regex='^[0-9]+[MG]$'
 
 if [[ -z $test_duration ]]; then
     echo "Please provide the test duration."
@@ -228,6 +229,59 @@ if [[ $warmup_time -ge $test_duration ]]; then
     exit 1
 fi
 
+declare -ag heap_sizes_array
+if [ ${#heap_sizes[@]} -eq 0 ]; then
+    heap_sizes_array+=($default_heap_sizes)
+else
+    heap_sizes_array+=("${heap_sizes[@]}")
+fi
+declare -ag concurrent_users_array
+if [ ${#concurrent_users[@]} -eq 0 ]; then
+    concurrent_users_array+=($default_concurrent_users)
+else
+    concurrent_users_array+=("${concurrent_users[@]}")
+fi
+declare -ag message_sizes_array
+if [ ${#message_sizes[@]} -eq 0 ]; then
+    message_sizes_array+=($default_message_sizes)
+else
+    message_sizes_array+=("${message_sizes[@]}")
+fi
+declare -ag backend_sleep_times_array
+if [ ${#backend_sleep_times[@]} -eq 0 ]; then
+    backend_sleep_times_array+=($default_backend_sleep_times)
+else
+    backend_sleep_times_array+=("${backend_sleep_times[@]}")
+fi
+
+for heap in ${heap_sizes_array[@]}; do
+    if ! [[ $heap =~ $heap_regex ]]; then
+        echo "Please specify a valid heap size for the application."
+        exit 1
+    fi
+done
+
+for users in ${concurrent_users_array[@]}; do
+    if ! [[ $users =~ $number_regex ]]; then
+        echo "Please specify a valid number for concurrent users."
+        exit 1
+    fi
+done
+
+for msize in ${message_sizes_array[@]}; do
+    if ! [[ $msize =~ $number_regex ]]; then
+        echo "Please specify a valid number for message size."
+        exit 1
+    fi
+done
+
+for sleep_time in ${backend_sleep_times_array[@]}; do
+    if ! [[ $sleep_time =~ $number_regex ]]; then
+        echo "Please specify a valid number for backend sleep time."
+        exit 1
+    fi
+done
+
 if [[ -z $jmeter_servers ]]; then
     echo "Please specify the number of JMeter servers."
     exit 1
@@ -237,8 +291,6 @@ if ! [[ $jmeter_servers =~ $number_regex ]]; then
     echo "JMeter Servers must be a positive number."
     exit 1
 fi
-
-heap_regex='^[0-9]+[mgMG]$'
 
 if ! [[ $jmeter_server_heap_size =~ $heap_regex ]]; then
     echo "Please specify a valid heap for JMeter Server."
@@ -387,31 +439,6 @@ function initialize_test() {
         done
     fi
 
-    declare -ag heap_sizes_array
-    if [ ${#heap_sizes[@]} -eq 0 ]; then
-        heap_sizes_array+=($default_heap_sizes)
-    else
-        heap_sizes_array+=("${heap_sizes[@]}")
-    fi
-    declare -ag concurrent_users_array
-    if [ ${#concurrent_users[@]} -eq 0 ]; then
-        concurrent_users_array+=($default_concurrent_users)
-    else
-        concurrent_users_array+=("${concurrent_users[@]}")
-    fi
-    declare -ag message_sizes_array
-    if [ ${#message_sizes[@]} -eq 0 ]; then
-        message_sizes_array+=($default_message_sizes)
-    else
-        message_sizes_array+=("${message_sizes[@]}")
-    fi
-    declare -ag backend_sleep_times_array
-    if [ ${#backend_sleep_times[@]} -eq 0 ]; then
-        backend_sleep_times_array+=($default_backend_sleep_times)
-    else
-        backend_sleep_times_array+=("${backend_sleep_times[@]}")
-    fi
-
     # Save test metadata
     declare -n scenario
     local all_scenarios=""
@@ -451,7 +478,7 @@ function initialize_test() {
         --argjson concurrent_users "$(printf '%s\n' "${concurrent_users_array[@]}" | jq -nR '[inputs]')" \
         --argjson message_sizes "$(printf '%s\n' "${message_sizes_array[@]}" | jq -nR '[inputs]')" \
         --argjson backend_sleep_times "$(printf '%s\n' "${backend_sleep_times_array[@]}" | jq -nR '[inputs]')" \
-        "$test_parameters_json" >test_metadata.json
+        "$test_parameters_json" >test-metadata.json
 
     if [ "$estimate" = false ]; then
         jmeter_dir=""
@@ -475,7 +502,7 @@ function initialize_test() {
         fi
         mkdir results
         cp $0 results/
-        mv test_metadata.json results/
+        mv test-metadata.json results/
 
         declare -a payload_sizes
         for msize in ${message_sizes_array[@]}; do
@@ -571,7 +598,7 @@ function test_scenarios() {
 
                         export JVM_ARGS="-Xms$jmeter_client_heap_size -Xmx$jmeter_client_heap_size -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$report_location/jmeter_gc.log $JMETER_JVM_ARGS"
 
-                        local jmeter_command="jmeter -n -t $script_dir/${jmx_file} $jmeter_remote_args"
+                        local jmeter_command="jmeter -n -t $script_dir/${jmx_file} -j $report_location/jmeter.log $jmeter_remote_args"
                         if [[ $jmeter_servers -gt 1 ]]; then
                             jmeter_command+=" -R $(
                                 IFS=","
@@ -612,6 +639,8 @@ function test_scenarios() {
                         if [[ $jmeter_servers -gt 1 ]]; then
                             for jmeter_ssh_host in ${jmeter_ssh_hosts[@]}; do
                                 download_file $jmeter_ssh_host jmetergc.log ${jmeter_ssh_host}_gc.log
+                                download_file $jmeter_ssh_host server.out ${jmeter_ssh_host}_server.out
+                                download_file $jmeter_ssh_host jmeter-server.log ${jmeter_ssh_host}_server.log
                             done
                         fi
 

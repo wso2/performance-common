@@ -27,6 +27,42 @@ if [ "$UID" -ne "0" ]; then
 fi
 
 export script_name="$0"
-script_dir=$(dirname "$0")
+export script_dir=$(dirname "$0")
+export oracle_jdk_dist=""
 
-$script_dir/setup-common.sh "$@" -p openjdk-8-jdk
+function usageCommand() {
+    echo "-d <oracle_jdk_dist>"
+}
+export -f usageCommand
+
+function usageHelp() {
+    echo "-d: Oracle JDK distribution. (If not provided, OpenJDK will be installed)"
+}
+export -f usageHelp
+
+while getopts "gp:w:o:hd:" opt; do
+    case "${opt}" in
+    d)
+        oracle_jdk_dist=${OPTARG}
+        ;;
+    *)
+        opts+=("-${opt}")
+        [[ -n "$OPTARG" ]] && opts+=("$OPTARG")
+        ;;
+    esac
+done
+shift "$((OPTIND - 1))"
+
+function setup() {
+    if [[ -f $oracle_jdk_dist ]]; then
+        echo "Installing Oracle JDK from $oracle_jdk_dist"
+        $script_dir/../java/install-java.sh -f $oracle_jdk_dist
+    fi
+}
+export -f setup
+
+if [[ ! -f $oracle_jdk_dist ]]; then
+    SETUP_COMMON_ARGS+="-p openjdk-8-jdk"
+fi
+
+$script_dir/setup-common.sh "${opts[@]}" "$@" $SETUP_COMMON_ARGS -p unzip

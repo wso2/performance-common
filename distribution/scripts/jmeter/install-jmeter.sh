@@ -29,9 +29,9 @@ function usage() {
     echo "Usage: "
     echo "$0 -i <installation_dir> [-f <jmeter_dist>] [-d] [-p <jmeter_plugin_name>] [-h]"
     echo ""
-    echo "-i: The JMeter installation directory."
-    echo "-f: The JMeter tgz distribution."
-    echo "-d: Download JMeter from web."
+    echo "-i: Apache JMeter installation directory."
+    echo "-f: Apache JMeter tgz distribution."
+    echo "-d: Download Apache JMeter from web."
     echo "-p: The name of the JMeter Plugin to install. You can provide multiple names."
     echo "-h: Display this help and exit."
     echo ""
@@ -89,12 +89,12 @@ if [ "$download" = true ]; then
 fi
 
 if [[ ! -f $jmeter_dist ]]; then
-    echo "Please specify the JMeter distribution file (apache-jmeter-*.tgz)"
+    echo "Please specify the JMeter distribution file (*.tgz)"
     exit 1
 fi
 
 if [[ ! $jmeter_dist =~ ^.*\.tgz$ ]]; then
-    echo "Please provide the JMeter tgz distribution file (apache-jmeter-*.tgz)"
+    echo "Please provide the JMeter tgz distribution file (*.tgz)"
     exit 1
 fi
 
@@ -104,9 +104,9 @@ fi
 plugins+=("jpgc-cmd" "jpgc-synthesis")
 
 # Extract JMeter Distribution
-jmeter_dist_filename=$(basename $jmeter_dist)
+dirname=$(tar -tf $jmeter_dist | head -1 | sed -e 's@/.*@@')
 
-dirname=$(echo $jmeter_dist_filename | sed 's/apache-jmeter-\([0-9]\.[0-9]\).*/apache-jmeter-\1/')
+installation_dir=$(realpath $installation_dir)
 
 extracted_dirname=$installation_dir"/"$dirname
 
