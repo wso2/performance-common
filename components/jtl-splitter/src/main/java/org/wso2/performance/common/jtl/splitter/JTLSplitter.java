@@ -139,6 +139,7 @@ public final class JTLSplitter {
 
             lineLoop:
             while ((line = br.readLine()) != null) {
+                lineNumber++;
                 int i = 0;
                 String[] values = new String[maximumColumns];
                 int pos = 0, end;
@@ -157,12 +158,18 @@ public final class JTLSplitter {
                 if (showProgress && lineNumber % 10_000 == 0) {
                     standardOutput.print("Processed " + lineNumber + " lines.\r");
                 }
-                if (values.length < minimumColumns) {
+                if (i < minimumColumns) {
                     // Validate number of columns
                     errorOutput.format("WARNING: Line %d has less columns than expected: %s%n", lineNumber, line);
                     continue;
                 }
-                long timestamp = Long.parseLong(values[0]);
+                long timestamp;
+                try {
+                    timestamp = Long.parseLong(values[0]);
+                } catch (Throwable parseError) {
+                    errorOutput.format("ERROR: Failed to parse timestamp in line %d: %s%n", lineNumber, line);
+                    throw new RuntimeException(parseError);
+                }
                 if (startTimestamp > timestamp) {
                     startTimestamp = timestamp;
                 }
@@ -178,19 +185,22 @@ public final class JTLSplitter {
                     bwMeasurement.newLine();
                 }
                 if (summarize) {
-                    Objects.requireNonNull(statCalculator).addSample(timestamp,
-                            // elapsed
-                            Integer.parseInt(values[1]),
-                            // success
-                            Boolean.parseBoolean(values[7]),
-                            // bytes
-                            Integer.parseInt(values[9]),
-                            // sentBytes
-                            Integer.parseInt(values[10]));
+                    try {
+                        Objects.requireNonNull(statCalculator).addSample(timestamp,
+                                // elapsed
+                                Integer.parseInt(values[1]),
+                                // success
+                                Boolean.parseBoolean(values[7]),
+                                // bytes
+                                Integer.parseInt(values[9]),
+                                // sentBytes
+                                Integer.parseInt(values[10]));
+                    } catch (Throwable parseError) {
+                        errorOutput.format("ERROR: Failed to parse values in line %d: %s%n", lineNumber, line);
+                        throw new RuntimeException(parseError);
+                    }
                 }
-                lineNumber++;
             }
-
             // Delete only if splitting is successful
             if (deleteJTLFileOnExit) {
                 jtlFile.deleteOnExit();
