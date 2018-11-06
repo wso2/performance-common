@@ -532,8 +532,9 @@ function initialize_test() {
 function exit_handler() {
     if [[ "$estimate" == false ]] && [[ -d results ]]; then
         echo "Zipping results directory..."
-        zip -9qr results.zip results/
+        # Create zip file without JTLs first (in case of limited disc space)
         zip -9qr results-without-jtls.zip results/ -x '*jtls.zip'
+        zip -9qr results.zip results/
     fi
     print_durations
 }
@@ -542,6 +543,7 @@ trap exit_handler EXIT
 
 function test_scenarios() {
     initialize_test
+    local test_counter=0
     for heap in ${heap_sizes_array[@]}; do
         declare -ng scenario
         for scenario in ${!test_scenario@}; do
@@ -568,7 +570,8 @@ function test_scenarios() {
                         #requests served by multiple jmeter servers if $jmeter_servers > 1
                         local total_users=$(($users * $jmeter_servers))
 
-                        local scenario_desc="Scenario Name: ${scenario_name}, Duration: $test_duration"
+                        test_counter=$((test_counter+1))
+                        local scenario_desc="Test No: ${test_counter}, Scenario Name: ${scenario_name}, Duration: $test_duration"
                         scenario_desc+=", Concurrent Users ${total_users}, Msg Size: ${msize}, Sleep Time: ${sleep_time}"
                         echo -n "# Starting the performance test."
                         echo " $scenario_desc"
