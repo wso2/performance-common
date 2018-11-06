@@ -30,7 +30,8 @@ PATH = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_ENVIRONMENT = Environment(
     autoescape=False,
     loader=FileSystemLoader(os.path.join(PATH, 'templates')),
-    trim_blocks=False)
+    trim_blocks=False,
+    keep_trailing_newline=True)
 
 
 def render_template(template_filename, context):
