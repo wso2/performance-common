@@ -16,10 +16,9 @@
 # ----------------------------------------------------------------------------
 # Create comparison charts from two summary.csv files
 # ----------------------------------------------------------------------------
-import sys
-
 import pandas as pd
 import seaborn as sns
+import sys
 
 import apimchart
 

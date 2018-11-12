@@ -16,11 +16,10 @@
 # Common python module to save charts
 # ----------------------------------------------------------------------------
 import atexit
-import re
-
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
 import pandas as pd
+import re
 import seaborn as sns
 
 df_charts = None
