@@ -298,7 +298,7 @@ Resources:
   #######################
   # EC2 Instances
   #######################
-{%- macro ec2instance(resource_name, name, instance_type_ref, files=[], public=false, volume_size=None) %}
+{%- macro ec2instance(resource_name, name, instance_type, files=[], public=false, volume_size=None) %}
   {{ resource_name }}:
     Type: 'AWS::EC2::Instance'
     DependsOn: [AttachGateway, BucketPolicy]
@@ -418,7 +418,7 @@ Resources:
             - !Ref BucketName
     Properties:
       ImageId: !FindInMap [ AWSRegion2AMI, !Ref "AWS::Region", AMI ]
-      InstanceType: {{ instance_type_ref }}
+      InstanceType: {{ instance_type }}
       KeyName: !Ref KeyName
       IamInstanceProfile: !Ref LogRoleInstanceProfile
       {%- if volume_size %}
