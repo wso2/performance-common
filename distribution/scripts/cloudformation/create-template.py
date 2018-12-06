@@ -46,7 +46,7 @@ def main():
 
     args = parser.parse_args()
 
-    context = {'jmeter_servers': args.jmeter_servers}
+    context = {'jmeter_servers': args.jmeter_servers, 'start_bastian': True}
 
     with open(args.output_name, 'w') as f:
         markdown_file = render_template(args.template_name, context)

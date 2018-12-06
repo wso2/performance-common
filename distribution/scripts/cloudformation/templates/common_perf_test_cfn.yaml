@@ -298,7 +298,7 @@ Resources:
   #######################
   # EC2 Instances
   #######################
-{%- macro ec2instance(resource_name, name, instance_type_ref=None, files=[], public=false, volume_size=None) %}
+{%- macro ec2instance(resource_name, name, instance_type_ref, files=[], public=false, volume_size=None) %}
   {{ resource_name }}:
     Type: 'AWS::EC2::Instance'
     DependsOn: [AttachGateway, BucketPolicy]
@@ -459,12 +459,12 @@ Resources:
           mkdir aws-cfn-bootstrap-latest
           curl -s https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz -O
           pip install aws-cfn-bootstrap-latest.tar.gz
-          tar xzf aws-cfn-bootstrap-latest.tar.gz -C  aws-cfn-bootstrap-latest --strip-components 1
+          tar xzf aws-cfn-bootstrap-latest.tar.gz -C aws-cfn-bootstrap-latest --strip-components 1
           ln -s aws-cfn-bootstrap-latest/init/ubuntu/cfn-hup /etc/init.d/cfn-hup
           # Initialize
           /usr/local/bin/cfn-init -v --stack ${AWS::StackId} --resource {{ resource_name }} --region ${AWS::Region}
           # Extract distribution
-          tar -xvf /home/ubuntu/performance-distribution.tar.gz -C /home/ubuntu
+          tar xzf /home/ubuntu/performance-distribution.tar.gz -C /home/ubuntu
           # Must run setup script in User Data (Commands executed within cfn-init do not show the progress in logs)
           # Run setup
           {% if caller is defined -%}
@@ -478,6 +478,67 @@ Resources:
 {%- endmacro %}
 {% block ec2instances %}
 {% endblock %}
+{% if start_bastian %}
+  BastionInstance:
+    Type: 'AWS::EC2::Instance'
+    Metadata:
+      'AWS::CloudFormation::Init':
+        config:
+          files:
+            /home/ubuntu/performance-distribution.tar.gz:
+              source: !Join
+                - ''
+                - - 'https://s3.'
+                  - !Ref BucketRegion
+                  - '.amazonaws.com/'
+                  - !Ref BucketName
+                  - /
+                  - !Ref PerformanceDistributionName
+                  - .pem
+              mode: '000664'
+              owner: ubuntu
+              group: ubuntu
+              authentication: "S3AccessCreds"
+            /home/ubuntu/private_key.pem:
+              source: !Join
+                - ''
+                - - 'https://s3.'
+                  - !Ref BucketRegion
+                  - '.amazonaws.com/'
+                  - !Ref BucketName
+                  - /
+                  - !Ref KeyName
+                  - .pem
+              mode: '000400'
+              owner: ubuntu
+              group: ubuntu
+              authentication: "S3AccessCreds"
+      'AWS::CloudFormation::Authentication':
+        S3AccessCreds:
+          type: S3
+          accessKeyId: !Ref CfnKeys
+          secretKey: !GetAtt
+            - CfnKeys
+            - SecretAccessKey
+          buckets:
+            - !Ref BucketName
+    Properties:
+      ImageId: !FindInMap [ AWSRegion2AMI, !Ref "AWS::Region", AMI ]
+      InstanceType: t3.nano
+      Tags:
+        - Key: Name
+          Value: !Join
+              - ':'
+              - - 'bastian'
+                - !Ref TestName
+      NetworkInterfaces:
+        - GroupSet:
+            - !Ref InstanceSecurityGroup
+          AssociatePublicIpAddress: 'true'
+          SubnetId: !Ref PublicSubnet
+          DeviceIndex: '0'
+          DeleteOnTermination: 'true'
+{% endif -%}
 Outputs:
 {%- block outputs %}
   StackVPC:
