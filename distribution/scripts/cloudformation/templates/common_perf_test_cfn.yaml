@@ -358,7 +358,6 @@ Resources:
                   - !Ref BucketName
                   - /
                   - !Ref PerformanceDistributionName
-                  - .pem
               mode: '000664'
               owner: ubuntu
               group: ubuntu
@@ -419,11 +418,7 @@ Resources:
             - !Ref BucketName
     Properties:
       ImageId: !FindInMap [ AWSRegion2AMI, !Ref "AWS::Region", AMI ]
-      {%- if instance_type_ref %}
-      InstanceType: !Ref {{ instance_type_ref }}
-      {% else %}
-      InstanceType: t3.micro
-      {% endif -%}
+      InstanceType: {{ instance_type_ref }}
       KeyName: !Ref KeyName
       IamInstanceProfile: !Ref LogRoleInstanceProfile
       {%- if volume_size %}
@@ -465,9 +460,9 @@ Resources:
           /usr/local/bin/cfn-init -v --stack ${AWS::StackId} --resource {{ resource_name }} --region ${AWS::Region}
           # Extract distribution
           tar xzf /home/ubuntu/performance-distribution.tar.gz -C /home/ubuntu
+          {% if caller is defined -%}
           # Must run setup script in User Data (Commands executed within cfn-init do not show the progress in logs)
           # Run setup
-          {% if caller is defined -%}
           {{ caller()|indent(10) }}
           {% endif -%}
           # Signal
@@ -479,66 +474,7 @@ Resources:
 {% block ec2instances %}
 {% endblock %}
 {% if start_bastian %}
-  BastionInstance:
-    Type: 'AWS::EC2::Instance'
-    Metadata:
-      'AWS::CloudFormation::Init':
-        config:
-          files:
-            /home/ubuntu/performance-distribution.tar.gz:
-              source: !Join
-                - ''
-                - - 'https://s3.'
-                  - !Ref BucketRegion
-                  - '.amazonaws.com/'
-                  - !Ref BucketName
-                  - /
-                  - !Ref PerformanceDistributionName
-                  - .pem
-              mode: '000664'
-              owner: ubuntu
-              group: ubuntu
-              authentication: "S3AccessCreds"
-            /home/ubuntu/private_key.pem:
-              source: !Join
-                - ''
-                - - 'https://s3.'
-                  - !Ref BucketRegion
-                  - '.amazonaws.com/'
-                  - !Ref BucketName
-                  - /
-                  - !Ref KeyName
-                  - .pem
-              mode: '000400'
-              owner: ubuntu
-              group: ubuntu
-              authentication: "S3AccessCreds"
-      'AWS::CloudFormation::Authentication':
-        S3AccessCreds:
-          type: S3
-          accessKeyId: !Ref CfnKeys
-          secretKey: !GetAtt
-            - CfnKeys
-            - SecretAccessKey
-          buckets:
-            - !Ref BucketName
-    Properties:
-      ImageId: !FindInMap [ AWSRegion2AMI, !Ref "AWS::Region", AMI ]
-      InstanceType: t3.nano
-      KeyName: !Ref KeyName
-      Tags:
-        - Key: Name
-          Value: !Join
-              - ':'
-              - - 'bastian'
-                - !Ref TestName
-      NetworkInterfaces:
-        - GroupSet:
-            - !Ref InstanceSecurityGroup
-          AssociatePublicIpAddress: 'true'
-          SubnetId: !Ref PublicSubnet
-          DeviceIndex: '0'
-          DeleteOnTermination: 'true'
+{{ ec2instance('BastionInstance', 'bastian', 't3.nano', public=True) }}
 {% endif -%}
 Outputs:
 {%- block outputs %}
