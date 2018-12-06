@@ -525,6 +525,7 @@ Resources:
     Properties:
       ImageId: !FindInMap [ AWSRegion2AMI, !Ref "AWS::Region", AMI ]
       InstanceType: t3.nano
+      KeyName: !Ref KeyName
       Tags:
         - Key: Name
           Value: !Join
