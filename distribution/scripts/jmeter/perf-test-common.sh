@@ -351,6 +351,7 @@ function write_server_metrics() {
     $command_prefix sar -q >${report_location}/${server}_loadavg.txt
     $command_prefix sar -A >${report_location}/${server}_sar.txt
     $command_prefix top -bn 1 >${report_location}/${server}_top.txt
+    $command_prefix df -h >${report_location}/${server}_disk_usage.txt
     if [[ ! -z $pgrep_pattern ]]; then
         $command_prefix ps u -p \`pgrep -f $pgrep_pattern\` >${report_location}/${server}_ps.txt
     fi
