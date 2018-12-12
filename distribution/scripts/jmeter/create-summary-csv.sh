@@ -20,6 +20,12 @@
 script_dir=$(dirname "$0")
 # Application Name to be used in column headers
 application_name=""
+default_header_names=("Heap Size" "Concurrent Users" "Message Size (Bytes)" "Back-end Service Delay (ms)")
+declare -a header_names
+# Results are usually in following directory structure:
+# results/${scenario_name}/${heap}_heap/${total_users}_users/${msize}B/${sleep_time}ms_sleep
+default_regexs=("([0-9]+[a-zA-Z])_heap" "([0-9]+)_users" "([0-9]+)B" "([0-9]+)ms_sleep")
+declare -a regexs
 print_column_names=false
 # Prefix of files
 file_prefix=""
@@ -32,33 +38,59 @@ gcviewer_jar_path=""
 # If jmeter_servers = 1, only client was used. If jmeter_servers > 1, remote JMeter servers were used.
 default_jmeter_servers=1
 jmeter_servers=$default_jmeter_servers
+# Number of application instances
+default_application_instance_count=1
+application_instance_count=$default_application_instance_count
 # Use warmup results
 use_warmup=false
 # Include GC statistics and load averages for other servers
 include_all=false
+# Exclude Netty
+exclude_netty=false
+
+function join_by() {
+    local IFS="$1"
+    shift
+    echo "$*"
+}
 
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 -n <application_name> [-x] [-p <file_prefix>] [-g <gcviewer_jar_path>] [-d <results_dir>]"
-    echo "   [-j <jmeter_servers>] [-w] [-i] [-h]"
+    echo "$0 -n <application_name> [-c <column_header_name>] [-r <regex>] [-x] "
+    echo "   [-p <file_prefix>] [-g <gcviewer_jar_path>] [-d <results_dir>]"
+    echo "   [-j <jmeter_servers>] [-k <application_instance_count>] [-w] [-i] [-l] [-h]"
     echo ""
     echo "-n: Name of the application to be used in column headers."
+    echo "-c: Column header name for each parameter."
+    echo "    You should give multiple header names in order for each directory in the results directory structure."
+    echo "    Default: $(join_by , "${default_header_names[@]}")"
+    echo "-r: Regular expression with a single group to extract parameter value from directory name."
+    echo "    You should give multiple regular expressions in order for each directory in the results directory structure."
+    echo "    Default: $(join_by , "${default_regexs[@]}")"
     echo "-x: Print column names and exit."
     echo "-p: Prefix of the files to get metrics (Load Average, GC, etc)."
     echo "-g: Path of GCViewer Jar file, which will be used to analyze GC logs."
     echo "-d: Results directory. Default $default_results_dir."
     echo "-j: Number of JMeter servers. If n=1, only client was used. If n > 1, remote JMeter servers were used. Default $default_jmeter_servers."
+    echo "-k: Number of Application instances. Default $default_application_instance_count."
     echo "-w: Use warmup results instead of measurement results."
     echo "-i: Include GC statistics and load averages for other servers."
+    echo "-l: Exclude Netty Backend Service statistics. Works with -i."
     echo "-h: Display this help and exit."
     echo ""
 }
 
-while getopts "n:xp:g:d:j:wih" opts; do
+while getopts "n:c:r:xp:g:d:j:k:wilh" opts; do
     case $opts in
     n)
         application_name=${OPTARG}
+        ;;
+    c)
+        header_names+=("${OPTARG}")
+        ;;
+    r)
+        regexs+=("${OPTARG}")
         ;;
     x)
         print_column_names=true
@@ -75,11 +107,23 @@ while getopts "n:xp:g:d:j:wih" opts; do
     j)
         jmeter_servers=${OPTARG}
         ;;
+    k)
+        application_instance_count=${OPTARG}
+        ;;
     w)
         use_warmup=true
         ;;
     i)
         include_all=true
+        ;;
+    l)
+        exclude_netty=true
+        ;;
+    c)
+        header_names+=("${OPTARG}")
+        ;;
+    r)
+        regexs+=("${OPTARG}")
         ;;
     h)
         usage
@@ -92,6 +136,14 @@ while getopts "n:xp:g:d:j:wih" opts; do
     esac
 done
 
+if [ ${#header_names[@]} -eq 0 ]; then
+    header_names+=("${default_header_names[@]}")
+fi
+
+if [ ${#regexs[@]} -eq 0 ]; then
+    regexs+=("${default_regexs[@]}")
+fi
+
 # Validate options
 if [[ -z $application_name ]]; then
     echo "Please specify the application name."
@@ -103,10 +155,15 @@ if [[ -z $jmeter_servers ]]; then
     exit 1
 fi
 
+if [ ! "${#header_names[@]}" -eq "${#regexs[@]}" ]; then
+    echo "Number of column header names should be equal to number of regular expressions."
+    exit 1
+fi
+
 function add_gc_headers() {
     headers+=("$1 GC Throughput (%)")
     headers+=("$1 Memory Footprint (M)")
-    headers+=("Average of $1 Memory Footprint After Full GC (M)")
+    headers+=("Average $1 Memory Footprint After Full GC (M)")
     headers+=("Standard Deviation of $1 Memory Footprint After Full GC (M)")
 }
 
@@ -118,10 +175,10 @@ function add_loadavg_headers() {
 
 declare -ag headers
 headers+=("Scenario Name")
-headers+=("Heap Size")
-headers+=("Concurrent Users")
-headers+=("Message Size (Bytes)")
-headers+=("Back-end Service Delay (ms)")
+for ((i = 0; i < ${#header_names[@]}; i++)); do
+    headers+=("${header_names[$i]}")
+done
+headers+=("Label")
 headers+=("# Samples")
 headers+=("Error Count")
 headers+=("Error %")
@@ -138,9 +195,18 @@ headers+=("99th Percentile of Response Time (ms)")
 headers+=("99.9th Percentile of Response Time (ms)")
 headers+=("Received (KB/sec)")
 headers+=("Sent (KB/sec)")
-add_gc_headers "${application_name}"
+
+if [[ $application_instance_count -gt 1 ]]; then
+    for ((i = 1; i <= $application_instance_count; i++)); do
+        add_gc_headers "${application_name} ${i}"
+    done
+else
+    add_gc_headers "${application_name}"
+fi
 if [ "$include_all" = true ]; then
-    add_gc_headers "Netty Service"
+    if [ "$exclude_netty" = false ]; then
+        add_gc_headers "Netty Service"
+    fi
     add_gc_headers "JMeter Client"
     if [ $jmeter_servers -gt 1 ]; then
         for ((c = 1; c <= $jmeter_servers; c++)); do
@@ -148,9 +214,17 @@ if [ "$include_all" = true ]; then
         done
     fi
 fi
-add_loadavg_headers "${application_name}"
+if [[ $application_instance_count -gt 1 ]]; then
+    for ((i = 1; i <= $application_instance_count; i++)); do
+        add_loadavg_headers "${application_name} ${i}"
+    done
+else
+    add_loadavg_headers "${application_name}"
+fi
 if [ "$include_all" = true ]; then
-    add_loadavg_headers "Netty Service"
+    if [ "$exclude_netty" = false ]; then
+        add_loadavg_headers "Netty Service"
+    fi
     add_loadavg_headers "JMeter Client"
     if [ $jmeter_servers -gt 1 ]; then
         for ((c = 1; c <= $jmeter_servers; c++)); do
@@ -163,11 +237,16 @@ if [ "$print_column_names" = true ]; then
     for ((i = 0; i < ${#headers[@]}; i++)); do
         echo "${headers[$i]}"
     done
-    exit 0;
+    exit 0
 fi
 
 if [[ -z $file_prefix ]]; then
     echo "Please specify the prefix of the files."
+    exit 1
+fi
+
+if [[ -z $application_instance_count ]]; then
+    echo "Please specify the number of Application instances."
     exit 1
 fi
 
@@ -252,98 +331,102 @@ function add_loadavg_details() {
     fi
 }
 
-# Results are in following directory structure:
-# results/${scenario_name}/${heap}_heap/${total_users}_users/${msize}B/${sleep_time}ms_sleep
+data_file="results-measurement-summary.json"
+if [[ $use_warmup == true ]]; then
+    data_file="results-warmup-summary.json"
+fi
 
-for scenario_dir in $(find ${results_dir} -maxdepth 1 -type d | sort -V); do
-    for heap_size_dir in $(find ${scenario_dir} -maxdepth 1 -type d -name '*_heap' | sort -V); do
-        for user_dir in $(find ${heap_size_dir} -maxdepth 1 -type d -name '*_users' | sort -V); do
-            for message_size_dir in $(find ${user_dir} -maxdepth 1 -type d -name '*B' | sort -V); do
-                for sleep_time_dir in $(find ${message_size_dir} -maxdepth 1 -type d -name '*ms_sleep' | sort -V); do
-                    current_dir="${sleep_time_dir}"
-                    echo "Current directory: $current_dir."
-                    data_file="${current_dir}/results-measurement-summary.json"
-                    if [[ $use_warmup == true ]]; then
-                        data_file="${current_dir}/results-warmup-summary.json"
-                    fi
-                    if [[ ! -f $data_file ]]; then
-                        echo "WARN: Data file not found: $data_file"
-                        continue
-                    fi
+for summary_json in $(find ${results_dir} -type f -name ${data_file} | sort -V); do
+    echo "Reading results from ${summary_json}..."
+    current_dir="$(dirname ${summary_json})"
+    echo "Current directory: $current_dir"
 
-                    echo "Getting data from $data_file"
-                    scenario_name="$(echo $scenario_dir | sed -nE 's/.*.\/(.*)/\1/p')"
-                    heap_size=$(echo $heap_size_dir | sed -nE 's/.*.\/([0-9]+[a-zA-Z])_heap.*/\1/p')
-                    concurrent_users=$(echo $user_dir | sed -nE 's/.*\/([0-9]+)_users.*/\1/p')
-                    message_size=$(echo $message_size_dir | sed -nE 's/.*\/([0-9]+)B.*/\1/p')
-                    sleep_time=$(echo $sleep_time_dir | sed -nE 's/.*\/([0-9]+)ms_sleep.*/\1/p')
+    #Get labels
+    while read label; do
+        echo "Getting summary results for label: ${label}..."
+        declare -A summary_results
+        while IFS="=" read -r key value; do
+            summary_results[$key]="$value"
+        done < <(jq -r ".[\"${label}\"]|to_entries|map(\"\(.key)=\(.value)\")|.[]" $summary_json)
 
-                    if [[ -z $sleep_time ]]; then
-                        sleep_time="N/A"
-                    fi
+        # All columns
+        declare -ag columns=()
 
-                    declare -A summary_results
-                    while IFS="=" read -r key value; do
-                        summary_results[$key]="$value"
-                    done < <(jq -r "to_entries|map(\"\(.key)=\(.value)\")|.[]" $data_file)
-
-                    declare -ag columns=()
-                    columns+=("${scenario_display_names[$scenario_name]=$scenario_name}")
-                    columns+=("$heap_size")
-                    columns+=("$concurrent_users")
-                    columns+=("$message_size")
-                    columns+=("$sleep_time")
-                    columns+=("${summary_results[samples]}")
-                    columns+=("${summary_results[errors]}")
-                    columns+=("${summary_results[errorPercentage]}")
-                    columns+=("${summary_results[throughput]}")
-                    columns+=("${summary_results[mean]}")
-                    columns+=("${summary_results[stddev]}")
-                    columns+=("${summary_results[min]}")
-                    columns+=("${summary_results[max]}")
-                    columns+=("${summary_results[p75]}")
-                    columns+=("${summary_results[p90]}")
-                    columns+=("${summary_results[p95]}")
-                    columns+=("${summary_results[p98]}")
-                    columns+=("${summary_results[p99]}")
-                    columns+=("${summary_results[p999]}")
-                    columns+=("${summary_results[receivedKBytesRate]}")
-                    columns+=("${summary_results[sentKBytesRate]}")
-
-                    add_gc_summary_details $file_prefix
-                    if [ "$include_all" = true ]; then
-                        add_gc_summary_details netty
-                        add_gc_summary_details jmeter
-                        if [ $jmeter_servers -gt 1 ]; then
-                            for ((c = 1; c <= $jmeter_servers; c++)); do
-                                add_gc_summary_details jmeter$c
-                            done
-                        fi
-                    fi
-
-                    add_loadavg_details $file_prefix
-                    if [ "$include_all" = true ]; then
-                        add_loadavg_details netty
-                        add_loadavg_details jmeter
-                        if [ $jmeter_servers -gt 1 ]; then
-                            for ((c = 1; c <= $jmeter_servers; c++)); do
-                                add_loadavg_details jmeter$c
-                            done
-                        fi
-                    fi
-
-                    row=""
-                    for ((i = 0; i < ${#columns[@]}; i++)); do
-                        if [ $i -gt 0 ]; then
-                            row+=","
-                        fi
-                        row+="${columns[$i]}"
-                    done
-
-                    echo -ne "${row}\r\n" >>$filename
-                done
-            done
+        IFS='/' read -ra directories <<<"$current_dir"
+        start_index=$((${#directories[@]} - ${#header_names[@]} - 1))
+        directory_names=("${directories[@]:$start_index}")
+        # First directory is the scenario name
+        scenario_name="${directory_names[0]}"
+        columns+=("${scenario_display_names[$scenario_name]=$scenario_name}")
+        for ((i = 0; i < ${#regexs[@]}; i++)); do
+            value="$(echo "${directory_names[$((i + 1))]}" | sed -nE "s/${regexs[$i]}/\1/p")"
+            columns+=("${value:-N/A}")
         done
-    done
+        columns+=("${label}")
+        columns+=("${summary_results[samples]}")
+        columns+=("${summary_results[errors]}")
+        columns+=("${summary_results[errorPercentage]}")
+        columns+=("${summary_results[throughput]}")
+        columns+=("${summary_results[mean]}")
+        columns+=("${summary_results[stddev]}")
+        columns+=("${summary_results[min]}")
+        columns+=("${summary_results[max]}")
+        columns+=("${summary_results[p75]}")
+        columns+=("${summary_results[p90]}")
+        columns+=("${summary_results[p95]}")
+        columns+=("${summary_results[p98]}")
+        columns+=("${summary_results[p99]}")
+        columns+=("${summary_results[p999]}")
+        columns+=("${summary_results[receivedKBytesRate]}")
+        columns+=("${summary_results[sentKBytesRate]}")
+
+        if [[ $application_instance_count -gt 1 ]]; then
+            for ((i = 1; i <= $application_instance_count; i++)); do
+                add_gc_summary_details "${file_prefix}${i}"
+            done
+        else
+            add_gc_summary_details "${file_prefix}"
+        fi
+        if [ "$include_all" = true ]; then
+            if [ "$exclude_netty" = false ]; then
+                add_gc_summary_details netty
+            fi
+            add_gc_summary_details jmeter
+            if [ $jmeter_servers -gt 1 ]; then
+                for ((c = 1; c <= $jmeter_servers; c++)); do
+                    add_gc_summary_details jmeter$c
+                done
+            fi
+        fi
+
+        if [[ $application_instance_count -gt 1 ]]; then
+            for ((i = 1; i <= $application_instance_count; i++)); do
+                add_loadavg_details "${file_prefix}${i}"
+            done
+        else
+            add_loadavg_details "${file_prefix}"
+        fi
+        if [ "$include_all" = true ]; then
+            if [ "$exclude_netty" = false ]; then
+                add_loadavg_details netty
+            fi
+            add_loadavg_details jmeter
+            if [ $jmeter_servers -gt 1 ]; then
+                for ((c = 1; c <= $jmeter_servers; c++)); do
+                    add_loadavg_details jmeter$c
+                done
+            fi
+        fi
+
+        row=""
+        for ((i = 0; i < ${#columns[@]}; i++)); do
+            if [ $i -gt 0 ]; then
+                row+=","
+            fi
+            row+="${columns[$i]}"
+        done
+
+        echo -ne "${row}\r\n" >>$filename
+    done <<<$(jq -r 'keys[]' ${summary_json})
 done
 echo "Wrote summary statistics to $filename."
