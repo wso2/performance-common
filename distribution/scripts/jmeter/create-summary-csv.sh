@@ -342,7 +342,7 @@ for summary_json in $(find ${results_dir} -type f -name ${data_file} | sort -V);
     echo "Current directory: $current_dir"
 
     #Get labels
-    while read label; do
+    jq -r 'keys[]' ${summary_json} | while read label; do
         echo "Getting summary results for label: ${label}..."
         declare -A summary_results
         while IFS="=" read -r key value; do
@@ -427,6 +427,6 @@ for summary_json in $(find ${results_dir} -type f -name ${data_file} | sort -V);
         done
 
         echo -ne "${row}\r\n" >>$filename
-    done <<<$(jq -r 'keys[]' ${summary_json})
+    done
 done
 echo "Wrote summary statistics to $filename."
