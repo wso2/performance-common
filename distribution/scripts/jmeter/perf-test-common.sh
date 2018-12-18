@@ -352,6 +352,7 @@ function write_server_metrics() {
     $command_prefix sar -A >${report_location}/${server}_sar.txt
     $command_prefix top -bn 1 >${report_location}/${server}_top.txt
     $command_prefix df -h >${report_location}/${server}_disk_usage.txt
+    $command_prefix free -m >${report_location}/${server}_free_memory.txt
     if [[ ! -z $pgrep_pattern ]]; then
         $command_prefix ps u -p \`pgrep -f $pgrep_pattern\` >${report_location}/${server}_ps.txt
     fi
@@ -417,6 +418,7 @@ function print_durations() {
         printf "%40s  %20s  %50s\n" "Total" "$total_counter" "$(format_time $total_duration)"
     else
         echo "WARNING: None of the test scenarios were executed."
+        exit 1
     fi
     printf "Script execution time: %s\n" "$(format_time $(measure_time $test_start_time))"
 }
