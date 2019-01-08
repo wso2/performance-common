@@ -57,7 +57,7 @@ def main():
         reader = csv.DictReader(csv_file)
         for row in reader:
             filtered_row = dict(
-                (name, value) for name, value in row.iteritems() if name in column_names_set
+                (name, value) for name, value in row.items() if name in column_names_set
             )
             rows.append(filtered_row)
 
@@ -68,7 +68,7 @@ def main():
         }
 
     markdown_filename = "summary.md"
-    with open(markdown_filename, 'w') as f:
+    with open(markdown_filename, 'wb') as f:
         markdown_file = render_template(markdown_filename, context)
         f.write(markdown_file.encode("utf-8"))
 
