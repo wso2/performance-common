@@ -47,9 +47,6 @@ Parameters:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
-  TestName:
-    Description: Name of the tests
-    Type: String
   BucketName:
     Description: Name of bucket containing files
     Type: String
@@ -179,7 +176,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'VPC'
-              - !Ref TestName
+              - !Ref AWS::StackName
   # Configure Public Subnet
   PublicSubnet:
     Type: 'AWS::EC2::Subnet'
@@ -194,7 +191,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'PublicSubnet'
-              - !Ref TestName
+              - !Ref AWS::StackName
   InternetGateway:
     Type: 'AWS::EC2::InternetGateway'
     Properties:
@@ -203,7 +200,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'InternetGateway'
-              - !Ref TestName
+              - !Ref AWS::StackName
   AttachGateway:
     Type: 'AWS::EC2::VPCGatewayAttachment'
     Properties:
@@ -218,7 +215,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'PublicRouteTable'
-              - !Ref TestName
+              - !Ref AWS::StackName
   PublicRoute:
     Type: 'AWS::EC2::Route'
     DependsOn: AttachGateway
@@ -245,7 +242,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'PrivateSubnet'
-              - !Ref TestName
+              - !Ref AWS::StackName
   NatGateway:
     Type: 'AWS::EC2::NatGateway'
     DependsOn: AttachGateway
@@ -259,7 +256,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'NatGateway'
-              - !Ref TestName
+              - !Ref AWS::StackName
   NatGatewayIPAddress:
     Type: 'AWS::EC2::EIP'
     DependsOn: AttachGateway
@@ -274,7 +271,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'PrivateRouteTable'
-              - !Ref TestName
+              - !Ref AWS::StackName
   PrivateRoute:
     Type: 'AWS::EC2::Route'
     DependsOn: AttachGateway
@@ -432,7 +429,7 @@ Resources:
           Value: !Join
               - ':'
               - - '{{ name }}'
-                - !Ref TestName
+                - !Ref AWS::StackName
       NetworkInterfaces:
         - GroupSet:
             - !Ref InstanceSecurityGroup

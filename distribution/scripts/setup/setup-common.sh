@@ -35,11 +35,12 @@ declare -a download_output_names
 function usage() {
     echo ""
     echo "Usage: "
-    echo -n "${script_name:-$0}"
+    echo "${script_name:-$0}  [-g] [-p <package>]"
+    echo "  [-w <url_to_download>] [-o <output_name>]"
     if declare -F usageCommand >/dev/null 2>&1; then
-        echo -n " $(usageCommand)"
+        echo "  $(usageCommand)"
     fi
-    echo "  [-g] [-p <package>] [-w <url_to_download>] [-o <output_name>]"
+    echo "  [-h]"
     echo ""
     echo "-g: Upgrade distribution"
     echo "-p: Package to install. You can give multiple -p options."

@@ -58,18 +58,18 @@
 #
 # Finally, execute test scenarios using the function test_scenarios
 
-# Concurrent users (these will by multiplied by the number of JMeter servers)
-default_concurrent_users="50 100 150 500 1000"
-declare -a concurrent_users
-# Message Sizes
-default_message_sizes="50 1024 10240"
-declare -a message_sizes
-# Common backend sleep times (in milliseconds).
-default_backend_sleep_times="0 30 500 1000"
-declare -a backend_sleep_times
+# Source common script
+script_dir=$(dirname "$0")
+. $script_dir/../common/common.sh
+
 # Application heap Sizes
-default_heap_sizes="2G"
-declare -a heap_sizes
+declare -a heap_sizes_array
+# Concurrent users (will be divided among JMeter servers)
+declare -a concurrent_users_array
+# Message Sizes
+declare -a message_sizes_array
+# Common backend sleep times (in milliseconds).
+declare -a backend_sleep_times_array
 
 # Test Duration in seconds
 default_test_duration=900
@@ -116,21 +116,17 @@ declare -A scenario_counter
 # Scenario specific durations
 declare -A scenario_duration
 
-function get_ssh_hostname() {
-    ssh -G $1 | awk '/^hostname / { print $2 }'
-}
-
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 [-u <concurrent_users>] [-b <message_sizes>] [-s <sleep_times>] [-m <heap_sizes>] [-d <test_duration>] [-w <warmup_time>]"
+    echo "$0 -m <heap_sizes> -u <concurrent_users> -b <message_sizes> -s <sleep_times> [-d <test_duration>] [-w <warmup_time>]"
     echo "   [-n <jmeter_servers>] [-j <jmeter_server_heap_size>] [-k <jmeter_client_heap_size>] [-l <netty_service_heap_size>]"
     echo "   [-i <include_scenario_name>] [-e <include_scenario_name>] [-t] [-p <estimated_processing_time_in_between_tests>] [-h]"
     echo ""
-    echo "-u: Concurrent Users to test. You can give multiple options to specify multiple users. Default \"$default_concurrent_users\"."
-    echo "-b: Message sizes in bytes. You can give multiple options to specify multiple message sizes. Default \"$default_message_sizes\"."
-    echo "-s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times. Default \"$default_backend_sleep_times\"."
-    echo "-m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Allowed suffixes: M, G. Default \"$default_heap_sizes\"."
+    echo "-m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Allowed suffixes: M, G."
+    echo "-u: Concurrent Users to test. You can give multiple options to specify multiple users."
+    echo "-b: Message sizes in bytes. You can give multiple options to specify multiple message sizes."
+    echo "-s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times."
     echo "-d: Test Duration in seconds. Default $default_test_duration."
     echo "-w: Warm-up time in seconds. Default $default_warmup_time."
     echo "-n: Number of JMeter servers. If n=1, only client will be used. If n > 1, remote JMeter servers will be used. Default $default_jmeter_servers."
@@ -148,16 +144,16 @@ function usage() {
 while getopts "u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts; do
     case $opts in
     u)
-        concurrent_users+=("${OPTARG}")
+        concurrent_users_array+=("${OPTARG}")
         ;;
     b)
-        message_sizes+=("${OPTARG}")
+        message_sizes_array+=("${OPTARG}")
         ;;
     s)
-        backend_sleep_times+=("${OPTARG}")
+        backend_sleep_times_array+=("${OPTARG}")
         ;;
     m)
-        heap_sizes+=("${OPTARG}")
+        heap_sizes_array+=("${OPTARG}")
         ;;
     d)
         test_duration=${OPTARG}
@@ -204,6 +200,26 @@ done
 number_regex='^[0-9]+$'
 heap_regex='^[0-9]+[MG]$'
 
+if [ ${#heap_sizes_array[@]} -eq 0 ]; then
+    echo "Please provide application heap memory sizes."
+    exit 1
+fi
+
+if [ ${#concurrent_users_array[@]} -eq 0 ]; then
+    echo "Please provide concurrent users to test."
+    exit 1
+fi
+
+if [ ${#message_sizes_array[@]} -eq 0 ]; then
+    echo "Please provide message sizes."
+    exit 1
+fi
+
+if [ ${#backend_sleep_times_array[@]} -eq 0 ]; then
+    echo "Please provide backend sleep rimes."
+    exit 1
+fi
+
 if [[ -z $test_duration ]]; then
     echo "Please provide the test duration."
     exit 1
@@ -227,31 +243,6 @@ fi
 if [[ $warmup_time -ge $test_duration ]]; then
     echo "The warmup time must be less than the test duration."
     exit 1
-fi
-
-declare -ag heap_sizes_array
-if [ ${#heap_sizes[@]} -eq 0 ]; then
-    heap_sizes_array+=($default_heap_sizes)
-else
-    heap_sizes_array+=("${heap_sizes[@]}")
-fi
-declare -ag concurrent_users_array
-if [ ${#concurrent_users[@]} -eq 0 ]; then
-    concurrent_users_array+=($default_concurrent_users)
-else
-    concurrent_users_array+=("${concurrent_users[@]}")
-fi
-declare -ag message_sizes_array
-if [ ${#message_sizes[@]} -eq 0 ]; then
-    message_sizes_array+=($default_message_sizes)
-else
-    message_sizes_array+=("${message_sizes[@]}")
-fi
-declare -ag backend_sleep_times_array
-if [ ${#backend_sleep_times[@]} -eq 0 ]; then
-    backend_sleep_times_array+=($default_backend_sleep_times)
-else
-    backend_sleep_times_array+=("${backend_sleep_times[@]}")
 fi
 
 for heap in ${heap_sizes_array[@]}; do
@@ -292,6 +283,14 @@ if ! [[ $jmeter_servers =~ $number_regex ]]; then
     exit 1
 fi
 
+for users in ${concurrent_users_array[@]}; do
+    remainder=$(bc <<< "scale=0; ${users}%${jmeter_servers}")
+    if ! [[ $remainder -eq 0 ]]; then
+        echo "Unable to split $users users into $jmeter_servers JMeter servers."
+        exit 1
+    fi
+done
+
 if ! [[ $jmeter_server_heap_size =~ $heap_regex ]]; then
     echo "Please specify a valid heap for JMeter Server."
     exit 1
@@ -312,63 +311,6 @@ for ((c = 1; c <= $jmeter_servers; c++)); do
     jmeter_ssh_hosts+=("jmeter$c")
     jmeter_hosts+=($(get_ssh_hostname jmeter$c))
 done
-
-function format_time() {
-    # Duration in seconds
-    local duration="$1"
-    local minutes=$(echo "$duration/60" | bc)
-    local seconds=$(echo "$duration-$minutes*60" | bc)
-    if [[ $minutes -ge 60 ]]; then
-        local hours=$(echo "$minutes/60" | bc)
-        minutes=$(echo "$minutes-$hours*60" | bc)
-        printf "%d hour(s), %02d minute(s) and %02d second(s)\n" $hours $minutes $seconds
-    elif [[ $minutes -gt 0 ]]; then
-        printf "%d minute(s) and %02d second(s)\n" $minutes $seconds
-    else
-        printf "%d second(s)\n" $seconds
-    fi
-}
-
-function measure_time() {
-    local end_time=$(date +%s)
-    local start_time=$1
-    local duration=$(echo "$end_time - $start_time" | bc)
-    echo "$duration"
-}
-
-function write_server_metrics() {
-    local server=$1
-    echo "Collecting server metrics for $server."
-    local ssh_host=$2
-    local pgrep_pattern=$3
-    local command_prefix=""
-    export LC_TIME=C
-    if [[ ! -z $ssh_host ]]; then
-        command_prefix="ssh -o SendEnv=LC_TIME $ssh_host"
-    fi
-    $command_prefix ss -s >${report_location}/${server}_ss.txt
-    $command_prefix uptime >${report_location}/${server}_uptime.txt
-    $command_prefix sar -q >${report_location}/${server}_loadavg.txt
-    $command_prefix sar -A >${report_location}/${server}_sar.txt
-    $command_prefix top -bn 1 >${report_location}/${server}_top.txt
-    $command_prefix df -h >${report_location}/${server}_disk_usage.txt
-    $command_prefix free -m >${report_location}/${server}_free_memory.txt
-    if [[ ! -z $pgrep_pattern ]]; then
-        $command_prefix ps u -p \`pgrep -f $pgrep_pattern\` >${report_location}/${server}_ps.txt
-    fi
-}
-
-function download_file() {
-    local server=$1
-    local remote_file=$2
-    local local_file_name=$3
-    echo "Downloading $remote_file from $server to $local_file_name"
-    if scp -qp $server:$remote_file ${report_location}/$local_file_name; then
-        echo "File transfer succeeded."
-    else
-        echo "WARNING: File transfer failed!"
-    fi
-}
 
 function record_scenario_duration() {
     local scenario_name="$1"
@@ -451,12 +393,12 @@ function initialize_test() {
             continue
         fi
         all_scenarios+=$(jq -n \
-        --arg name "${scenario[name]}" \
-        --arg display_name "${scenario[display_name]}" \
-        --arg description "${scenario[description]}"  \
-        --arg jmx "${scenario[jmx]}" \
-        --arg use_backend "${scenario[use_backend]}" \
-        '. | .["name"]=$name | .["display_name"]=$display_name | .["description"]=$description | .["jmx"]=$jmx | .["use_backend"]=$use_backend')
+            --arg name "${scenario[name]}" \
+            --arg display_name "${scenario[display_name]}" \
+            --arg description "${scenario[description]}" \
+            --arg jmx "${scenario[jmx]}" \
+            --arg use_backend "${scenario[use_backend]}" \
+            '. | .["name"]=$name | .["display_name"]=$display_name | .["description"]=$description | .["jmx"]=$jmx | .["use_backend"]=$use_backend')
     done
 
     local test_parameters_json='.'
@@ -571,15 +513,15 @@ function test_scenarios() {
                         fi
                         local start_time=$(date +%s)
                         #requests served by multiple jmeter servers if $jmeter_servers > 1
-                        local total_users=$(($users * $jmeter_servers))
+                        local users_per_jmeter=$(bc <<< "scale=0; ${users}/${jmeter_servers}")
 
-                        test_counter=$((test_counter+1))
+                        test_counter=$((test_counter + 1))
                         local scenario_desc="Test No: ${test_counter}, Scenario Name: ${scenario_name}, Duration: $test_duration"
-                        scenario_desc+=", Concurrent Users ${total_users}, Msg Size: ${msize}, Sleep Time: ${sleep_time}"
+                        scenario_desc+=", Concurrent Users ${users}, Msg Size: ${msize}, Sleep Time: ${sleep_time}"
                         echo -n "# Starting the performance test."
                         echo " $scenario_desc"
 
-                        report_location=$PWD/results/${scenario_name}/${heap}_heap/${total_users}_users/${msize}B/${sleep_time}ms_sleep
+                        report_location=$PWD/results/${scenario_name}/${heap}_heap/${users}_users/${msize}B/${sleep_time}ms_sleep
 
                         echo "Report location is ${report_location}"
                         mkdir -p $report_location
@@ -587,10 +529,10 @@ function test_scenarios() {
                         if [[ $sleep_time -ge 0 ]]; then
                             echo "Starting Backend Service. Sleep Time: $sleep_time"
                             ssh $backend_ssh_host "./netty-service/netty-start.sh -m $netty_service_heap_size -w \
-                                -- --worker-threads $total_users --sleep-time $sleep_time"
+                                -- --worker-threads $users --sleep-time $sleep_time"
                         fi
 
-                        declare -ag jmeter_params=("users=$users" "duration=$test_duration")
+                        declare -ag jmeter_params=("users=$users_per_jmeter" "duration=$test_duration")
 
                         before_execute_test_scenario
 

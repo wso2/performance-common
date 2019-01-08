@@ -38,15 +38,28 @@ def render_template(template_filename, context):
     return TEMPLATE_ENVIRONMENT.get_template(template_filename).render(context)
 
 
+class StoreDictKeyPair(argparse.Action):
+     def __call__(self, parser, namespace, values, option_string=None):
+         my_dict = {}
+         for kv in values.split(","):
+             k,v = kv.split("=")
+             my_dict[k] = v
+         setattr(namespace, self.dest, my_dict)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Create AWS CloudFormation template.')
     parser.add_argument('--template-name', required=True, help='The template file name.', type=str)
-    parser.add_argument('--jmeter-servers', required=True, help='Number of JMeter Servers.', type=int)
     parser.add_argument('--output-name', required=True, help='Output file name.', type=str)
+    parser.add_argument('--jmeter-servers', required=True, help='Number of JMeter Servers.', type=int)
+    parser.add_argument("--parameters", dest="parameters", action=StoreDictKeyPair, help="Additional parameters.", metavar="key1=value1,key2=value2...")
+    parser.add_argument("--start-bastian", default=False, action="store_true" , help="Start bastian instance")
 
     args = parser.parse_args()
 
-    context = {'jmeter_servers': args.jmeter_servers, 'start_bastian': True}
+    context = {'jmeter_servers': args.jmeter_servers, 'start_bastian': args.start_bastian}
+    if args.parameters is not None:
+        context.update(args.parameters)
 
     with open(args.output_name, 'w') as f:
         markdown_file = render_template(args.template_name, context)
