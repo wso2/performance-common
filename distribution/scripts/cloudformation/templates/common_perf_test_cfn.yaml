@@ -292,6 +292,7 @@ Resources:
       SecurityGroupIngress:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
+  {% block resources %}{% endblock %}
   #######################
   # EC2 Instances
   #######################
