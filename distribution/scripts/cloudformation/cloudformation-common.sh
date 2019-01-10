@@ -628,11 +628,11 @@ echo "Creating summary.csv..."
 # Extract all results.
 for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     stack_results_dir="$results_dir/results-$(($i + 1))"
-    unzip -nq ${stack_results_dir}/results-without-jtls.zip -x */test-metadata.json -d $results_dir
+    unzip -nq ${stack_results_dir}/results-without-jtls.zip -x '*/test-metadata.json' -d $results_dir
 done
 cd $results_dir
 # Create CSV
-$script_dir/../jmeter/create-summary-csv.sh -d results -n ${application_name} -p ${metrics_file_prefix} -j 2 -g ${gcviewer_jar_path}
+$script_dir/../jmeter/create-summary-csv.sh -d results -n "${application_name}" -p "${metrics_file_prefix}" -j 2 -g "${gcviewer_jar_path}"
 # Copy metadata
 cp cf-test-metadata.json test-metadata.json results
 # Zip results
@@ -640,7 +640,7 @@ zip -9qmr results-all.zip results/
 
 # Use following to get all column names:
 echo "Available column names:"
-while IFS= read -r line; do echo -ne " \"$line\""; done < <($script_dir/../jmeter/create-summary-csv.sh -n ${application_name} -j 2 -i -x)
+while read -r line; do echo "\"$line\""; done < <($script_dir/../jmeter/create-summary-csv.sh -n "${application_name}" -j 2 -i -x)
 echo -ne "\n\n"
 
 declare -a column_names
@@ -649,13 +649,8 @@ while read column_name; do
     column_names+=("$column_name")
 done < <(get_columns)
 
-column_names_str=""
-for ((i = 0; i < ${#column_names[@]}; i++)); do
-    column_names_str+=" \"${column_names[$i]}\""
-done
-
 echo "Creating summary results markdown file..."
-$script_dir/../jmeter/create-summary-markdown.py --json-files cf-test-metadata.json test-metadata.json --column-names $column_names_str
+$script_dir/../jmeter/create-summary-markdown.py --json-files cf-test-metadata.json test-metadata.json --column-names "${column_names[@]}"
 
 echo "Results:"
 cat summary.csv | cut -d, -f 1-11 | column -t -s,
