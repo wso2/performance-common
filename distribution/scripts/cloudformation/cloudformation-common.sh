@@ -69,7 +69,7 @@ function usage() {
     if function_exists usageCommand; then
         echo "   $(usageCommand)"
     fi
-    echo "   [-w <minimum_stack_creation_wait_time>]"
+    echo "   [-t <number_of_stacks>] [-p <parallel_parameter_option>] [-w <minimum_stack_creation_wait_time>]"
     echo "   [-h] -- [run_performance_tests_options]"
     echo ""
     echo "-f: Distribution containing the scripts to run performance tests."
@@ -89,7 +89,8 @@ function usage() {
         echo "$(usageHelp)"
     fi
     echo "-t: Number of stacks to create. Default: $default_number_of_stacks."
-    echo "-p: Parameter option of the test script, which will be used to run tests in parallel. Default: $default_parallel_parameter_option."
+    echo "-p: Parameter option of the test script, which will be used to run tests in parallel."
+    echo "    Default: $default_parallel_parameter_option. Allowed option characters: $ALLOWED_OPTIONS."
     echo "-w: The minimum time to wait in minutes before polling for cloudformation stack's CREATE_COMPLETE status."
     echo "    Default: $default_minimum_stack_creation_wait_time."
     echo "-h: Display this help and exit."
