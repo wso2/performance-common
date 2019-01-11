@@ -321,6 +321,8 @@ mkdir $results_dir
 echo "Results will be downloaded to $results_dir"
 # Get absolute path of GCViewer
 gcviewer_jar_path=$(realpath $gcviewer_jar_path)
+# Copy scripts to results directory (in case if we need to use the scripts again)
+cp $performance_scripts_distribution $results_dir
 
 # Save metadata
 declare -A test_parameters
