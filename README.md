@@ -26,10 +26,20 @@ It's recommended to include the contents of this package with any scripts writte
 Following is the tree view of the contents inside distribution package.
 
 ```
+|-- cloudformation
+|   |-- cloudformation-common.sh
+|   |-- create-template.py
+|   |-- get_wum_updated_wso2_product.sh
+|   |-- python-requirements.txt
+|   `-- templates
+|       `-- common_perf_test_cfn.yaml
+|-- common
+|   `-- common.sh
 |-- java
 |   `-- install-java.sh
 |-- jmeter
 |   |-- create-summary-csv.sh
+|   |-- create-summary-markdown.py
 |   |-- csv-to-markdown-converter.py
 |   |-- install-jmeter.sh
 |   |-- jmeter-server-start.sh
@@ -51,7 +61,6 @@ Following is the tree view of the contents inside distribution package.
     |-- setup-jmeter-client.sh
     |-- setup-jmeter.sh
     `-- setup-netty.sh
-
 ```
 
 Each directory has one or more executable scripts. All scripts support `-h` (help) option.
@@ -59,6 +68,56 @@ Each directory has one or more executable scripts. All scripts support `-h` (hel
 **Note:** Most of these scripts will work only on Debian based systems like Ubuntu.
 
 See following sections for more details.
+
+### AWS CloudFormation
+
+The performance test scripts can create AWS resources to run standard server performance tests on AWS.
+
+Standard server performance tests include a backend service and the parameters include "Application heap memory sizes",
+"Concurrent users", "Message sizes", and "Backend Sleep Times".
+
+The `create-template.py` script can create AWS CloudFormation template based on a `Jinja2` template. The `common_perf_test_cfn.yaml` file
+is a common `Jinja2` template, which has necessary configurations to create a performance test environment on AWS.
+
+You can extend `cloudformation-common.sh` to run standard server performance tests. By extending, you can will get all the functionality
+of creating the AWS stack, run the tests, delete stack and summarize results. You can even run several stacks to run performance tests parallely.
+
+The `cloudformation-common.sh` script is not directly executable, but it supports following options.
+
+```console
+ubuntu@server:~$ ./cloudformation/cloudformation-common.sh -h
+
+Usage: 
+./cloudformation/cloudformation-common.sh -f <performance_scripts_distribution> [-d <results_dir>] -k <key_file> -n <key_name>
+   -j <jmeter_distribution> -o <oracle_jdk_distribution> -g <gcviewer_jar_path>
+   -s <stack_name_prefix> -b <s3_bucket_name> -r <s3_bucket_region>
+   -J <jmeter_client_ec2_instance_type> -S <jmeter_server_ec2_instance_type>
+   -N <netty_ec2_instance_type> 
+   [-t <number_of_stacks>] [-p <parallel_parameter_option>] [-w <minimum_stack_creation_wait_time>]
+   [-h] -- [run_performance_tests_options]
+
+-f: Distribution containing the scripts to run performance tests.
+-d: The results directory. Default value is a directory with current time. For example, results-20190116114029.
+-k: Amazon EC2 Key File. Amazon EC2 Key Name must match with this file name.
+-n: Amazon EC2 Key Name.
+-j: Apache JMeter (tgz) distribution.
+-o: Oracle JDK distribution.
+-g: Path of GCViewer Jar file, which will be used to analyze GC logs.
+-s: The Amazon CloudFormation Stack Name Prefix.
+-b: Amazon S3 Bucket Name.
+-r: Amazon S3 Bucket Region.
+-J: Amazon EC2 Instance Type for JMeter Client.
+-S: Amazon EC2 Instance Type for JMeter Server.
+-N: Amazon EC2 Instance Type for Netty (Backend) Service.
+-t: Number of stacks to create. Default: 1.
+-p: Parameter option of the test script, which will be used to run tests in parallel.
+    Default: u. Allowed option characters: ubsm.
+-w: The minimum time to wait in minutes before polling for cloudformation stack's CREATE_COMPLETE status.
+    Default: 5.
+-h: Display this help and exit.
+```
+
+When running the performance tests, you can use `get_wum_updated_wso2_product.sh` script to get a WSO2 product with all WUM updates.
 
 ### Java
 
@@ -103,9 +162,9 @@ ubuntu@server:~$ ./jmeter/install-jmeter.sh -h
 Usage: 
 ./jmeter/install-jmeter.sh -i <installation_dir> [-f <jmeter_dist>] [-d] [-p <jmeter_plugin_name>] [-h]
 
--i: The JMeter installation directory.
--f: The JMeter tgz distribution.
--d: Download JMeter from web.
+-i: Apache JMeter installation directory.
+-f: Apache JMeter tgz distribution.
+-d: Download Apache JMeter from web.
 -p: The name of the JMeter Plugin to install. You can provide multiple names.
 -h: Display this help and exit.
 ```
@@ -132,12 +191,16 @@ Any script depending on this script must define test scenarios as follows:
 ```bash
 declare -A test_scenario0=(
     [name]="test_scenario_name1"
+    [display_name]="Test Scenario 1"
+    [description]="Description of Test Scenario 1"
     [jmx]="test_scenario_name1.jmx"
     [use_backend]=true
     [skip]=false
 )
 declare -A test_scenario1=(
     [name]="test_scenario_name2"
+    [display_name]="Test Scenario 2"
+    [description]="Description of Test Scenario 2"
     [jmx]="test_scenario_name2.jmx"
     [use_backend]=true
     [skip]=false
@@ -145,8 +208,9 @@ declare -A test_scenario1=(
 ```
 
 Then define following functions in the script.
-1. `before_execute_test_scenario`
-2. `after_execute_test_scenario`
+1. `initialize`
+2. `before_execute_test_scenario`
+3. `after_execute_test_scenario`
 
 In above functions, following variables may be used
 1. `scenario_name`
@@ -163,25 +227,24 @@ additional JVM arguments to JMeter.
 
 Finally, execute test scenarios using the function `test_scenarios`.
 
-
 ```console
 ubuntu@server:~$ ./jmeter/perf-test-common.sh -h
 
 Usage: 
-./jmeter/perf-test-common.sh [-u <concurrent_users>] [-b <message_sizes>] [-s <sleep_times>] [-m <heap_sizes>] [-d <test_duration>] [-w <warmup_time>]
+./jmeter/perf-test-common.sh -m <heap_sizes> -u <concurrent_users> -b <message_sizes> -s <sleep_times> [-d <test_duration>] [-w <warmup_time>]
    [-n <jmeter_servers>] [-j <jmeter_server_heap_size>] [-k <jmeter_client_heap_size>] [-l <netty_service_heap_size>]
    [-i <include_scenario_name>] [-e <include_scenario_name>] [-t] [-p <estimated_processing_time_in_between_tests>] [-h]
 
--u: Concurrent Users to test. You can give multiple options to specify multiple users. Default "50 100 150 500 1000".
--b: Message sizes in bytes. You can give multiple options to specify multiple message sizes. Default "50 1024 10240".
--s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times. Default "0 30 500 1000".
--m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Default "2g".
+-m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Allowed suffixes: M, G.
+-u: Concurrent Users to test. You can give multiple options to specify multiple users.
+-b: Message sizes in bytes. You can give multiple options to specify multiple message sizes.
+-s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times.
 -d: Test Duration in seconds. Default 900.
--w: Warm-up time in minutes. Default 5.
+-w: Warm-up time in seconds. Default 300.
 -n: Number of JMeter servers. If n=1, only client will be used. If n > 1, remote JMeter servers will be used. Default 1.
--j: Heap Size of JMeter Server. Default 4g.
--k: Heap Size of JMeter Client. Default 2g.
--l: Heap Size of Netty Service. Default 4g.
+-j: Heap Size of JMeter Server. Allowed suffixes: M, G. Default 4G.
+-k: Heap Size of JMeter Client. Allowed suffixes: M, G. Default 2G.
+-l: Heap Size of Netty Service. Allowed suffixes: M, G. Default 4G.
 -i: Scenario name to to be included. You can give multiple options to filter scenarios.
 -e: Scenario name to to be excluded. You can give multiple options to filter scenarios.
 -t: Estimate time without executing tests.
@@ -197,16 +260,26 @@ Use `create-summary-csv.sh` to create a summary CSV file.
 ubuntu@server:~$ ./jmeter/create-summary-csv.sh -h
 
 Usage: 
-./jmeter/create-summary-csv.sh -n <application_name> [-p <file_prefix>] [-g <gcviewer_jar_path>] [-d <results_dir>]
-   [-j <jmeter_servers>] [-w] [-i] [-h]
+./jmeter/create-summary-csv.sh -n <application_name> [-c <column_header_name>] [-r <regex>] [-x] 
+   [-p <file_prefix>] [-g <gcviewer_jar_path>] [-d <results_dir>]
+   [-j <jmeter_servers>] [-k <application_instance_count>] [-w] [-i] [-l] [-h]
 
 -n: Name of the application to be used in column headers.
- p: Prefix of the files to get metrics (Load Average, GC, etc).
+-c: Column header name for each parameter.
+    You should give multiple header names in order for each directory in the results directory structure.
+    Default: Heap Size,Concurrent Users,Message Size (Bytes),Back-end Service Delay (ms)
+-r: Regular expression with a single group to extract parameter value from directory name.
+    You should give multiple regular expressions in order for each directory in the results directory structure.
+    Default: ([0-9]+[a-zA-Z])_heap,([0-9]+)_users,([0-9]+)B,([0-9]+)ms_sleep
+-x: Print column names and exit.
+-p: Prefix of the files to get metrics (Load Average, GC, etc).
 -g: Path of GCViewer Jar file, which will be used to analyze GC logs.
 -d: Results directory. Default ./jmeter/results.
 -j: Number of JMeter servers. If n=1, only client was used. If n > 1, remote JMeter servers were used. Default 1.
+-k: Number of Application instances. Default 1.
 -w: Use warmup results instead of measurement results.
 -i: Include GC statistics and load averages for other servers.
+-l: Exclude Netty Backend Service statistics. Works with -i.
 -h: Display this help and exit.
 ```
 
@@ -216,6 +289,25 @@ Use `csv-to-markdown-converter.py` to convert CSV results into Markdown format.
 ubuntu@server:~$ ./jmeter/csv-to-markdown-converter.py
 
 Usage: {Input File(.csv)} {Output File (.md)}
+```
+
+Use `create-summary-markdown.py` to create a markdown file, which will be a summary of performance test results. This scripts
+looks for a `Jinja2` template with the name `summary.md` in `templates` directory.
+
+```console
+ubuntu@server:~$ ./jmeter/create-summary-markdown.py -h
+usage: create-summary-markdown.py [-h] --json-files JSON_FILES
+                                  [JSON_FILES ...] --column-names COLUMN_NAMES
+                                  [COLUMN_NAMES ...]
+
+Create summary report
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --json-files JSON_FILES [JSON_FILES ...]
+                        JSON files with parameters.
+  --column-names COLUMN_NAMES [COLUMN_NAMES ...]
+                        Columns to include in the report.
 ```
 
 ### JTL Splitter
