@@ -344,7 +344,10 @@ for key in "${!test_parameters[@]}"; do
 done
 jq -n $test_parameters_args "$test_parameters_json" >$results_dir/cf-test-metadata.json
 
-estimate_command="$script_dir/../jmeter/run-performance-tests.sh -t ${run_performance_tests_options[@]}"
+# Allow to change the script name
+run_performance_tests_script_name=${run_performance_tests_script_name:-run-performance-tests.sh}
+
+estimate_command="$script_dir/../jmeter/${run_performance_tests_script_name} -t ${run_performance_tests_options[@]}"
 echo "Estimating total time for performance tests: $estimate_command"
 # Estimating this script will also validate the options. It's important to validate options before creating the stack.
 $estimate_command
@@ -431,7 +434,7 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     fi
     jmeter_servers_per_stack+=("$jmeter_servers")
     performance_test_options[$i]+=" -n $jmeter_servers"
-    estimate_command="$script_dir/../jmeter/run-performance-tests.sh -t ${performance_test_options[$i]}"
+    estimate_command="$script_dir/../jmeter/${run_performance_tests_script_name} -t ${performance_test_options[$i]}"
     echo "$(($i + 1)): Estimating total time for the tests in stack $(($i + 1)) with $jmeter_servers JMeter server(s) handling a maximum of $max_concurrent_users concurrent users: $estimate_command"
     $estimate_command
 done
@@ -587,7 +590,7 @@ function run_perf_tests_in_stack() {
     jmeter_client_ip="$(aws cloudformation describe-stacks --stack-name $stack_id --query 'Stacks[0].Outputs[?OutputKey==`JMeterClientPublicIP`].OutputValue' --output text)"
     echo "JMeter Client Public IP: $jmeter_client_ip"
 
-    run_performance_tests_command="./jmeter/run-performance-tests.sh ${performance_test_options[$index]}"
+    run_performance_tests_command="./jmeter/${run_performance_tests_script_name} ${performance_test_options[$index]}"
     # Run performance tests
     run_remote_tests="ssh -i $key_file -o "StrictHostKeyChecking=no" -T ubuntu@$jmeter_client_ip $run_performance_tests_command"
     echo "Running performance tests: $run_remote_tests"
