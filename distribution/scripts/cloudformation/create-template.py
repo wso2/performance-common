@@ -53,11 +53,11 @@ def main():
     parser.add_argument('--output-name', required=True, help='Output file name.', type=str)
     parser.add_argument('--jmeter-servers', required=True, help='Number of JMeter Servers.', type=int)
     parser.add_argument("--parameters", dest="parameters", action=StoreDictKeyPair, help="Additional parameters.", metavar="key1=value1,key2=value2...")
-    parser.add_argument("--start-bastian", default=False, action="store_true" , help="Start bastian instance")
+    parser.add_argument("--start-bastion", default=False, action="store_true" , help="Start bastion instance")
 
     args = parser.parse_args()
 
-    context = {'jmeter_servers': args.jmeter_servers, 'start_bastian': args.start_bastian}
+    context = {'jmeter_servers': args.jmeter_servers, 'start_bastion': args.start_bastion}
     if args.parameters is not None:
         context.update(args.parameters)
 

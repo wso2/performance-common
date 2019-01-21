@@ -471,8 +471,8 @@ Resources:
 {%- endmacro %}
 {% block ec2instances %}
 {% endblock %}
-{% if start_bastian %}
-{{ ec2instance('BastionInstance', 'bastian', 't3.nano', public=True) }}
+{% if start_bastion %}
+{{ ec2instance('BastionInstance', 'bastion', 't3.nano', public=True) }}
 {% endif -%}
 Outputs:
 {%- block outputs %}
