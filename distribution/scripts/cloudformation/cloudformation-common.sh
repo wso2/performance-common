@@ -550,7 +550,7 @@ function save_logs_and_delete_stack() {
     cat $stack_events_json | jq '.StackEvents | .[] | select ( .ResourceStatus == "CREATE_FAILED" )'
 
     # Download log events
-    log_group_name="${stack_name}-CloudFormationLogs"
+    local log_group_name="${stack_name}-CloudFormationLogs"
     local log_streams_json=$stack_results_dir/log-streams.json
     if aws logs describe-log-streams --log-group-name $log_group_name --output json >$log_streams_json; then
         local log_events_file=$stack_results_dir/log-events.log
@@ -560,6 +560,8 @@ function save_logs_and_delete_stack() {
             aws logs get-log-events --log-group-name $log_group_name --log-stream-name $log_stream --output text >>$log_events_file
             echo -ne "\n\n#### The end of log events from $log_stream\n\n" >>$log_events_file
         done
+    else
+        echo "WARNING: There was an error getting log streams from the log group $log_group_name. Check whether AWS CloudWatch logs are enabled."
     fi
 
     delete_stack $stack_id
