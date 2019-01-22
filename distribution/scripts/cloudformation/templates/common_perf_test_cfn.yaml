@@ -118,6 +118,7 @@ Resources:
                 - CfnUser
                 - Arn
       Bucket: !Ref BucketName
+{% if enable_cloudwatch_logs %}
   ####################################################################
   # Create IAM resources to configure AWS Logs Agent in EC2 instances
   ####################################################################
@@ -160,6 +161,7 @@ Resources:
         - - !Ref AWS::StackName
           - 'CloudFormationLogs'
       RetentionInDays: 7
+{% endif -%}
   ##########################################################################################
   # Create VPC, public subnet and private subnet
   # https://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Scenario2.html
@@ -304,6 +306,7 @@ Resources:
       'AWS::CloudFormation::Init':
         config:
           files:
+            {%- if enable_cloudwatch_logs %}
             /etc/awslogs/awslogs.conf:
               content: !Sub |
                 [general]
@@ -347,6 +350,7 @@ Resources:
               mode: '000444'
               owner: root
               group: root
+            {%- endif %}
             /home/ubuntu/performance-distribution.tar.gz:
               source: !Join
                 - ''
@@ -389,6 +393,7 @@ Resources:
               group: ubuntu
               authentication: "S3AccessCreds"
             {%- endfor %}
+          {%- if enable_cloudwatch_logs %}
           commands:
             01_create_state_directory:
               command: mkdir -p /var/awslogs/state
@@ -405,6 +410,7 @@ Resources:
                   - !Ref 'AWS::Region'
                   - ' -c /etc/awslogs/awslogs.conf'
               cwd: /root
+          {%- endif %}
       'AWS::CloudFormation::Authentication':
         S3AccessCreds:
           type: S3
@@ -418,7 +424,9 @@ Resources:
       ImageId: !FindInMap [ AWSRegion2AMI, !Ref "AWS::Region", AMI ]
       InstanceType: {{ instance_type }}
       KeyName: !Ref KeyName
+      {%- if enable_cloudwatch_logs %}
       IamInstanceProfile: !Ref LogRoleInstanceProfile
+      {%- endif %}
       {%- if volume_size %}
       BlockDeviceMappings:
         - DeviceName: "/dev/sda1"
