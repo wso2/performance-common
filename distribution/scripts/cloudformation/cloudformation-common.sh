@@ -592,12 +592,12 @@ function run_perf_tests_in_stack() {
     jmeter_client_ip="$(aws cloudformation describe-stacks --stack-name $stack_id --query 'Stacks[0].Outputs[?OutputKey==`JMeterClientPublicIP`].OutputValue' --output text)"
     echo "JMeter Client Public IP: $jmeter_client_ip"
 
-    run_performance_tests_command="./jmeter/${run_performance_tests_script_name} ${performance_test_options[$index]}"
+    ssh_command_prefix="ssh -i $key_file -o "StrictHostKeyChecking=no" -T ubuntu@$jmeter_client_ip"
     # Run performance tests
-    run_remote_tests="ssh -i $key_file -o "StrictHostKeyChecking=no" -T ubuntu@$jmeter_client_ip $run_performance_tests_command"
-    echo "Running performance tests: $run_remote_tests"
+    run_remote_tests_command="$ssh_command_prefix ./jmeter/${run_performance_tests_script_name} ${performance_test_options[$index]}"
+    echo "Running performance tests: $run_remote_tests_command"
     # Handle any error and let the script continue.
-    $run_remote_tests || echo "Remote test ssh command failed: $run_remote_tests"
+    $run_remote_tests_command || echo "Remote test ssh command failed: $run_remote_tests_command"
 
     echo "Downloading results-without-jtls.zip"
     # Download results-without-jtls.zip
@@ -615,6 +615,12 @@ function run_perf_tests_in_stack() {
         echo "Failed to download the results.zip"
         exit 500
     fi
+
+    download_logs_command="$ssh_command_prefix ./cloudformation/download_logs.sh -o ~"
+    echo "Download logs to JMeter client: $download_logs_command"
+    $download_logs_command
+    echo "Downloading logs.zip"
+    scp -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$jmeter_client_ip:logs.zip $stack_results_dir
 }
 
 for ((i = 0; i < ${#stack_ids[@]}; i++)); do
