@@ -140,7 +140,7 @@ echo -ne "\n"
 FUNC=$(declare -f setup || echo "")
 if [[ ! -z $FUNC ]]; then
     echo "Running the setup function"
-    bash -c "$FUNC; setup"
+    bash -ec "$FUNC; setup"
 fi
 
 # Move all logs files
