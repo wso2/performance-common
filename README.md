@@ -24,7 +24,8 @@ It's recommended to include the contents of this package with any scripts writte
 
 Following is the tree view of the contents inside distribution package.
 
-```
+```console
+ubuntu@server:~$ tree --charset=ascii | sed -e 's/[0-9]\.[0-9]\.[0-9].*\.jar/${version}.jar/g'
 .
 |-- cloudformation
 |   |-- cloudformation-common.sh
@@ -62,6 +63,8 @@ Following is the tree view of the contents inside distribution package.
     |-- setup-jmeter-client.sh
     |-- setup-jmeter.sh
     `-- setup-netty.sh
+
+10 directories, 26 files
 ```
 
 Each directory has one or more executable scripts. All scripts support `-h` (help) option.
