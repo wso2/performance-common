@@ -13,11 +13,10 @@ In [components](components), there are several Java projects and each project bu
 The [distribution](distribution) directory has the scripts and the Maven project to build the final distribution package
  including all scripts and components to be used for performance tests.
 
-The package (**performance-common-distribution-${version}.tar.gz**) built by the distribution maven module is the
- only package required for performance tests from this repository.
+The package (**performance-common-distribution-${version}.tar.gz**) built by the distribution maven module can be used as a dependency to write
+performance testing scripts.
 
-This package only provides helper scripts and applications. You should extend the functionality of these scripts to run
-performance tests.
+This package only provides helper scripts and applications. You must extend the functionality of these scripts to run performance tests.
 
 It's recommended to include the contents of this package with any scripts written to extend the functionality.
 
@@ -26,9 +25,11 @@ It's recommended to include the contents of this package with any scripts writte
 Following is the tree view of the contents inside distribution package.
 
 ```
+.
 |-- cloudformation
 |   |-- cloudformation-common.sh
 |   |-- create-template.py
+|   |-- download-logs.sh
 |   |-- get-wum-updated-wso2-product.sh
 |   |-- python-requirements.txt
 |   `-- templates
@@ -79,7 +80,7 @@ Standard server performance tests include a backend service and the parameters i
 The `create-template.py` script can create AWS CloudFormation template based on a `Jinja2` template. The `common_perf_test_cfn.yaml` file
 is a common `Jinja2` template, which has necessary configurations to create a performance test environment on AWS.
 
-You can extend `cloudformation-common.sh` to run standard server performance tests. By extending, you can will get all the functionality
+You should extend `cloudformation-common.sh` to run standard server performance tests. By extending, you can will get all the functionality
 of creating the AWS stack, run the tests, delete stack and summarize results. You can even run several stacks to run performance tests parallely.
 
 The `cloudformation-common.sh` script is not directly executable, but it supports following options.
@@ -97,7 +98,7 @@ Usage:
    [-h] -- [run_performance_tests_options]
 
 -f: Distribution containing the scripts to run performance tests.
--d: The results directory. Default value is a directory with current time. For example, results-20190116114029.
+-d: The results directory. Default value is a directory with current time. For example, results-20190124094422.
 -k: Amazon EC2 Key File. Amazon EC2 Key Name must match with this file name.
 -n: Amazon EC2 Key Name.
 -j: Apache JMeter (tgz) distribution.
@@ -139,10 +140,11 @@ The script needs to be run as root. The JDK will be extracted to `/usr/lib/jvm` 
 ubuntu@server:~$ ./java/install-java.sh -h
 
 Usage: 
-./java/install-java.sh -f <java_dist> [-p <java_dir>] [-h]
+./java/install-java.sh -f <java_dist> [-p <java_dir>] [-u <user>] [-h]
 
 -f: The jdk tar.gz file.
 -p: Java installation directory.
+-u: Target user. Default: ubuntu.
 -h: Display this help and exit.
 ```
 
@@ -171,7 +173,7 @@ Usage:
 
 #### Running standard server performance tests.
 
-You can extend `perf-test-common.sh` to run standard server performance tests. It supports testing with multiple concurrent
+You shoud extend `perf-test-common.sh` to run standard server performance tests. It supports testing with multiple concurrent
 users, different message sizes, different backend service delays and different heap memory sizes of the target server.
 
 The script also supports running remote (distributed) JMeter tests and it will also summarize the results for warmup and
