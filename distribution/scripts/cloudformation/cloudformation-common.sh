@@ -616,7 +616,7 @@ function run_perf_tests_in_stack() {
         exit 500
     fi
 
-    download_logs_command="$ssh_command_prefix ./cloudformation/download_logs.sh -o ~"
+    download_logs_command="$ssh_command_prefix ./cloudformation/download-logs.sh -o ~"
     echo "Download logs to JMeter client: $download_logs_command"
     $download_logs_command
     echo "Downloading logs.zip"

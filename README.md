@@ -29,7 +29,7 @@ Following is the tree view of the contents inside distribution package.
 |-- cloudformation
 |   |-- cloudformation-common.sh
 |   |-- create-template.py
-|   |-- get_wum_updated_wso2_product.sh
+|   |-- get-wum-updated-wso2-product.sh
 |   |-- python-requirements.txt
 |   `-- templates
 |       `-- common_perf_test_cfn.yaml
@@ -117,7 +117,7 @@ Usage:
 -h: Display this help and exit.
 ```
 
-When running the performance tests, you can use `get_wum_updated_wso2_product.sh` script to get a WSO2 product with all WUM updates.
+When running the performance tests, you can use `get-wum-updated-wso2-product.sh` script to get a WSO2 product with all WUM updates.
 
 ### Java
 
