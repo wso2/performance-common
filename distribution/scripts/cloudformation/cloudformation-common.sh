@@ -337,12 +337,12 @@ if function_exists get_test_metadata; then
 fi
 
 test_parameters_json="."
-test_parameters_args=""
+declare -a test_parameters_args
 for key in "${!test_parameters[@]}"; do
     test_parameters_json+=" | .[\"$key\"]=\$$key"
-    test_parameters_args+=" --arg $key "${test_parameters[$key]}""
+    test_parameters_args+=("--arg" "$key" "${test_parameters[$key]}")
 done
-jq -n $test_parameters_args "$test_parameters_json" >$results_dir/cf-test-metadata.json
+jq -n "${test_parameters_args[@]}" "$test_parameters_json" >$results_dir/cf-test-metadata.json
 
 # Allow to change the script name
 run_performance_tests_script_name=${run_performance_tests_script_name:-run-performance-tests.sh}
