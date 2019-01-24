@@ -357,7 +357,7 @@ for summary_json in $(find ${results_dir} -type f -name ${data_file} | sort -V);
         directory_names=("${directories[@]:$start_index}")
         # First directory is the scenario name
         scenario_name="${directory_names[0]}"
-        columns+=("${scenario_display_names[$scenario_name]=$scenario_name}")
+        columns+=("${scenario_display_names["$scenario_name"]="$scenario_name"}")
         for ((i = 0; i < ${#regexs[@]}; i++)); do
             value="$(echo "${directory_names[$((i + 1))]}" | sed -nE "s/${regexs[$i]}/\1/p")"
             columns+=("${value:-N/A}")

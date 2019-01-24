@@ -645,10 +645,10 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     unzip -nq ${stack_results_dir}/results-without-jtls.zip -x '*/test-metadata.json' -d $results_dir
 done
 cd $results_dir
+# Copy metadata before creating CSV
+cp cf-test-metadata.json test-metadata.json results
 # Create CSV
 $script_dir/../jmeter/create-summary-csv.sh -d results -n "${application_name}" -p "${metrics_file_prefix}" -j 2 -g "${gcviewer_jar_path}"
-# Copy metadata
-cp cf-test-metadata.json test-metadata.json results
 # Zip results
 zip -9qmr results-all.zip results/
 
