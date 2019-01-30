@@ -28,7 +28,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
-import java.util.Objects;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -93,14 +94,10 @@ public final class JTLSplitter {
         Path warmupJTLFile = jtlPath.resolveSibling(outputFilePrefix + "-warmup.jtl");
         Path measurementJTLFile = jtlPath.resolveSibling(outputFilePrefix + "-measurement.jtl");
 
-        StatCalculator warmupStatCalculator = null;
-        StatCalculator measurementStatCalculator = null;
+        Map<String, StatCalculator> warmupStatCalculators = new LinkedHashMap<>();
+        Map<String, StatCalculator> measurementStatCalculators = new LinkedHashMap<>();
         Path warmupSummaryJsonFile = jtlPath.resolveSibling(outputFilePrefix + "-warmup-summary.json");
         Path measurementSummaryJsonFile = jtlPath.resolveSibling(outputFilePrefix + "-measurement-summary.json");
-        if (summarize) {
-            warmupStatCalculator = new StatCalculator(precision);
-            measurementStatCalculator = new StatCalculator(precision);
-        }
 
         standardOutput.format("Splitting %s file into %s and %s.%n", fileName, warmupJTLFile.getFileName(),
                 measurementJTLFile.getFileName());
@@ -174,19 +171,25 @@ public final class JTLSplitter {
                     startTimestamp = timestamp;
                 }
                 long diff = timestamp - startTimestamp;
-                final StatCalculator statCalculator;
+                final Map<String, StatCalculator> statCalculatorMap;
                 if (diff <= timeLimit) {
-                    statCalculator = warmupStatCalculator;
+                    statCalculatorMap = warmupStatCalculators;
                     bwWarmup.write(line);
                     bwWarmup.newLine();
                 } else {
-                    statCalculator = measurementStatCalculator;
+                    statCalculatorMap = measurementStatCalculators;
                     bwMeasurement.write(line);
                     bwMeasurement.newLine();
                 }
                 if (summarize) {
                     try {
-                        Objects.requireNonNull(statCalculator).addSample(timestamp,
+                        String label = values[2];
+                        StatCalculator statCalculator = statCalculatorMap.get(label);
+                        if (statCalculator == null) {
+                            statCalculator = new StatCalculator(precision);
+                            statCalculatorMap.put(label, statCalculator);
+                        }
+                        statCalculator.addSample(timestamp,
                                 // elapsed
                                 Integer.parseInt(values[1]),
                                 // success
@@ -216,8 +219,8 @@ public final class JTLSplitter {
                  BufferedWriter bwMeasurementSummary =
                          new BufferedWriter(new FileWriter(measurementSummaryJsonFile.toFile()))) {
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                gson.toJson(Objects.requireNonNull(warmupStatCalculator).calculate(), bwWarmupSummary);
-                gson.toJson(Objects.requireNonNull(measurementStatCalculator).calculate(), bwMeasurementSummary);
+                gson.toJson(getSummaryStats(warmupStatCalculators), bwWarmupSummary);
+                gson.toJson(getSummaryStats(measurementStatCalculators), bwMeasurementSummary);
             } catch (IOException e) {
                 errorOutput.println(e.getMessage());
             }
@@ -230,5 +233,11 @@ public final class JTLSplitter {
                 TimeUnit.NANOSECONDS.toSeconds(elapsed) -
                         TimeUnit.MINUTES.toSeconds(TimeUnit.NANOSECONDS.toMinutes(elapsed)));
 
+    }
+
+    private Map<String, SummaryStats> getSummaryStats(Map<String, StatCalculator> statCalculatorMap) {
+        Map<String, SummaryStats> summaryStatsMap = new LinkedHashMap<>(statCalculatorMap.size());
+        statCalculatorMap.forEach((label, statCalculator) -> summaryStatsMap.put(label, statCalculator.calculate()));
+        return summaryStatsMap;
     }
 }

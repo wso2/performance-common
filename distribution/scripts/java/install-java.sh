@@ -21,14 +21,22 @@
 
 java_dist=""
 java_dir=""
+default_user=""
+if [[ ! -z $SUDO_USER ]]; then
+    default_user="$SUDO_USER"
+else
+    default_user="ubuntu"
+fi
+user="$default_user"
 
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 -f <java_dist> [-p <java_dir>] [-h]"
+    echo "$0 -f <java_dist> [-p <java_dir>] [-u <user>] [-h]"
     echo ""
     echo "-f: The jdk tar.gz file."
     echo "-p: Java installation directory."
+    echo "-u: Target user. Default: $default_user."
     echo "-h: Display this help and exit."
     echo ""
 }
@@ -40,13 +48,16 @@ if [ "$UID" -ne "0" ]; then
     exit 9
 fi
 
-while getopts "f:p:h" opts; do
+while getopts "f:p:u:h" opts; do
     case $opts in
     f)
         java_dist=${OPTARG}
         ;;
     p)
         java_dir=${OPTARG}
+        ;;
+    u)
+        user=${OPTARG}
         ;;
     h)
         usage
@@ -66,8 +77,7 @@ if ! command -v unzip >/dev/null 2>&1; then
 fi
 
 if [[ ! -f $java_dist ]]; then
-    echo "Please specify the java distribution file (tar.gz)"
-    help
+    echo "Please specify the java distribution file (tar.gz)."
     exit 1
 fi
 
@@ -79,7 +89,12 @@ fi
 
 #Validate java directory
 if [[ ! -d $java_dir ]]; then
-    echo "Please specify a valid java installation directory"
+    echo "Please specify a valid java installation directory."
+    exit 1
+fi
+
+if ! id "$user" >/dev/null 2>&1; then
+    echo "Please specify a valid user."
     exit 1
 fi
 
@@ -133,12 +148,12 @@ done
 # Create system preferences directory
 java_system_prefs_dir="/etc/.java/.systemPrefs"
 if [[ ! -d $java_system_prefs_dir ]]; then
-    echo "Creating $java_system_prefs_dir and changing ownership to $SUDO_USER:$SUDO_USER"
+    echo "Creating $java_system_prefs_dir and changing ownership to $user:$user"
     mkdir -p $java_system_prefs_dir
-    chown -R $SUDO_USER:$SUDO_USER $java_system_prefs_dir
+    chown -R $user:$user $java_system_prefs_dir
 fi
 
-user_bashrc_file=/home/$SUDO_USER/.bashrc
+user_bashrc_file=/home/$user/.bashrc
 
 if [[ ! -f $user_bashrc_file ]]; then
     echo "Creating $user_bashrc_file"
