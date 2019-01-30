@@ -67,8 +67,12 @@ public final class EchoHttpServer {
     @Parameter(names = "--enable-ssl", description = "Enable SSL")
     private boolean enableSSL = false;
 
-    @Parameter(names = "--keyStore-file", description = "Keystore file")
+    @Parameter(names = "--key-store-file", validateValueWith = KeyStoreFileValidator.class,
+            description = "Keystore file")
     private File keyStoreFile = null;
+
+    @Parameter(names = "--key-store-password", description = "Keystore password")
+    private String keyStorePassword;
 
     @Parameter(names = "--sleep-time", description = "Sleep Time in milliseconds")
     private int sleepTime = 0;
@@ -102,9 +106,9 @@ public final class EchoHttpServer {
         final SslContext sslCtx;
         if (enableSSL) {
             if (keyStoreFile != null) {
-                KeyManagerFactory keyManagerFactory = createSSLContextFromKeystores(keyStoreFile);
+                KeyManagerFactory keyManagerFactory = getKeyManagerFactory(keyStoreFile);
                 sslCtx = SslContextBuilder.forServer(keyManagerFactory).build();
-                logger.info("sslCtx created from given keystore");
+                logger.info("Ssl context is created from {}", keyStoreFile.getAbsolutePath());
             } else {
                 SelfSignedCertificate ssc = new SelfSignedCertificate();
                 sslCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey()).build();
@@ -153,9 +157,8 @@ public final class EchoHttpServer {
         }
     }
 
-    private KeyManagerFactory createSSLContextFromKeystores(File keyStoreFile) {
+    private KeyManagerFactory getKeyManagerFactory(File keyStoreFile) {
         KeyManagerFactory kmf;
-        String keyStorePassword = "ballerina";
         try {
             KeyStore ks = getKeyStore(keyStoreFile, keyStorePassword);
             kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -163,9 +166,8 @@ public final class EchoHttpServer {
                 kmf.init(ks, keyStorePassword.toCharArray());
             }
             return kmf;
-
         } catch (UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException | IOException e) {
-            throw new IllegalArgumentException("Failed to initialize the SSLContext", e);
+            throw new IllegalArgumentException("Failed to initialize the Key Manager factory", e);
         }
     }
 
