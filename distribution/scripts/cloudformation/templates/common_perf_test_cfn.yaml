@@ -32,13 +32,13 @@ Description: >-
 Mappings:
   AWSRegion2AMI:
     us-east-1:
-      AMI: ami-0d2505740b82f7948
+      AMI: ami-0b86cfbff176b7d3a
     us-east-2:
-      AMI: ami-0cf8cc36b8c81c6de
+      AMI: ami-0125a7e5b2489477a
     us-west-1:
-      AMI: ami-09c5eca75eed8245a
+      AMI: ami-0e81aa4c57820bb57
     us-west-2:
-      AMI: ami-0f05ad41860678734
+      AMI: ami-03fa1f014b48fa6bd
 #############################
 # User inputs
 #############################
@@ -47,9 +47,6 @@ Parameters:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
-  TestName:
-    Description: Name of the tests
-    Type: String
   BucketName:
     Description: Name of bucket containing files
     Type: String
@@ -121,6 +118,7 @@ Resources:
                 - CfnUser
                 - Arn
       Bucket: !Ref BucketName
+{% if enable_cloudwatch_logs %}
   ####################################################################
   # Create IAM resources to configure AWS Logs Agent in EC2 instances
   ####################################################################
@@ -163,6 +161,7 @@ Resources:
         - - !Ref AWS::StackName
           - 'CloudFormationLogs'
       RetentionInDays: 7
+{% endif -%}
   ##########################################################################################
   # Create VPC, public subnet and private subnet
   # https://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Scenario2.html
@@ -179,7 +178,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'VPC'
-              - !Ref TestName
+              - !Ref AWS::StackName
   # Configure Public Subnet
   PublicSubnet:
     Type: 'AWS::EC2::Subnet'
@@ -194,7 +193,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'PublicSubnet'
-              - !Ref TestName
+              - !Ref AWS::StackName
   InternetGateway:
     Type: 'AWS::EC2::InternetGateway'
     Properties:
@@ -203,7 +202,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'InternetGateway'
-              - !Ref TestName
+              - !Ref AWS::StackName
   AttachGateway:
     Type: 'AWS::EC2::VPCGatewayAttachment'
     Properties:
@@ -218,7 +217,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'PublicRouteTable'
-              - !Ref TestName
+              - !Ref AWS::StackName
   PublicRoute:
     Type: 'AWS::EC2::Route'
     DependsOn: AttachGateway
@@ -245,7 +244,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'PrivateSubnet'
-              - !Ref TestName
+              - !Ref AWS::StackName
   NatGateway:
     Type: 'AWS::EC2::NatGateway'
     DependsOn: AttachGateway
@@ -259,7 +258,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'NatGateway'
-              - !Ref TestName
+              - !Ref AWS::StackName
   NatGatewayIPAddress:
     Type: 'AWS::EC2::EIP'
     DependsOn: AttachGateway
@@ -274,7 +273,7 @@ Resources:
           Value: !Join
             - ':'
             - - 'PrivateRouteTable'
-              - !Ref TestName
+              - !Ref AWS::StackName
   PrivateRoute:
     Type: 'AWS::EC2::Route'
     DependsOn: AttachGateway
@@ -295,6 +294,7 @@ Resources:
       SecurityGroupIngress:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
+  {% block resources %}{% endblock %}
   #######################
   # EC2 Instances
   #######################
@@ -306,6 +306,7 @@ Resources:
       'AWS::CloudFormation::Init':
         config:
           files:
+            {%- if enable_cloudwatch_logs %}
             /etc/awslogs/awslogs.conf:
               content: !Sub |
                 [general]
@@ -349,6 +350,7 @@ Resources:
               mode: '000444'
               owner: root
               group: root
+            {%- endif %}
             /home/ubuntu/performance-distribution.tar.gz:
               source: !Join
                 - ''
@@ -391,6 +393,7 @@ Resources:
               group: ubuntu
               authentication: "S3AccessCreds"
             {%- endfor %}
+          {%- if enable_cloudwatch_logs %}
           commands:
             01_create_state_directory:
               command: mkdir -p /var/awslogs/state
@@ -407,6 +410,7 @@ Resources:
                   - !Ref 'AWS::Region'
                   - ' -c /etc/awslogs/awslogs.conf'
               cwd: /root
+          {%- endif %}
       'AWS::CloudFormation::Authentication':
         S3AccessCreds:
           type: S3
@@ -420,7 +424,9 @@ Resources:
       ImageId: !FindInMap [ AWSRegion2AMI, !Ref "AWS::Region", AMI ]
       InstanceType: {{ instance_type }}
       KeyName: !Ref KeyName
+      {%- if enable_cloudwatch_logs %}
       IamInstanceProfile: !Ref LogRoleInstanceProfile
+      {%- endif %}
       {%- if volume_size %}
       BlockDeviceMappings:
         - DeviceName: "/dev/sda1"
@@ -432,7 +438,7 @@ Resources:
           Value: !Join
               - ':'
               - - '{{ name }}'
-                - !Ref TestName
+                - !Ref AWS::StackName
       NetworkInterfaces:
         - GroupSet:
             - !Ref InstanceSecurityGroup
@@ -473,8 +479,8 @@ Resources:
 {%- endmacro %}
 {% block ec2instances %}
 {% endblock %}
-{% if start_bastian %}
-{{ ec2instance('BastionInstance', 'bastian', 't3.nano', public=True) }}
+{% if start_bastion %}
+{{ ec2instance('BastionInstance', 'bastion', 't3.nano', public=True) }}
 {% endif -%}
 Outputs:
 {%- block outputs %}
