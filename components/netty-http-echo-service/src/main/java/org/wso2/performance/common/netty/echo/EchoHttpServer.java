@@ -35,7 +35,17 @@ import io.netty.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;
 
 /**
@@ -56,6 +66,9 @@ public final class EchoHttpServer {
 
     @Parameter(names = "--enable-ssl", description = "Enable SSL")
     private boolean enableSSL = false;
+
+    @Parameter(names = "--keyStore-file", description = "Keystore file")
+    private File keyStoreFile = null;
 
     @Parameter(names = "--sleep-time", description = "Sleep Time in milliseconds")
     private int sleepTime = 0;
@@ -88,8 +101,14 @@ public final class EchoHttpServer {
         // Configure SSL.
         final SslContext sslCtx;
         if (enableSSL) {
-            SelfSignedCertificate ssc = new SelfSignedCertificate();
-            sslCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey()).build();
+            if (keyStoreFile != null) {
+                KeyManagerFactory keyManagerFactory = createSSLContextFromKeystores(keyStoreFile);
+                sslCtx = SslContextBuilder.forServer(keyManagerFactory).build();
+                logger.info("sslCtx created from given keystore");
+            } else {
+                SelfSignedCertificate ssc = new SelfSignedCertificate();
+                sslCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey()).build();
+            }
         } else {
             sslCtx = null;
         }
@@ -132,5 +151,35 @@ public final class EchoHttpServer {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
+    }
+
+    private KeyManagerFactory createSSLContextFromKeystores(File keyStoreFile) {
+        KeyManagerFactory kmf;
+        String keyStorePassword = "ballerina";
+        try {
+            KeyStore ks = getKeyStore(keyStoreFile, keyStorePassword);
+            kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            if (ks != null) {
+                kmf.init(ks, keyStorePassword.toCharArray());
+            }
+            return kmf;
+
+        } catch (UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException | IOException e) {
+            throw new IllegalArgumentException("Failed to initialize the SSLContext", e);
+        }
+    }
+
+    private KeyStore getKeyStore(File keyStoreFile, String keyStorePassword) throws IOException {
+        KeyStore keyStore = null;
+        String  tlsStoreType = "PKCS12";
+        if (keyStoreFile != null && keyStorePassword != null) {
+            try (InputStream is = new FileInputStream(keyStoreFile)) {
+                keyStore = KeyStore.getInstance(tlsStoreType);
+                keyStore.load(is, keyStorePassword.toCharArray());
+            } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException e) {
+                throw new IOException(e);
+            }
+        }
+        return keyStore;
     }
 }
