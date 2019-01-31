@@ -29,13 +29,25 @@ function initialize() {
 export -f initialize
 
 declare -A test_scenario0=(
-    [name]="backend"
-    [display_name]="Backend"
-    [description]="Directly invoking the backend service"
+    [name]="netty-backend-http"
+    [display_name]="HTTP echo service"
+    [description]="An HTTP echo service implemented in Netty"
     [jmx]="backend-test.jmx"
     [protocol]="http"
-    [path]="/echo/1.0.0"
-    [use_backend]=false
+    [path]="/"
+    [use_backend]=true
+    [skip]=false
+)
+
+declare -A test_scenario1=(
+    [name]="netty-backend-https"
+    [display_name]="HTTPS echo service"
+    [description]="An HTTPS echo service implemented in Netty"
+    [jmx]="backend-test.jmx"
+    [protocol]="https"
+    [backend_flags]="--enable-ssl"
+    [path]="/"
+    [use_backend]=true
     [skip]=false
 )
 
@@ -44,14 +56,10 @@ function before_execute_test_scenario() {
     local protocol=${scenario[protocol]}
     jmeter_params+=("host=$backend_host" "port=8688" "path=$service_path")
     jmeter_params+=("payload=$HOME/${msize}B.json" "response_size=${msize}B" "protocol=$protocol")
-    echo "Starting backend service"
-    ssh $backend_ssh_host "./netty-service/netty-start.sh -m $heap"
 }
 
 function after_execute_test_scenario() {
-    write_server_metrics netty $backend_ssh_host netty
-    download_file $backend_ssh_host netty-service/logs/netty.log netty.log
-    download_file $backend_ssh_host netty-service/logs/nettygc.log netty_gc.log
+    return 0
 }
 
 test_scenarios
