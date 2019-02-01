@@ -26,16 +26,6 @@ export aws_cloudformation_template_filename="backend_perf_test_cfn.yaml"
 export application_name="Backend Server"
 export metrics_file_prefix="netty"
 
-while getopts ":f:d:k:n:j:o:g:s:b:r:J:S:N:t:p:w:h" opt; do
-    case "${opt}" in
-    *)
-        opts+=("-${opt}")
-        [[ -n "$OPTARG" ]] && opts+=("$OPTARG")
-        ;;
-    esac
-done
-shift "$((OPTIND - 1))"
-
 function get_test_metadata() {
     echo "application_name=$application_name"
 }
@@ -57,4 +47,4 @@ function get_columns() {
 }
 export -f get_columns
 
-$script_dir/cloudformation-common.sh "${opts[@]}" -- "$@"
+$script_dir/cloudformation-common.sh "$@"
