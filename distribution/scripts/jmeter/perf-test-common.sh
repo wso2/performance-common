@@ -527,9 +527,10 @@ function test_scenarios() {
                         mkdir -p $report_location
 
                         if [[ $sleep_time -ge 0 ]]; then
-                            echo "Starting Backend Service. Sleep Time: $sleep_time"
+                            local backend_flags="${scenario[backend_flags]}"
+                            echo "Starting Backend Service. Worker Threads: $users, Sleep Time: $sleep_time, Additional Flags: ${backend_flags:-N/A}"
                             ssh $backend_ssh_host "./netty-service/netty-start.sh -m $netty_service_heap_size -w \
-                                -- --worker-threads $users --sleep-time $sleep_time"
+                                -- ${backend_flags} --worker-threads $users --sleep-time $sleep_time"
                         fi
 
                         declare -ag jmeter_params=("users=$users_per_jmeter" "duration=$test_duration")
