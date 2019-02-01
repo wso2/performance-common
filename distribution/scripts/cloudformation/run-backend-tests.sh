@@ -25,6 +25,7 @@ export script_dir=$(dirname "$0")
 export aws_cloudformation_template_filename="backend_perf_test_cfn.yaml"
 export application_name="Backend Server"
 export metrics_file_prefix="netty"
+export run_performance_tests_script_name="run-backend-tests.sh"
 
 function get_test_metadata() {
     echo "application_name=$application_name"
