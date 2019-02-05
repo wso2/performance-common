@@ -57,7 +57,7 @@ function before_execute_test_scenario() {
     local backend_flags=${scenario[backend_flags]}
     jmeter_params+=("host=$backend_host" "port=8688" "path=$service_path")
     jmeter_params+=("payload=$HOME/${msize}B.json" "response_size=${msize}B" "protocol=$protocol")
-    if [[ $netty_service_heap_size -eq $heap ]]; then
+    if [[ "$netty_service_heap_size" == "$heap" ]]; then
         return 0
     fi
     echo "Restarting Backend Service. Worker Threads: $users, Sleep Time: $sleep_time, Additional Flags: ${backend_flags:-N/A}"
