@@ -23,7 +23,7 @@ export script_name="$0"
 export script_dir=$(dirname "$0")
 
 export aws_cloudformation_template_filename="backend_perf_test_cfn.yaml"
-export application_name="Backend Server"
+export application_name="Back-end Server"
 export metrics_file_prefix="netty"
 export run_performance_tests_script_name="run-backend-tests.sh"
 
@@ -43,8 +43,8 @@ function get_columns() {
     echo "Average Response Time (ms)"
     echo "Standard Deviation of Response Time (ms)"
     echo "99th Percentile of Response Time (ms)"
-    echo "Backend GC Throughput (%)"
-    echo "Average Backend Memory Footprint After Full GC (M)"
+    echo "$application_name GC Throughput (%)"
+    echo "Average $application_name Memory Footprint After Full GC (M)"
 }
 export -f get_columns
 

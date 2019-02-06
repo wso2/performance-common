@@ -1,7 +1,7 @@
 # {{ parameters.application_name }} Performance Test Results
 
-These are the performance test results of a [Netty](https://netty.io/) based back-end service which echoes back any request
-posted to it after a specified period of time. This is the backend that is used in the performance tests of WSO2 products.
+These are the performance test results of a [Netty](https://netty.io/) based Back-end service which echoes back any request
+posted to it after a specified period of time. This is the Back-end that is used in the performance tests of WSO2 products.
 
 | Test Scenarios | Description |
 | --- | --- |
@@ -13,7 +13,7 @@ Our test client is [Apache JMeter](https://jmeter.apache.org/index.html). We tes
 time. We split the test results into warmup and measurement parts and use the measurement part to compute the
 performance metrics.
 
-We run the backend performance tests under different numbers of concurrent users, message sizes (payloads) and back-end service
+We run the Back-end performance tests under different numbers of concurrent users, message sizes (payloads) and Back-end service
 delays.
 
 The main performance metrics:
@@ -31,7 +31,7 @@ The following are the test parameters.
 | Heap Size | The amount of memory allocated to the application | {{ parameters.heap_sizes|join(', ') }} |
 | Concurrent Users | The number of users accessing the application at the same time. | {{ parameters.concurrent_users|join(', ') }} |
 | Message Size (Bytes) | The request payload size in Bytes. | {{ parameters.message_sizes|join(', ') }} |
-| Back-end Delay (ms) | The delay added by the back-end service. | {{ parameters.backend_sleep_times|join(', ') }} |
+| Back-end Delay (ms) | The delay added by the Back-end service. | {{ parameters.backend_sleep_times|join(', ') }} |
 
 The duration of each test is **{{ parameters.test_duration }} seconds**. The warm-up period is **{{ parameters.warmup_time }} seconds**.
 The measurement results are collected after the warm-up period.
