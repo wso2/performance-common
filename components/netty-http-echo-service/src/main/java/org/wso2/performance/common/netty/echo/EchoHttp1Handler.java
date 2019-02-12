@@ -40,8 +40,6 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  */
 public class EchoHttp1Handler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
-    EchoHttp1Handler() {}
-
     @Override
     public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
         if (HttpUtil.is100ContinueExpected(req)) {

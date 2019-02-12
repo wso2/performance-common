@@ -29,8 +29,6 @@ import io.netty.handler.codec.http2.Http2Settings;
 public final class Http2HandlerBuilder
         extends AbstractHttp2ConnectionHandlerBuilder<EchoHttp2ServerHandler, Http2HandlerBuilder> {
 
-    Http2HandlerBuilder() {}
-
     @Override
     public EchoHttp2ServerHandler build() {
         return super.build();

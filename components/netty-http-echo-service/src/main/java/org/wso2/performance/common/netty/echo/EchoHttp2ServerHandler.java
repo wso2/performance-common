@@ -105,6 +105,7 @@ public class EchoHttp2ServerHandler extends Http2ConnectionHandler implements Ht
     @Override
     public void onHeadersRead(ChannelHandlerContext ctx, int streamId,
             Http2Headers headers, int padding, boolean endOfStream) {
+        // This will only echo back a payload less than 16kb(Which is the size of a single frame).
         contentType = headers.get("content-type").toString();
         if (endOfStream) {
             ByteBuf content = ctx.alloc().buffer();

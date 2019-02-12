@@ -48,7 +48,6 @@
 
     <modules>
         <module>components/netty-http-echo-service</module>
-        <module>components/netty-http2-echo-service</module>
         <module>components/payload-generator</module>
         <module>components/jtl-splitter</module>
         <module>distribution</module>
