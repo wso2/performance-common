@@ -29,8 +29,8 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler.UpgradeCodecFactory;
-import io.netty.handler.codec.http2.CleartextHttp2ServerUpgradeHandler;
 import io.netty.handler.codec.http2.Http2CodecUtil;
+import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
 import io.netty.handler.codec.http2.Http2ServerUpgradeCodec;
 import io.netty.handler.ssl.SslContext;
 import io.netty.util.AsciiString;
@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Sets up the Netty pipeline for the example server. Depending on the endpoint config, sets up the
- * pipeline for h2 or cleartext HTTP upgrade to HTTP/2.
+ * pipeline for NPN or cleartext HTTP upgrade to HTTP/2.
  */
 public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
 
@@ -48,7 +48,8 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
 
     private static final UpgradeCodecFactory upgradeCodecFactory = protocol -> {
         if (AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)) {
-            return new Http2ServerUpgradeCodec(new Http2HandlerBuilder().build());
+            return new Http2ServerUpgradeCodec(
+                    Http2FrameCodecBuilder.forServer().build(), new EchoHttp2ServerHandler());
         } else {
             return null;
         }
@@ -61,7 +62,7 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
         this(sslCtx, 16 * 1024);
     }
 
-    private Http2ServerInitializer(SslContext sslCtx, int maxHttpContentLength) {
+    Http2ServerInitializer(SslContext sslCtx, int maxHttpContentLength) {
         if (maxHttpContentLength < 0) {
             throw new IllegalArgumentException("maxHttpContentLength (expected >= 0): " + maxHttpContentLength);
         }
@@ -79,7 +80,7 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
     }
 
     /**
-     * Configure the pipeline for TLS ALPN negotiation to HTTP/2.
+     * Configure the pipeline for TLS NPN negotiation to HTTP/2.
      */
     private void configureSsl(SocketChannel ch) {
         ch.pipeline().addLast(sslCtx.newHandler(ch.alloc()), new Http2OrHttpHandler());
@@ -91,12 +92,9 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
     private void configureClearText(SocketChannel ch) {
         final ChannelPipeline p = ch.pipeline();
         final HttpServerCodec sourceCodec = new HttpServerCodec();
-        final HttpServerUpgradeHandler upgradeHandler = new HttpServerUpgradeHandler(sourceCodec, upgradeCodecFactory);
-        final CleartextHttp2ServerUpgradeHandler cleartextHttp2ServerUpgradeHandler =
-                new CleartextHttp2ServerUpgradeHandler(sourceCodec, upgradeHandler,
-                                                       new Http2HandlerBuilder().build());
 
-        p.addLast(cleartextHttp2ServerUpgradeHandler);
+        p.addLast(sourceCodec);
+        p.addLast(new HttpServerUpgradeHandler(sourceCodec, upgradeCodecFactory));
         p.addLast(new SimpleChannelInboundHandler<HttpMessage>() {
             @Override
             protected void channelRead0(ChannelHandlerContext ctx, HttpMessage msg) throws Exception {
@@ -119,7 +117,7 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
     private static class UserEventLogger extends ChannelInboundHandlerAdapter {
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-            logger.debug("User event triggered in no upgrade attempt: " + evt);
+            logger.debug("User Event Triggered: " + evt);
             ctx.fireUserEventTriggered(evt);
         }
     }
