@@ -80,6 +80,7 @@ public class EchoHttp2ServerHandler extends ChannelDuplexHandler {
             } else {
                 sendResponse(ctx, stream, wrappedBuffer(content, data.content()));
             }
+            removeFromMap(stream.id());
         } else {
             addToMap(stream.id(), data.content());
         }
@@ -94,6 +95,13 @@ public class EchoHttp2ServerHandler extends ChannelDuplexHandler {
             dataMap.put(streamId, data);
         } else {
             dataMap.put(streamId, wrappedBuffer(content, data));
+        }
+    }
+
+    private static void removeFromMap(int streamId) {
+        ByteBuf content = (ByteBuf) dataMap.get(streamId);
+        if (content != null) {
+            dataMap.remove(streamId);
         }
     }
 
