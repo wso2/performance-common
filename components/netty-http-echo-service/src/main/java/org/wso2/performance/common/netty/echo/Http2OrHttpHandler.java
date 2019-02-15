@@ -21,6 +21,7 @@ package org.wso2.performance.common.netty.echo;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 
@@ -37,16 +38,16 @@ public class Http2OrHttpHandler extends ApplicationProtocolNegotiationHandler {
     }
 
     @Override
-    protected void configurePipeline(ChannelHandlerContext ctx, String protocol) throws Exception {
+    protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
         if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
-            ctx.pipeline().addLast(new Http2HandlerBuilder().build());
+            ctx.pipeline().addLast(Http2FrameCodecBuilder.forServer().build(), new EchoHttp2ServerHandler());
             return;
         }
 
         if (ApplicationProtocolNames.HTTP_1_1.equals(protocol)) {
             ctx.pipeline().addLast(new HttpServerCodec(),
-                                   new HttpObjectAggregator(MAX_CONTENT_LENGTH),
-                                   new EchoHttp1Handler());
+                    new HttpObjectAggregator(MAX_CONTENT_LENGTH),
+                    new EchoHttp1Handler());
             return;
         }
 
