@@ -30,4 +30,8 @@
         <Class name="org.wso2.performance.common.jtl.splitter.JTLSplitter"/>
         <Method name="splitJTL"/>
     </Match>
+    <Match>
+        <Bug pattern="BC_UNCONFIRMED_CAST_OF_RETURN_VALUE"/>
+        <Class name="org.wso2.performance.common.netty.echo.Http2HandlerBuilder"/>
+    </Match>
 </FindBugsFilter>

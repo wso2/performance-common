@@ -18,6 +18,7 @@ package org.wso2.performance.common.netty.echo;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -28,8 +29,13 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http2.Http2SecurityUtil;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.SslProvider;
+import io.netty.handler.ssl.SupportedCipherSuiteFilter;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.util.Version;
 import org.slf4j.Logger;
@@ -54,6 +60,7 @@ import javax.net.ssl.SSLException;
 public final class EchoHttpServer {
 
     private static final Logger logger = LoggerFactory.getLogger(EchoHttpServer.class);
+    public static final String HTTP2_VERSION = "2.0";;
 
     @Parameter(names = "--port", description = "Server Port")
     private int port = 8688;
@@ -74,6 +81,9 @@ public final class EchoHttpServer {
     @Parameter(names = "--key-store-password", description = "Keystore password")
     private String keyStorePassword;
 
+    @Parameter(names = "--http-version", description = "Http version")
+    private static String httpVersion = "1.1";
+
     @Parameter(names = "--sleep-time", description = "Sleep Time in milliseconds")
     private int sleepTime = 0;
 
@@ -91,7 +101,11 @@ public final class EchoHttpServer {
             return;
         }
 
-        echoHttpServer.startServer();
+        if (httpVersion.equalsIgnoreCase(HTTP2_VERSION)) {
+            echoHttpServer.startHttp2Server();
+        } else {
+            echoHttpServer.startServer();
+        }
     }
 
     private void startServer() throws SSLException, CertificateException, InterruptedException {
@@ -154,6 +168,55 @@ public final class EchoHttpServer {
             // Shut down all event loops to terminate all threads.
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
+        }
+    }
+
+    private void startHttp2Server() throws SSLException, CertificateException, InterruptedException {
+        logger.info("Echo HTTP2 Server. Port: {}, Boss Threads: {}, Worker Threads: {}, SSL Enabled: {}" +
+                ", Sleep Time: {}ms", port, bossThreads, workerThreads, enableSSL, sleepTime);
+        // Print Max Heap Size
+        logger.info("Max Heap Size: {}MB", Runtime.getRuntime().maxMemory() / (1024 * 1024));
+        // Print Netty Version
+        Version version = Version.identify(this.getClass().getClassLoader()).values().iterator().next();
+        logger.info("Netty Version: {}", version.artifactVersion());
+        // Configure SSL.
+        final SslContext sslCtx;
+        if (enableSSL) {
+            if (keyStoreFile != null) {
+                KeyManagerFactory keyManagerFactory = getKeyManagerFactory(keyStoreFile);
+                sslCtx = SslContextBuilder.forServer(keyManagerFactory).applicationProtocolConfig(
+                        new ApplicationProtocolConfig(ApplicationProtocolConfig.Protocol.ALPN,
+                                ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                                ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                                ApplicationProtocolNames.HTTP_2, ApplicationProtocolNames.HTTP_1_1))
+                        .sslProvider(SslProvider.OPENSSL)
+                        .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE).build();
+                logger.info("Ssl context is created from {}", keyStoreFile.getAbsolutePath());
+            } else {
+                SelfSignedCertificate ssc = new SelfSignedCertificate();
+                sslCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey())
+                        .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
+                        .sslProvider(SslProvider.OPENSSL).applicationProtocolConfig(
+                                new ApplicationProtocolConfig(ApplicationProtocolConfig.Protocol.ALPN,
+                                        ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                                        ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                                        ApplicationProtocolNames.HTTP_2, ApplicationProtocolNames.HTTP_1_1)).build();
+            }
+        } else {
+            sslCtx = null;
+        }
+        EventLoopGroup group = new NioEventLoopGroup();
+        try {
+            ServerBootstrap b = new ServerBootstrap();
+            b.option(ChannelOption.SO_BACKLOG, 1024);
+            b.group(group)
+                    .channel(NioServerSocketChannel.class)
+                    .childHandler(new Http2ServerInitializer(sslCtx));
+
+            Channel ch = b.bind(port).sync().channel();
+            ch.closeFuture().sync();
+        } finally {
+            group.shutdownGracefully();
         }
     }
 
