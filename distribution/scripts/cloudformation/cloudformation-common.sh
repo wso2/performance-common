@@ -648,7 +648,7 @@ cd $results_dir
 # Copy metadata before creating CSV
 cp cf-test-metadata.json test-metadata.json results
 # Create CSV
-$script_dir/../jmeter/create-summary-csv.sh -d results -n "${application_name}" -p "${metrics_file_prefix}" -j 2 -g "${gcviewer_jar_path}"
+$script_dir/../jmeter/create-summary-csv.sh -d results -n "${application_name}" -p "${metrics_file_prefix}" -j 2 -g "${gcviewer_jar_path} -i"
 # Zip results
 zip -9qmr results-all.zip results/
 
