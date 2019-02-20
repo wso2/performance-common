@@ -94,7 +94,7 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
         final HttpServerCodec sourceCodec = new HttpServerCodec();
 
         p.addLast(sourceCodec);
-        p.addLast(new HttpServerUpgradeHandler(sourceCodec, upgradeCodecFactory));
+        p.addLast(new HttpServerUpgradeHandler(sourceCodec, upgradeCodecFactory, Integer.MAX_VALUE));
         p.addLast(new SimpleChannelInboundHandler<HttpMessage>() {
             @Override
             protected void channelRead0(ChannelHandlerContext ctx, HttpMessage msg) throws Exception {
