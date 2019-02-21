@@ -67,10 +67,11 @@ public class EchoHttp2ServerHandler extends ChannelDuplexHandler {
     }
 
     private static void onHeadersRead(ChannelHandlerContext ctx, Http2HeadersFrame headersFrame) {
+        Http2FrameStream stream = headersFrame.stream();
         Http2Headers headers = new DefaultHttp2Headers().status(OK.codeAsText());
-        ctx.write(new DefaultHttp2HeadersFrame(headers).stream(headersFrame.stream()));
+        ctx.write(new DefaultHttp2HeadersFrame(headers).stream(stream));
         if (headersFrame.isEndStream()) {
-            ctx.write(new DefaultHttp2DataFrame(new EmptyByteBuf(ctx.alloc()), true).stream(headersFrame.stream()));
+            ctx.write(new DefaultHttp2DataFrame(new EmptyByteBuf(ctx.alloc()), true).stream(stream));
         }
     }
 }
