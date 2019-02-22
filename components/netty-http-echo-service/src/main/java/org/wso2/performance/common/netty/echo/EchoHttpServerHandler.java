@@ -37,18 +37,17 @@ public class EchoHttpServerHandler extends SimpleChannelInboundHandler<FullHttpR
 
     private long sleepTime;
 
-    public EchoHttpServerHandler(long sleepTime) {
+    EchoHttpServerHandler(long sleepTime) {
         this.sleepTime = sleepTime;
     }
 
     @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+    public void channelReadComplete(ChannelHandlerContext ctx) {
         ctx.flush();
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg)
-            throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) {
         if (sleepTime > 0) {
             try {
                 Thread.sleep(sleepTime);

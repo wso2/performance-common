@@ -62,7 +62,7 @@ public class EchoHttp2ServerHandler extends ChannelDuplexHandler {
     private static void onDataRead(ChannelHandlerContext ctx, Http2DataFrame data) {
         Http2FrameStream stream = data.stream();
         ctx.write(new DefaultHttp2DataFrame(data.content(), data.isEndStream()).stream(stream));
-        // Update the flowcontroller
+        // Update the flow-controller
         ctx.write(new DefaultHttp2WindowUpdateFrame(data.initialFlowControlledBytes()).stream(stream));
     }
 
