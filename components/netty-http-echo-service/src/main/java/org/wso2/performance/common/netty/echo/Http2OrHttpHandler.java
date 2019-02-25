@@ -32,9 +32,11 @@ import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 public class Http2OrHttpHandler extends ApplicationProtocolNegotiationHandler {
 
     private static final int MAX_CONTENT_LENGTH = 1024 * 100;
+    private final long sleepTime;
 
-    Http2OrHttpHandler() {
+    Http2OrHttpHandler(long sleepTime) {
         super(ApplicationProtocolNames.HTTP_1_1);
+        this.sleepTime = sleepTime;
     }
 
     @Override
@@ -47,7 +49,7 @@ public class Http2OrHttpHandler extends ApplicationProtocolNegotiationHandler {
         if (ApplicationProtocolNames.HTTP_1_1.equals(protocol)) {
             ctx.pipeline().addLast(new HttpServerCodec(),
                     new HttpObjectAggregator(MAX_CONTENT_LENGTH),
-                    new EchoHttp1Handler());
+                    new EchoHttpServerHandler(sleepTime));
             return;
         }
 

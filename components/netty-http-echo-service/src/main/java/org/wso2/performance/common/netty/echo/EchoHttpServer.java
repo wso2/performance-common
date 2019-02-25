@@ -50,7 +50,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;
 
@@ -60,7 +59,7 @@ import javax.net.ssl.SSLException;
 public final class EchoHttpServer {
 
     private static final Logger logger = LoggerFactory.getLogger(EchoHttpServer.class);
-    public static final String HTTP2_VERSION = "2.0";;
+    private static final String HTTP2_VERSION = "2.0";
 
     @Parameter(names = "--port", description = "Server Port")
     private int port = 8688;
@@ -109,13 +108,7 @@ public final class EchoHttpServer {
     }
 
     private void startServer() throws SSLException, CertificateException, InterruptedException {
-        logger.info("Echo HTTP Server. Port: {}, Boss Threads: {}, Worker Threads: {}, SSL Enabled: {}" +
-                ", Sleep Time: {}ms", new Object[]{port, bossThreads, workerThreads, enableSSL, sleepTime});
-        // Print Max Heap Size
-        logger.info("Max Heap Size: {}MB", Runtime.getRuntime().maxMemory() / (1024 * 1024));
-        // Print Netty Version
-        Version version = Version.identify(this.getClass().getClassLoader()).values().iterator().next();
-        logger.info("Netty Version: {}", version.artifactVersion());
+        printServerInfo();
         // Configure SSL.
         final SslContext sslCtx;
         if (enableSSL) {
@@ -142,7 +135,7 @@ public final class EchoHttpServer {
                     .childOption(ChannelOption.SO_KEEPALIVE, true)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
-                        public void initChannel(SocketChannel ch) throws Exception {
+                        public void initChannel(SocketChannel ch) {
                             ChannelPipeline p = ch.pipeline();
                             if (sslCtx != null) {
                                 p.addLast(sslCtx.newHandler(ch.alloc()));
@@ -172,13 +165,7 @@ public final class EchoHttpServer {
     }
 
     private void startHttp2Server() throws SSLException, CertificateException, InterruptedException {
-        logger.info("Echo HTTP2 Server. Port: {}, Boss Threads: {}, Worker Threads: {}, SSL Enabled: {}" +
-                ", Sleep Time: {}ms", port, bossThreads, workerThreads, enableSSL, sleepTime);
-        // Print Max Heap Size
-        logger.info("Max Heap Size: {}MB", Runtime.getRuntime().maxMemory() / (1024 * 1024));
-        // Print Netty Version
-        Version version = Version.identify(this.getClass().getClassLoader()).values().iterator().next();
-        logger.info("Netty Version: {}", version.artifactVersion());
+        printServerInfo();
         // Configure SSL.
         final SslContext sslCtx;
         if (enableSSL) {
@@ -211,13 +198,23 @@ public final class EchoHttpServer {
             b.option(ChannelOption.SO_BACKLOG, 1024);
             b.group(group)
                     .channel(NioServerSocketChannel.class)
-                    .childHandler(new Http2ServerInitializer(sslCtx));
+                    .childHandler(new Http2ServerInitializer(sslCtx, sleepTime));
 
             Channel ch = b.bind(port).sync().channel();
             ch.closeFuture().sync();
         } finally {
             group.shutdownGracefully();
         }
+    }
+
+    private void printServerInfo() {
+        logger.info("Echo HTTP/{} Server. Port: {}, Boss Threads: {}, Worker Threads: {}, SSL Enabled: {}" +
+                ", Sleep Time: {}ms", httpVersion, port, bossThreads, workerThreads, enableSSL, sleepTime);
+        // Print Max Heap Size
+        logger.info("Max Heap Size: {}MB", Runtime.getRuntime().maxMemory() / (1024 * 1024));
+        // Print Netty Version
+        Version version = Version.identify(this.getClass().getClassLoader()).values().iterator().next();
+        logger.info("Netty Version: {}", version.artifactVersion());
     }
 
     private KeyManagerFactory getKeyManagerFactory(File keyStoreFile) {
@@ -236,7 +233,7 @@ public final class EchoHttpServer {
 
     private KeyStore getKeyStore(File keyStoreFile, String keyStorePassword) throws IOException {
         KeyStore keyStore = null;
-        String  tlsStoreType = "PKCS12";
+        String tlsStoreType = "PKCS12";
         if (keyStoreFile != null && keyStorePassword != null) {
             try (InputStream is = new FileInputStream(keyStoreFile)) {
                 keyStore = KeyStore.getInstance(tlsStoreType);
