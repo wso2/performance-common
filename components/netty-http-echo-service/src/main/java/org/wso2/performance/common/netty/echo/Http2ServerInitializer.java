@@ -57,17 +57,19 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
 
     private final SslContext sslCtx;
     private final int maxHttpContentLength;
+    private final long sleepTime;
 
-    Http2ServerInitializer(SslContext sslCtx) {
-        this(sslCtx, 16 * 1024);
+    Http2ServerInitializer(SslContext sslCtx, long sleepTime) {
+        this(sslCtx, sleepTime, 16 * 1024);
     }
 
-    Http2ServerInitializer(SslContext sslCtx, int maxHttpContentLength) {
+    private Http2ServerInitializer(SslContext sslCtx, long sleepTime, int maxHttpContentLength) {
         if (maxHttpContentLength < 0) {
             throw new IllegalArgumentException("maxHttpContentLength (expected >= 0): " + maxHttpContentLength);
         }
         this.sslCtx = sslCtx;
         this.maxHttpContentLength = maxHttpContentLength;
+        this.sleepTime = sleepTime;
     }
 
     @Override
@@ -83,7 +85,7 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
      * Configure the pipeline for TLS NPN negotiation to HTTP/2.
      */
     private void configureSsl(SocketChannel ch) {
-        ch.pipeline().addLast(sslCtx.newHandler(ch.alloc()), new Http2OrHttpHandler());
+        ch.pipeline().addLast(sslCtx.newHandler(ch.alloc()), new Http2OrHttpHandler(sleepTime));
     }
 
     /**
@@ -97,12 +99,12 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
         p.addLast(new HttpServerUpgradeHandler(sourceCodec, upgradeCodecFactory, Integer.MAX_VALUE));
         p.addLast(new SimpleChannelInboundHandler<HttpMessage>() {
             @Override
-            protected void channelRead0(ChannelHandlerContext ctx, HttpMessage msg) throws Exception {
+            protected void channelRead0(ChannelHandlerContext ctx, HttpMessage msg) {
                 // If this handler is hit then no upgrade has been attempted and the client is just talking HTTP.
-                logger.error("Directly talking: " + msg.protocolVersion() + " (no upgrade was attempted)");
+                logger.error("Directly talking: {} (no upgrade was attempted)", msg.protocolVersion());
                 ChannelPipeline pipeline = ctx.pipeline();
                 ChannelHandlerContext thisCtx = pipeline.context(this);
-                pipeline.addAfter(thisCtx.name(), null, new EchoHttp1Handler());
+                pipeline.addAfter(thisCtx.name(), null, new EchoHttpServerHandler(sleepTime));
                 pipeline.replace(this, null, new HttpObjectAggregator(maxHttpContentLength));
                 ctx.fireChannelRead(ReferenceCountUtil.retain(msg));
             }
@@ -117,7 +119,7 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
     private static class UserEventLogger extends ChannelInboundHandlerAdapter {
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-            logger.debug("User Event Triggered: " + evt);
+            logger.debug("User Event Triggered: {}", evt);
             ctx.fireUserEventTriggered(evt);
         }
     }
