@@ -405,7 +405,7 @@ fi
 function read_concurrent_users() {
     declare -ag concurrent_users=()
     OPTIND=0
-    while getopts ":u:" opts $@; do
+    while getopts ":u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts $@; do
         case $opts in
         u)
             concurrent_users+=("${OPTARG}")
