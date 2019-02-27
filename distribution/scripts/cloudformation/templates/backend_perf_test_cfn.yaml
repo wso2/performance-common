@@ -21,28 +21,6 @@
     Description: Backend EC2 instance type
     Type: String
 {%- endblock %}
-{% block resources -%}
-  #Configure second private subnet
-  PrivateSubnet2:
-    Type: 'AWS::EC2::Subnet'
-    Properties:
-      VpcId: !Ref VPC
-      AvailabilityZone: !Select
-        - 1
-        - Fn::GetAZs: !Ref 'AWS::Region'
-      CidrBlock: 10.0.2.0/24
-      Tags:
-        - Key: Name
-          Value: !Join
-            - ':'
-            - - 'PrivateSubnet2'
-              - !Ref AWS::StackName
-  PrivateSubnet2RouteTableAssociation:
-    Type: 'AWS::EC2::SubnetRouteTableAssociation'
-    Properties:
-      SubnetId: !Ref PrivateSubnet2
-      RouteTableId: !Ref PrivateRouteTable
-{%- endblock %}
 {% block ec2instances -%}
 # JMeter Client
 {% call ec2instance('JMeterClientInstance', 'jmeter-client', '!Ref JMeterClientInstanceType',
