@@ -29,10 +29,10 @@ function initialize() {
 export -f initialize
 
 declare -A test_scenario0=(
-    [name]="netty-backend-http"
-    [display_name]="HTTP echo service"
-    [description]="An HTTP echo service implemented in Netty"
-    [jmx]="backend-test.jmx"
+    [name]="backend-h1c"
+    [display_name]="Echo service - HTTP/1.1 over cleartext"
+    [description]="An HTTP/1.1 over cleartext echo service implemented in Netty."
+    [jmx]="http-post-request.jmx"
     [protocol]="http"
     [path]="/"
     [use_backend]=true
@@ -40,12 +40,36 @@ declare -A test_scenario0=(
 )
 
 declare -A test_scenario1=(
-    [name]="netty-backend-https"
-    [display_name]="HTTPS echo service"
-    [description]="An HTTPS echo service implemented in Netty"
-    [jmx]="backend-test.jmx"
+    [name]="backend-h1"
+    [display_name]="Echo service - HTTP/1.1 over TLS"
+    [description]="An HTTP/1.1 over TLS echo service implemented in Netty."
+    [jmx]="http-post-request.jmx"
     [protocol]="https"
     [backend_flags]="--enable-ssl"
+    [path]="/"
+    [use_backend]=true
+    [skip]=false
+)
+
+declare -A test_scenario2=(
+    [name]="backend-h2c"
+    [display_name]="Echo service - HTTP/2 over cleartext"
+    [description]="An HTTP/2 over cleartext echo service implemented in Netty."
+    [jmx]="http2-post-request.jmx"
+    [protocol]="https"
+    [backend_flags]="--http2"
+    [path]="/"
+    [use_backend]=true
+    [skip]=false
+)
+
+declare -A test_scenario3=(
+    [name]="backend-h2"
+    [display_name]="Echo service - HTTP/2 over TLS"
+    [description]="An HTTP/2 over TLS echo service implemented in Netty."
+    [jmx]="http2-post-request.jmx"
+    [protocol]="https"
+    [backend_flags]="--http2 --enable-ssl"
     [path]="/"
     [use_backend]=true
     [skip]=false

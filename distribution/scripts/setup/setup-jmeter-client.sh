@@ -157,7 +157,7 @@ function setup() {
     fi
 
     echo "Setting up JMeter in $installation_dir"
-    $script_dir/../jmeter/install-jmeter.sh -f $jmeter_dist -i $installation_dir "${jmeter_plugins_array[@]}"
+    $script_dir/../jmeter/install-jmeter.sh -f $jmeter_dist -i $installation_dir "${jmeter_plugins_array[@]}" -p bzm-http2
 }
 export -f setup
 
@@ -165,4 +165,9 @@ if [[ ! -f $oracle_jdk_dist ]]; then
     SETUP_COMMON_ARGS+="-p openjdk-8-jdk"
 fi
 
-$script_dir/setup-common.sh "${opts[@]}" "$@" $SETUP_COMMON_ARGS -p zip -p unzip -p jq -p bc
+alpnboot_dir="/opt/alpnboot"
+mkdir -p $alpnboot_dir
+
+$script_dir/setup-common.sh "${opts[@]}" "$@" $SETUP_COMMON_ARGS -p zip -p unzip -p jq -p bc \
+    -w http://search.maven.org/remotecontent?filepath=org/mortbay/jetty/alpn/alpn-boot/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar \
+    -o $alpnboot_dir/alpnboot.jar
