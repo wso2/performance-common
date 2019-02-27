@@ -30,10 +30,8 @@ user="$default_user"
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 -f <java_dist> [-p <java_dir>] [-u <user>] [-h]"
+    echo "$0 [-u <user>] [-h]"
     echo ""
-    echo "-f: The jdk tar.gz file."
-    echo "-p: Java installation directory."
     echo "-u: Target user. Default: $default_user."
     echo "-h: Display this help and exit."
     echo ""
@@ -46,12 +44,30 @@ if [ "$UID" -ne "0" ]; then
     exit 9
 fi
 
+while getopts "u:h" opts; do
+    case $opts in
+    u)
+        user=${OPTARG}
+        ;;
+    h)
+        usage
+        exit 0
+        ;;
+    \?)
+        usage
+        exit 1
+        ;;
+    esac
+done
+
 if ! command -v docker >/dev/null 2>&1; then
     echo "docker is not installed! Installing docker.."
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
     add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
     apt-get update
     apt-get install -y docker-ce
+    #set docker user as a non root user
+    sudo usermod -aG docker $user
 else
     echo "docker is already installed."
 fi
