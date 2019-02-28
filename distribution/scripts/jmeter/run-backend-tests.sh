@@ -81,6 +81,9 @@ function before_execute_test_scenario() {
     local backend_flags=${scenario[backend_flags]}
     jmeter_params+=("host=$backend_host" "port=8688" "path=$service_path")
     jmeter_params+=("payload=$HOME/${msize}B.json" "response_size=${msize}B" "protocol=$protocol")
+    if [[ $backend_flags == *"http2"* ]]; then
+        JMETER_JVM_ARGS="-Xbootclasspath/p:/opt/alpnboot/alpnboot.jar"
+    fi
     if [[ "$netty_service_heap_size" == "$heap" ]]; then
         return 0
     fi
