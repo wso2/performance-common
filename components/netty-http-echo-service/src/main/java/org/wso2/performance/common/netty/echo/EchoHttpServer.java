@@ -75,8 +75,8 @@ public final class EchoHttpServer {
     @Parameter(names = "--http2", description = "Use HTTP/2 protocol instead of HTTP/1.1")
     private boolean http2 = false;
 
-    @Parameter(names = "--enable-ssl", description = "Enable SSL")
-    private boolean enableSSL = false;
+    @Parameter(names = "--ssl", description = "Enable SSL")
+    private boolean ssl = false;
 
     @Parameter(names = "--key-store-file", validateValueWith = KeyStoreFileValidator.class,
             description = "Keystore file")
@@ -112,7 +112,7 @@ public final class EchoHttpServer {
 
     private void startServer() throws SSLException, CertificateException, InterruptedException {
         logger.info("Echo HTTP/{} Server. Port: {}, Boss Threads: {}, Worker Threads: {}, SSL Enabled: {}" +
-                ", Sleep Time: {}ms", http2 ? "2.0" : "1.1", port, bossThreads, workerThreads, enableSSL, sleepTime);
+                ", Sleep Time: {}ms", http2 ? "2.0" : "1.1", port, bossThreads, workerThreads, ssl, sleepTime);
         // Print Max Heap Size
         logger.info("Max Heap Size: {}MB", Runtime.getRuntime().maxMemory() / (1024 * 1024));
         // Print Netty Version
@@ -144,7 +144,7 @@ public final class EchoHttpServer {
     private ServerBootstrap configureHttp1_1(ServerBootstrap b) throws SSLException, CertificateException {
         // Configure SSL.
         final SslContext sslCtx;
-        if (enableSSL) {
+        if (ssl) {
             SslContextBuilder sslContextBuilder = createSslContextBuilder();
             sslCtx = sslContextBuilder.build();
         } else {
@@ -168,7 +168,7 @@ public final class EchoHttpServer {
     private ServerBootstrap configureHttp2(ServerBootstrap b) throws SSLException, CertificateException {
         // Configure SSL.
         final SslContext sslCtx;
-        if (enableSSL) {
+        if (ssl) {
             ApplicationProtocolConfig protocolConfig =
                     new ApplicationProtocolConfig(ApplicationProtocolConfig.Protocol.ALPN,
                             ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
