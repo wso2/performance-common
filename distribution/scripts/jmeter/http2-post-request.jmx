@@ -46,7 +46,6 @@
           <boolProp name="HTTP2Request.follow_redirects">true</boolProp>
           <boolProp name="HTTP2Request.auto_redirects">false</boolProp>
           <stringProp name="HTTP2Request.request_id"></stringProp>
-          <boolProp name="HTTP2Request.sync_request">true</boolProp>
           <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </com.blazemeter.jmeter.http2.sampler.HTTP2Request>
         <hashTree>
