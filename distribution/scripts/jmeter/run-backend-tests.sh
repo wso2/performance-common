@@ -52,18 +52,6 @@ declare -A test_scenario1=(
 )
 
 declare -A test_scenario2=(
-    [name]="backend-h2c"
-    [display_name]="Echo service - HTTP/2 over cleartext"
-    [description]="An HTTP/2 over cleartext echo service implemented in Netty."
-    [jmx]="http2-post-request.jmx"
-    [protocol]="https"
-    [backend_flags]="--http2"
-    [path]="/"
-    [use_backend]=true
-    [skip]=false
-)
-
-declare -A test_scenario3=(
     [name]="backend-h2"
     [display_name]="Echo service - HTTP/2 over TLS"
     [description]="An HTTP/2 over TLS echo service implemented in Netty."
