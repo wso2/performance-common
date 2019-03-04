@@ -176,7 +176,6 @@ public final class EchoHttpServer {
                             ApplicationProtocolNames.HTTP_2, ApplicationProtocolNames.HTTP_1_1);
             SslContextBuilder sslContextBuilder = createSslContextBuilder();
             sslCtx = sslContextBuilder.applicationProtocolConfig(protocolConfig)
-                    .sslProvider(SslProvider.OPENSSL)
                     .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
                     .build();
         } else {
@@ -196,7 +195,7 @@ public final class EchoHttpServer {
             SelfSignedCertificate ssc = new SelfSignedCertificate();
             sslContextBuilder = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey());
         }
-        return sslContextBuilder;
+        return sslContextBuilder.sslProvider(SslProvider.OPENSSL);
     }
 
     private KeyManagerFactory getKeyManagerFactory(File keyStoreFile) {
