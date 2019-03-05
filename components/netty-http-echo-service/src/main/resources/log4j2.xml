@@ -32,6 +32,6 @@
             <AppenderRef ref="STDOUT"/>
             <AppenderRef ref="NETTY_LOGFILE"/>
         </Root>
-        <Logger name="org.wso2.performance.common.netty.echo" level="debug"/>
+        <Logger name="org.wso2.performance.common.netty.echo" level="info"/>
     </Loggers>
 </Configuration>
