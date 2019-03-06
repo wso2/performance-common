@@ -89,8 +89,8 @@ public final class EchoHttpServer {
     @Parameter(names = {"-h", "--help"}, description = "Display Help", help = true)
     private boolean help = false;
 
-    @Parameter(names = "--enable-http2-aggregator", description = "Enable HTTP/2 Aggregator")
-    private boolean enableHttp2Aggregator = true;
+    @Parameter(names = "--h2-aggregation", description = "Enable HTTP/2 message aggregation")
+    private boolean h2Aggregation = true;
 
     public static void main(String[] args) throws Exception {
         EchoHttpServer echoHttpServer = new EchoHttpServer();
@@ -201,7 +201,7 @@ public final class EchoHttpServer {
             b.option(ChannelOption.SO_BACKLOG, 1024);
             b.group(group)
                     .channel(NioServerSocketChannel.class)
-                    .childHandler(new Http2ServerInitializer(sslCtx, sleepTime, enableHttp2Aggregator));
+                    .childHandler(new Http2ServerInitializer(sslCtx, sleepTime, h2Aggregation));
 
             Channel ch = b.bind(port).sync().channel();
             ch.closeFuture().sync();

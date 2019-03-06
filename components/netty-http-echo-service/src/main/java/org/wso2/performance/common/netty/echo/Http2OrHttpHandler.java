@@ -37,19 +37,19 @@ public class Http2OrHttpHandler extends ApplicationProtocolNegotiationHandler {
 
     private static final int MAX_CONTENT_LENGTH = 1024 * 100;
     private final long sleepTime;
-    private final boolean enableHttp2Aggregator;
+    private final boolean h2Aggregation;
 
-    Http2OrHttpHandler(long sleepTime, boolean enableHttp2Aggregator) {
+    Http2OrHttpHandler(long sleepTime, boolean h2Aggregation) {
         super(ApplicationProtocolNames.HTTP_1_1);
         this.sleepTime = sleepTime;
-        this.enableHttp2Aggregator = enableHttp2Aggregator;
+        this.h2Aggregation = h2Aggregation;
     }
 
     @Override
     protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
         if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
 
-            if (enableHttp2Aggregator) {
+            if (h2Aggregation) {
                 DefaultHttp2Connection connection = new DefaultHttp2Connection(true);
                 InboundHttp2ToHttpAdapter listener = new InboundHttp2ToHttpAdapterBuilder(connection)
                         .propagateSettings(true)

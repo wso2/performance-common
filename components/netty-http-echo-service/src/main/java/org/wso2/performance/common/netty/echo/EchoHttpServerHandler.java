@@ -32,8 +32,8 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
- * Handler implementation for the echo server and http/2 echo server with aggregator.
- * For http/2 echo server with aggregator, this receives a {@link FullHttpRequest},
+ * Handler implementation for the echo server and http/2 echo server with message aggregation.
+ * For http/2 echo server with message aggregation, this receives a {@link FullHttpRequest},
  * which has been converted by a {@link InboundHttp2ToHttpAdapter} before it arrived here.
  * For further details, check {@link Http2OrHttpHandler} where the pipeline is setup.
  */
@@ -41,11 +41,11 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class EchoHttpServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     private long sleepTime;
-    private boolean enableHttp2Aggregator;
+    private boolean h2Aggregation;
 
-    EchoHttpServerHandler(long sleepTime, boolean enableHttp2Aggregator) {
+    EchoHttpServerHandler(long sleepTime, boolean h2Aggregation) {
         this.sleepTime = sleepTime;
-        this.enableHttp2Aggregator = enableHttp2Aggregator;
+        this.h2Aggregation = h2Aggregation;
     }
 
     @Override
@@ -58,7 +58,7 @@ public class EchoHttpServerHandler extends SimpleChannelInboundHandler<FullHttpR
             }
         }
 
-        if (enableHttp2Aggregator) {
+        if (h2Aggregation) {
             String streamId = getStreamId(request);
             FullHttpResponse response = EchoHttpServerHandler.buildFullHttpResponse(request);
             setStreamId(response, streamId);
