@@ -34,7 +34,7 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 /**
  * Handler implementation for the echo server and http/2 echo server with message aggregation.
  * For http/2 echo server with message aggregation, this receives a {@link FullHttpRequest},
- * which has been converted by a {@link InboundHttp2ToHttpAdapter} before it arrived here.
+ * which has been converted by a {@link InboundHttp2ToHttpAdapter} before it arrives here.
  * For further details, check {@link Http2OrHttpHandler} where the pipeline is setup.
  */
 @Sharable
