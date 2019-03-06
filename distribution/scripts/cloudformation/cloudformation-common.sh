@@ -405,7 +405,7 @@ fi
 function read_concurrent_users() {
     declare -ag concurrent_users=()
     OPTIND=0
-    while getopts ":u:" opts $@; do
+    while getopts ":u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts $@; do
         case $opts in
         u)
             concurrent_users+=("${OPTARG}")
@@ -588,6 +588,14 @@ function run_perf_tests_in_stack() {
     aws cloudformation wait stack-create-complete --stack-name $stack_id
     printf "Stack creation time: %s\n" "$(format_time $(measure_time $stack_create_start_time))"
 
+    # Get stack resources
+    local stack_resources_json=$stack_results_dir/stack-resources.json
+    echo "Saving $stack_name stack resources to $stack_resources_json"
+    aws cloudformation describe-stack-resources --stack-name $stack_id --no-paginate --output json >$stack_resources_json
+    # Print EC2 instances
+    echo "AWS EC2 instances: "
+    cat $stack_resources_json | jq -r '.StackResources | .[] | select ( .ResourceType == "AWS::EC2::Instance" ) | .LogicalResourceId'
+
     echo "Getting JMeter Client Public IP..."
     jmeter_client_ip="$(aws cloudformation describe-stacks --stack-name $stack_id --query 'Stacks[0].Outputs[?OutputKey==`JMeterClientPublicIP`].OutputValue' --output text)"
     echo "JMeter Client Public IP: $jmeter_client_ip"
@@ -648,7 +656,7 @@ cd $results_dir
 # Copy metadata before creating CSV
 cp cf-test-metadata.json test-metadata.json results
 # Create CSV
-$script_dir/../jmeter/create-summary-csv.sh -d results -n "${application_name}" -p "${metrics_file_prefix}" -j 2 -g "${gcviewer_jar_path}"
+$script_dir/../jmeter/create-summary-csv.sh -d results -n "${application_name}" -p "${metrics_file_prefix}" -j 2 -g "${gcviewer_jar_path}" -i
 # Zip results
 zip -9qmr results-all.zip results/
 

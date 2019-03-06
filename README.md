@@ -77,8 +77,8 @@ See following sections for more details.
 
 The performance test scripts can create AWS resources to run standard server performance tests on AWS.
 
-Standard server performance tests include a backend service and the parameters include "Application heap memory sizes",
-"Concurrent users", "Message sizes", and "Backend Sleep Times".
+Standard server performance tests include a Back-end service and the parameters include "Application heap memory sizes",
+"Concurrent users", "Message sizes", and "Back-end Sleep Times".
 
 The `create-template.py` script can create AWS CloudFormation template based on a `Jinja2` template. The `common_perf_test_cfn.yaml` file
 is a common `Jinja2` template, which has necessary configurations to create a performance test environment on AWS.
@@ -112,7 +112,7 @@ Usage:
 -r: Amazon S3 Bucket Region.
 -J: Amazon EC2 Instance Type for JMeter Client.
 -S: Amazon EC2 Instance Type for JMeter Server.
--N: Amazon EC2 Instance Type for Netty (Backend) Service.
+-N: Amazon EC2 Instance Type for Netty (Back-end) Service.
 -t: Number of stacks to create. Default: 1.
 -p: Parameter option of the test script, which will be used to run tests in parallel.
     Default: u. Allowed option characters: ubsm.
@@ -177,7 +177,7 @@ Usage:
 #### Running standard server performance tests.
 
 You shoud extend `perf-test-common.sh` to run standard server performance tests. It supports testing with multiple concurrent
-users, different message sizes, different backend service delays and different heap memory sizes of the target server.
+users, different message sizes, different Back-end service delays and different heap memory sizes of the target server.
 
 The script also supports running remote (distributed) JMeter tests and it will also summarize the results for warmup and
 measurement periods.
@@ -243,7 +243,7 @@ Usage:
 -m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Allowed suffixes: M, G.
 -u: Concurrent Users to test. You can give multiple options to specify multiple users.
 -b: Message sizes in bytes. You can give multiple options to specify multiple message sizes.
--s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times.
+-s: Back-end Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times.
 -d: Test Duration in seconds. Default 900.
 -w: Warm-up time in seconds. Default 300.
 -n: Number of JMeter servers. If n=1, only client will be used. If n > 1, remote JMeter servers will be used. Default 1.
@@ -284,7 +284,7 @@ Usage:
 -k: Number of Application instances. Default 1.
 -w: Use warmup results instead of measurement results.
 -i: Include GC statistics and load averages for other servers.
--l: Exclude Netty Backend Service statistics. Works with -i.
+-l: Exclude Netty Back-end Service statistics. Works with -i.
 -h: Display this help and exit.
 ```
 
