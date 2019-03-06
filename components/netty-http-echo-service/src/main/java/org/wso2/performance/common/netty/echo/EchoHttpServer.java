@@ -91,8 +91,8 @@ public final class EchoHttpServer {
     @Parameter(names = {"-h", "--help"}, description = "Display Help", help = true)
     private boolean help = false;
 
-    @Parameter(names = "--h2-aggregation", description = "Enable HTTP/2 message aggregation")
-    private boolean h2Aggregation = true;
+    @Parameter(names = "--h2-aggregate-content", description = "Enable HTTP/2 message aggregation")
+    private boolean h2AggregateContent = true;
 
     public static void main(String[] args) throws Exception {
         EchoHttpServer echoHttpServer = new EchoHttpServer();
@@ -184,7 +184,7 @@ public final class EchoHttpServer {
         } else {
             sslCtx = null;
         }
-        return b.childHandler(new Http2ServerInitializer(sslCtx, sleepTime, h2Aggregation));
+        return b.childHandler(new Http2ServerInitializer(sslCtx, sleepTime, h2AggregateContent));
     }
 
     private SslContextBuilder createSslContextBuilder() throws CertificateException {

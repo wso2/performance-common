@@ -49,7 +49,7 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
     private final SslContext sslCtx;
     private final int maxHttpContentLength;
     private final long sleepTime;
-    private final boolean h2Aggregation;
+    private final boolean h2AggregateContent;
 
     private static final UpgradeCodecFactory upgradeCodecFactory = protocol -> {
         if (AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)) {
@@ -60,18 +60,19 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
         }
     };
 
-    Http2ServerInitializer(SslContext sslCtx, long sleepTime, boolean enableHttp2Aggregator) {
-        this(sslCtx, sleepTime, enableHttp2Aggregator, 16 * 1024);
+    Http2ServerInitializer(SslContext sslCtx, long sleepTime, boolean h2AggregateContent) {
+        this(sslCtx, sleepTime, h2AggregateContent, 16 * 1024);
     }
 
-    private Http2ServerInitializer(SslContext sslCtx, long sleepTime, boolean h2Aggregation, int maxHttpContentLength) {
+    private Http2ServerInitializer(SslContext sslCtx, long sleepTime, boolean h2AggregateContent,
+                                   int maxHttpContentLength) {
         if (maxHttpContentLength < 0) {
             throw new IllegalArgumentException("maxHttpContentLength (expected >= 0): " + maxHttpContentLength);
         }
         this.sslCtx = sslCtx;
         this.maxHttpContentLength = maxHttpContentLength;
         this.sleepTime = sleepTime;
-        this.h2Aggregation = h2Aggregation;
+        this.h2AggregateContent = h2AggregateContent;
     }
 
     @Override
@@ -87,7 +88,7 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
      * Configure the pipeline for TLS NPN negotiation to HTTP/2.
      */
     private void configureSsl(SocketChannel ch) {
-        ch.pipeline().addLast(sslCtx.newHandler(ch.alloc()), new Http2OrHttpHandler(sleepTime, h2Aggregation));
+        ch.pipeline().addLast(sslCtx.newHandler(ch.alloc()), new Http2OrHttpHandler(sleepTime, h2AggregateContent));
     }
 
     /**
