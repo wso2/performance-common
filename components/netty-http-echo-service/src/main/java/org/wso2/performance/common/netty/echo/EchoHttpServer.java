@@ -17,8 +17,8 @@ package org.wso2.performance.common.netty.echo;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -45,6 +45,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -59,7 +60,8 @@ import javax.net.ssl.SSLException;
 public final class EchoHttpServer {
 
     private static final Logger logger = LoggerFactory.getLogger(EchoHttpServer.class);
-    private static final String HTTP2_VERSION = "2.0";
+
+    private static final PrintStream consoleErr = System.err;
 
     @Parameter(names = "--port", description = "Server Port")
     private int port = 8688;
@@ -70,18 +72,18 @@ public final class EchoHttpServer {
     @Parameter(names = "--worker-threads", description = "Worker Threads")
     private int workerThreads = 200;
 
-    @Parameter(names = "--enable-ssl", description = "Enable SSL")
-    private boolean enableSSL = false;
+    @Parameter(names = "--http2", description = "Use HTTP/2 protocol instead of HTTP/1.1")
+    private boolean http2 = false;
+
+    @Parameter(names = "--ssl", description = "Enable SSL")
+    private boolean ssl = false;
 
     @Parameter(names = "--key-store-file", validateValueWith = KeyStoreFileValidator.class,
             description = "Keystore file")
     private File keyStoreFile = null;
 
     @Parameter(names = "--key-store-password", description = "Keystore password")
-    private String keyStorePassword;
-
-    @Parameter(names = "--http-version", description = "Http version")
-    private static String httpVersion = "1.1";
+    private String keyStorePassword = "";
 
     @Parameter(names = "--sleep-time", description = "Sleep Time in milliseconds")
     private int sleepTime = 0;
@@ -93,37 +95,29 @@ public final class EchoHttpServer {
         EchoHttpServer echoHttpServer = new EchoHttpServer();
         final JCommander jcmdr = new JCommander(echoHttpServer);
         jcmdr.setProgramName(EchoHttpServer.class.getSimpleName());
-        jcmdr.parse(args);
+        try {
+            jcmdr.parse(args);
+        } catch (ParameterException ex) {
+            consoleErr.println(ex.getMessage());
+            return;
+        }
 
         if (echoHttpServer.help) {
             jcmdr.usage();
             return;
         }
 
-        if (httpVersion.equalsIgnoreCase(HTTP2_VERSION)) {
-            echoHttpServer.startHttp2Server();
-        } else {
-            echoHttpServer.startServer();
-        }
+        echoHttpServer.startServer();
     }
 
     private void startServer() throws SSLException, CertificateException, InterruptedException {
-        printServerInfo();
-        // Configure SSL.
-        final SslContext sslCtx;
-        if (enableSSL) {
-            if (keyStoreFile != null) {
-                KeyManagerFactory keyManagerFactory = getKeyManagerFactory(keyStoreFile);
-                sslCtx = SslContextBuilder.forServer(keyManagerFactory).build();
-                logger.info("Ssl context is created from {}", keyStoreFile.getAbsolutePath());
-            } else {
-                SelfSignedCertificate ssc = new SelfSignedCertificate();
-                sslCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey()).build();
-            }
-        } else {
-            sslCtx = null;
-        }
-
+        logger.info("Echo HTTP/{} Server. Port: {}, Boss Threads: {}, Worker Threads: {}, SSL Enabled: {}" +
+                ", Sleep Time: {}ms", http2 ? "2.0" : "1.1", port, bossThreads, workerThreads, ssl, sleepTime);
+        // Print Max Heap Size
+        logger.info("Max Heap Size: {}MB", Runtime.getRuntime().maxMemory() / (1024 * 1024));
+        // Print Netty Version
+        Version version = Version.identify(this.getClass().getClassLoader()).values().iterator().next();
+        logger.info("Netty Version: {}", version.artifactVersion());
         // Configure the server.
         EventLoopGroup bossGroup = new NioEventLoopGroup(bossThreads);
         EventLoopGroup workerGroup = new NioEventLoopGroup(workerThreads);
@@ -131,29 +125,12 @@ public final class EchoHttpServer {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .option(ChannelOption.SO_BACKLOG, 1024)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true)
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        public void initChannel(SocketChannel ch) {
-                            ChannelPipeline p = ch.pipeline();
-                            if (sslCtx != null) {
-                                p.addLast(sslCtx.newHandler(ch.alloc()));
-                            }
-                            p.addLast(new HttpServerCodec());
-                            p.addLast("aggregator", new HttpObjectAggregator(1048576));
-                            p.addLast(new EchoHttpServerHandler(sleepTime));
-                        }
-                    });
-
+                    .option(ChannelOption.SO_BACKLOG, 1024);
+            b = http2 ? configureHttp2(b) : configureHttp1_1(b);
 
             // Start the server.
             // Bind and start to accept incoming connections.
             ChannelFuture f = b.bind(port).sync();
-
-            // Wait until the server socket is closed.
-            // In this example, this does not happen, but you can do that to gracefully
-            // shut down your server.
 
             // Wait until the server socket is closed.
             f.channel().closeFuture().sync();
@@ -164,57 +141,61 @@ public final class EchoHttpServer {
         }
     }
 
-    private void startHttp2Server() throws SSLException, CertificateException, InterruptedException {
-        printServerInfo();
+    private ServerBootstrap configureHttp1_1(ServerBootstrap b) throws SSLException, CertificateException {
         // Configure SSL.
         final SslContext sslCtx;
-        if (enableSSL) {
-            if (keyStoreFile != null) {
-                KeyManagerFactory keyManagerFactory = getKeyManagerFactory(keyStoreFile);
-                sslCtx = SslContextBuilder.forServer(keyManagerFactory).applicationProtocolConfig(
-                        new ApplicationProtocolConfig(ApplicationProtocolConfig.Protocol.ALPN,
-                                ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
-                                ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-                                ApplicationProtocolNames.HTTP_2, ApplicationProtocolNames.HTTP_1_1))
-                        .sslProvider(SslProvider.OPENSSL)
-                        .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE).build();
-                logger.info("Ssl context is created from {}", keyStoreFile.getAbsolutePath());
-            } else {
-                SelfSignedCertificate ssc = new SelfSignedCertificate();
-                sslCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey())
-                        .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
-                        .sslProvider(SslProvider.OPENSSL).applicationProtocolConfig(
-                                new ApplicationProtocolConfig(ApplicationProtocolConfig.Protocol.ALPN,
-                                        ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
-                                        ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-                                        ApplicationProtocolNames.HTTP_2, ApplicationProtocolNames.HTTP_1_1)).build();
-            }
+        if (ssl) {
+            SslContextBuilder sslContextBuilder = createSslContextBuilder();
+            sslCtx = sslContextBuilder.build();
         } else {
             sslCtx = null;
         }
-        EventLoopGroup group = new NioEventLoopGroup();
-        try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.option(ChannelOption.SO_BACKLOG, 1024);
-            b.group(group)
-                    .channel(NioServerSocketChannel.class)
-                    .childHandler(new Http2ServerInitializer(sslCtx, sleepTime));
-
-            Channel ch = b.bind(port).sync().channel();
-            ch.closeFuture().sync();
-        } finally {
-            group.shutdownGracefully();
-        }
+        return b.childOption(ChannelOption.SO_KEEPALIVE, true)
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    public void initChannel(SocketChannel ch) {
+                        ChannelPipeline p = ch.pipeline();
+                        if (sslCtx != null) {
+                            p.addLast(sslCtx.newHandler(ch.alloc()));
+                        }
+                        p.addLast(new HttpServerCodec());
+                        p.addLast("aggregator", new HttpObjectAggregator(1048576));
+                        p.addLast(new EchoHttpServerHandler(sleepTime));
+                    }
+                });
     }
 
-    private void printServerInfo() {
-        logger.info("Echo HTTP/{} Server. Port: {}, Boss Threads: {}, Worker Threads: {}, SSL Enabled: {}" +
-                ", Sleep Time: {}ms", httpVersion, port, bossThreads, workerThreads, enableSSL, sleepTime);
-        // Print Max Heap Size
-        logger.info("Max Heap Size: {}MB", Runtime.getRuntime().maxMemory() / (1024 * 1024));
-        // Print Netty Version
-        Version version = Version.identify(this.getClass().getClassLoader()).values().iterator().next();
-        logger.info("Netty Version: {}", version.artifactVersion());
+    private ServerBootstrap configureHttp2(ServerBootstrap b) throws SSLException, CertificateException {
+        // Configure SSL.
+        final SslContext sslCtx;
+        if (ssl) {
+            ApplicationProtocolConfig protocolConfig =
+                    new ApplicationProtocolConfig(ApplicationProtocolConfig.Protocol.ALPN,
+                            ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                            ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                            ApplicationProtocolNames.HTTP_2, ApplicationProtocolNames.HTTP_1_1);
+            SslContextBuilder sslContextBuilder = createSslContextBuilder();
+            sslCtx = sslContextBuilder.applicationProtocolConfig(protocolConfig)
+                    .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
+                    .build();
+        } else {
+            sslCtx = null;
+        }
+        return b.childHandler(new Http2ServerInitializer(sslCtx, sleepTime));
+    }
+
+    private SslContextBuilder createSslContextBuilder() throws CertificateException {
+        final SslContextBuilder sslContextBuilder;
+        if (keyStoreFile != null) {
+            logger.info("Creating SSL context using the key store {}", keyStoreFile.getAbsolutePath());
+            KeyManagerFactory keyManagerFactory = getKeyManagerFactory(keyStoreFile);
+            sslContextBuilder = SslContextBuilder.forServer(keyManagerFactory);
+        } else {
+            logger.info("Creating SSL context using self signed certificate");
+            SelfSignedCertificate ssc = new SelfSignedCertificate();
+            sslContextBuilder = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey());
+        }
+        return sslContextBuilder.sslProvider(SslProvider.OPENSSL);
     }
 
     private KeyManagerFactory getKeyManagerFactory(File keyStoreFile) {
