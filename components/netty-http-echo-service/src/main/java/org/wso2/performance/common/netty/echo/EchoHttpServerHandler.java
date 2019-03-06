@@ -26,7 +26,6 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http2.HttpConversionUtil;
-import io.netty.handler.codec.http2.InboundHttp2ToHttpAdapter;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -34,7 +33,7 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 /**
  * Handler implementation for the echo server and http/2 echo server with content aggregation.
  * For http/2 echo server with content aggregation, this receives a {@link FullHttpRequest},
- * which has been converted by a {@link InboundHttp2ToHttpAdapter} before it arrives here.
+ * which has been converted by a {@link io.netty.handler.codec.http2.InboundHttp2ToHttpAdapter} before it arrives here.
  * For further details, check {@link Http2OrHttpHandler} where the pipeline is setup.
  */
 @Sharable
