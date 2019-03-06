@@ -91,7 +91,7 @@ public final class EchoHttpServer {
     @Parameter(names = {"-h", "--help"}, description = "Display Help", help = true)
     private boolean help = false;
 
-    @Parameter(names = "--h2-aggregate-content", description = "Enable HTTP/2 message aggregation")
+    @Parameter(names = "--h2-aggregate-content", description = "Enable HTTP/2 content aggregation")
     private boolean h2AggregateContent = true;
 
     public static void main(String[] args) throws Exception {
