@@ -91,6 +91,9 @@ public final class EchoHttpServer {
     @Parameter(names = {"-h", "--help"}, description = "Display Help", help = true)
     private boolean help = false;
 
+    @Parameter(names = "--h2-aggregate-content", description = "Enable HTTP/2 content aggregation")
+    private boolean h2AggregateContent = true;
+
     public static void main(String[] args) throws Exception {
         EchoHttpServer echoHttpServer = new EchoHttpServer();
         final JCommander jcmdr = new JCommander(echoHttpServer);
@@ -160,7 +163,7 @@ public final class EchoHttpServer {
                         }
                         p.addLast(new HttpServerCodec());
                         p.addLast("aggregator", new HttpObjectAggregator(1048576));
-                        p.addLast(new EchoHttpServerHandler(sleepTime));
+                        p.addLast(new EchoHttpServerHandler(sleepTime, false));
                     }
                 });
     }
@@ -181,7 +184,7 @@ public final class EchoHttpServer {
         } else {
             sslCtx = null;
         }
-        return b.childHandler(new Http2ServerInitializer(sslCtx, sleepTime));
+        return b.childHandler(new Http2ServerInitializer(sslCtx, sleepTime, h2AggregateContent));
     }
 
     private SslContextBuilder createSslContextBuilder() throws CertificateException {

@@ -25,29 +25,30 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpUtil;
+import io.netty.handler.codec.http2.HttpConversionUtil;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
- * Handler implementation for the echo server.
+ * Handler implementation for the echo server and http/2 echo server with content aggregation.
+ * For http/2 echo server with content aggregation, this receives a {@link FullHttpRequest},
+ * which has been converted by a {@link io.netty.handler.codec.http2.InboundHttp2ToHttpAdapter} before it arrives here.
+ * For further details, check {@link Http2OrHttpHandler} where the pipeline is setup.
  */
 @Sharable
 public class EchoHttpServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     private long sleepTime;
+    private boolean h2AggregateContent;
 
-    EchoHttpServerHandler(long sleepTime) {
+    EchoHttpServerHandler(long sleepTime, boolean h2AggregateContent) {
         this.sleepTime = sleepTime;
+        this.h2AggregateContent = h2AggregateContent;
     }
 
     @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) {
-        ctx.flush();
-    }
-
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) {
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
         if (sleepTime > 0) {
             try {
                 Thread.sleep(sleepTime);
@@ -56,18 +57,43 @@ public class EchoHttpServerHandler extends SimpleChannelInboundHandler<FullHttpR
             }
         }
 
-        boolean keepAlive = HttpUtil.isKeepAlive(msg);
-        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, msg.content().copy());
-        String contentType = msg.headers().get(HttpHeaderNames.CONTENT_TYPE);
+        if (h2AggregateContent) {
+            String streamId = getStreamId(request);
+            FullHttpResponse response = EchoHttpServerHandler.buildFullHttpResponse(request);
+            setStreamId(response, streamId);
+            ctx.write(response);
+        } else {
+            boolean keepAlive = HttpUtil.isKeepAlive(request);
+            FullHttpResponse response = buildFullHttpResponse(request);
+            if (!keepAlive) {
+                ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+            } else {
+                response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+                ctx.write(response);
+            }
+        }
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) {
+        ctx.flush();
+    }
+
+    private static FullHttpResponse buildFullHttpResponse(FullHttpRequest request) {
+        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, request.content().copy());
+        String contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType != null) {
             response.headers().set(HttpHeaderNames.CONTENT_TYPE, contentType);
         }
         response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
-        if (!keepAlive) {
-            ctx.write(response).addListener(ChannelFutureListener.CLOSE);
-        } else {
-            response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-            ctx.write(response);
-        }
+        return response;
+    }
+
+    private String getStreamId(FullHttpRequest request) {
+        return request.headers().get(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text());
+    }
+
+    private void setStreamId(FullHttpResponse response, String streamId) {
+        response.headers().set(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text(), streamId);
     }
 }

@@ -33,15 +33,10 @@ import io.netty.handler.codec.http2.Http2HeadersFrame;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 
 /**
- * Handler implementation for the http2 echo server.
+ * Handler implementation for the http/2 echo server without content aggregation. This echo backs the header/data
+ * frames as soon as they arrive without any content aggregation against stream id.
  */
 public class EchoHttp2ServerHandler extends ChannelDuplexHandler {
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        super.exceptionCaught(ctx, cause);
-        ctx.close();
-    }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -73,5 +68,11 @@ public class EchoHttp2ServerHandler extends ChannelDuplexHandler {
         if (headersFrame.isEndStream()) {
             ctx.write(new DefaultHttp2DataFrame(new EmptyByteBuf(ctx.alloc()), true).stream(stream));
         }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        super.exceptionCaught(ctx, cause);
+        ctx.close();
     }
 }
