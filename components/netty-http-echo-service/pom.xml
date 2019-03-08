@@ -164,6 +164,7 @@
                 </executions>
                 <configuration>
                     <testFilesDirectory>${project.basedir}/../../distribution/scripts/jmeter</testFilesDirectory>
+                    <propertiesFilesDirectory>${project.basedir}/../../distribution/scripts/jmeter</propertiesFilesDirectory>
                     <testFilesIncluded>
                         <jMeterTestFile>http-post-request.jmx</jMeterTestFile>
                     </testFilesIncluded>
