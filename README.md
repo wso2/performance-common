@@ -399,20 +399,28 @@ Usage: EchoHttpServer [options]
     --boss-threads
       Boss Threads
       Default: 4
-    --enable-ssl
-      Enable SSL
-      Default: false
+    --delay
+      Response delay in milliseconds
+      Default: 0
     -h, --help
       Display Help
+    --http2
+      Use HTTP/2 protocol instead of HTTP/1.1
+      Default: false
+    --key-store-file
+      Keystore file
+    --key-store-password
+      Keystore password
+      Default: <empty string>
     --port
       Server Port
       Default: 8688
-    --sleep-time
-      Sleep Time in milliseconds
-      Default: 0
+    --ssl
+      Enable SSL
+      Default: false
     --worker-threads
       Worker Threads
-      Default: 200
+      Default: 8
 ```
 
 ### Payloads

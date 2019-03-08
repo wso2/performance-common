@@ -75,9 +75,9 @@ function before_execute_test_scenario() {
     if [[ "$netty_service_heap_size" == "$heap" ]]; then
         return 0
     fi
-    echo "Restarting Backend Service. Worker Threads: $users, Sleep Time: $sleep_time, Additional Flags: ${backend_flags:-N/A}"
+    echo "Restarting Backend Service. Heap: $heap, Delay: $sleep_time, Additional Flags: ${backend_flags:-N/A}"
     ssh $backend_ssh_host "./netty-service/netty-start.sh -m $heap -w \
-     -- ${backend_flags} --worker-threads $users --sleep-time $sleep_time"
+     -- ${backend_flags} --delay $sleep_time"
 }
 
 function after_execute_test_scenario() {

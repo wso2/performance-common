@@ -85,7 +85,7 @@ public final class EchoHttpServer {
     @Parameter(names = "--key-store-password", description = "Keystore password")
     private String keyStorePassword = "";
 
-    @Parameter(names = "--sleep-time", description = "Sleep Time in milliseconds")
+    @Parameter(names = "--delay", description = "Response delay in milliseconds")
     private int sleepTime = 0;
 
     @Parameter(names = {"-h", "--help"}, description = "Display Help", help = true)
