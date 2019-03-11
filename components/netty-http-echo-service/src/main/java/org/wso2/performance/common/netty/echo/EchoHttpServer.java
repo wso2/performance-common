@@ -37,6 +37,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.ssl.SupportedCipherSuiteFilter;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
+import io.netty.util.NettyRuntime;
 import io.netty.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,10 +68,10 @@ public final class EchoHttpServer {
     private int port = 8688;
 
     @Parameter(names = "--boss-threads", description = "Boss Threads")
-    private int bossThreads = Runtime.getRuntime().availableProcessors();
+    private int bossThreads = NettyRuntime.availableProcessors();
 
     @Parameter(names = "--worker-threads", description = "Worker Threads")
-    private int workerThreads = 200;
+    private int workerThreads = NettyRuntime.availableProcessors() * 2;
 
     @Parameter(names = "--http2", description = "Use HTTP/2 protocol instead of HTTP/1.1")
     private boolean http2 = false;
@@ -85,7 +86,7 @@ public final class EchoHttpServer {
     @Parameter(names = "--key-store-password", description = "Keystore password")
     private String keyStorePassword = "";
 
-    @Parameter(names = "--sleep-time", description = "Sleep Time in milliseconds")
+    @Parameter(names = "--delay", description = "Response delay in milliseconds")
     private int sleepTime = 0;
 
     @Parameter(names = {"-h", "--help"}, description = "Display Help", help = true)

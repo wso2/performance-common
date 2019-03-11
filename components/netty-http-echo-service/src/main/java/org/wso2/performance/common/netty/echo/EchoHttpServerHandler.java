@@ -27,6 +27,8 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http2.HttpConversionUtil;
 
+import java.util.concurrent.TimeUnit;
+
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
@@ -49,14 +51,6 @@ public class EchoHttpServerHandler extends SimpleChannelInboundHandler<FullHttpR
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
-        if (sleepTime > 0) {
-            try {
-                Thread.sleep(sleepTime);
-            } catch (InterruptedException e) {
-                // Ignore
-            }
-        }
-
         if (h2AggregateContent) {
             String streamId = getStreamId(request);
             FullHttpResponse response = EchoHttpServerHandler.buildFullHttpResponse(request);
@@ -76,7 +70,11 @@ public class EchoHttpServerHandler extends SimpleChannelInboundHandler<FullHttpR
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
-        ctx.flush();
+        if (sleepTime > 0) {
+            ctx.executor().schedule(ctx::flush, sleepTime, TimeUnit.MILLISECONDS);
+        } else {
+            ctx.flush();
+        }
     }
 
     private static FullHttpResponse buildFullHttpResponse(FullHttpRequest request) {
