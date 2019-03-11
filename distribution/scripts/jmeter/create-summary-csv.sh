@@ -20,6 +20,8 @@
 script_dir=$(dirname "$0")
 # Application Name to be used in column headers
 application_name=""
+default_filename="summary.csv"
+filename="$default_filename"
 default_header_names=("Heap Size" "Concurrent Users" "Message Size (Bytes)" "Back-end Service Delay (ms)")
 declare -a header_names
 # Results are usually in following directory structure:
@@ -57,11 +59,12 @@ function join_by() {
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 -n <application_name> [-c <column_header_name>] [-r <regex>] [-x] "
+    echo "$0 -n <application_name> [-o <filename>] [-c <column_header_name>] [-r <regex>] [-x] "
     echo "   [-p <file_prefix>] [-g <gcviewer_jar_path>] [-d <results_dir>]"
     echo "   [-j <jmeter_servers>] [-k <application_instance_count>] [-w] [-i] [-l] [-h]"
     echo ""
     echo "-n: Name of the application to be used in column headers."
+    echo "-o: Output filename. Default: $default_filename"
     echo "-c: Column header name for each parameter."
     echo "    You should give multiple header names in order for each directory in the results directory structure."
     echo "    Default: $(join_by , "${default_header_names[@]}")"
@@ -71,9 +74,9 @@ function usage() {
     echo "-x: Print column names and exit."
     echo "-p: Prefix of the files to get metrics (Load Average, GC, etc)."
     echo "-g: Path of GCViewer Jar file, which will be used to analyze GC logs."
-    echo "-d: Results directory. Default $default_results_dir."
-    echo "-j: Number of JMeter servers. If n=1, only client was used. If n > 1, remote JMeter servers were used. Default $default_jmeter_servers."
-    echo "-k: Number of Application instances. Default $default_application_instance_count."
+    echo "-d: Results directory. Default: $default_results_dir."
+    echo "-j: Number of JMeter servers. If n=1, only client was used. If n > 1, remote JMeter servers were used. Default: $default_jmeter_servers."
+    echo "-k: Number of Application instances. Default: $default_application_instance_count."
     echo "-w: Use warmup results instead of measurement results."
     echo "-i: Include GC statistics and load averages for other servers."
     echo "-l: Exclude Netty Backend Service statistics. Works with -i."
@@ -81,10 +84,13 @@ function usage() {
     echo ""
 }
 
-while getopts "n:c:r:xp:g:d:j:k:wilh" opts; do
+while getopts "n:o:c:r:xp:g:d:j:k:wilh" opts; do
     case $opts in
     n)
         application_name=${OPTARG}
+        ;;
+    o)
+        filename=${OPTARG}
         ;;
     c)
         header_names+=("${OPTARG}")
@@ -147,6 +153,11 @@ fi
 # Validate options
 if [[ -z $application_name ]]; then
     echo "Please specify the application name."
+    exit 1
+fi
+
+if [[ -z $filename ]]; then
+    echo "Please specify the output filename."
     exit 1
 fi
 
@@ -240,6 +251,7 @@ if [ "$print_column_names" = true ]; then
     exit 0
 fi
 
+# Following should be validated only if "$print_column_names" = false
 if [[ -z $file_prefix ]]; then
     echo "Please specify the prefix of the files."
     exit 1
@@ -250,18 +262,15 @@ if [[ -z $application_instance_count ]]; then
     exit 1
 fi
 
-if [[ ! -d $results_dir ]]; then
-    echo "Please specify the results directory."
-    exit 1
-fi
-
 if [[ ! -f $gcviewer_jar_path ]]; then
     echo "Please specify the path to GCViewer JAR file."
     exit 1
 fi
 
-# Output file name
-filename="summary.csv"
+if [[ ! -d $results_dir ]]; then
+    echo "Please specify the results directory."
+    exit 1
+fi
 
 if [[ -f $filename ]]; then
     echo "$filename already exists"
