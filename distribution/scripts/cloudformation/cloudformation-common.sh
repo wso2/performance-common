@@ -34,6 +34,7 @@ check_command python
 check_command ts
 
 script_start_time=$(date +%s)
+user_email=""
 performance_scripts_distribution=""
 default_results_dir="results-$(date +%Y%m%d%H%M%S)"
 results_dir="$default_results_dir"
@@ -61,7 +62,7 @@ ALLOWED_OPTIONS="ubsm"
 function usage() {
     echo ""
     echo "Usage: "
-    echo "${script_name:-$0} -f <performance_scripts_distribution> [-d <results_dir>] -k <key_file> -n <key_name>"
+    echo "${script_name:-$0} -u <user_email> -f <performance_scripts_distribution> [-d <results_dir>] -k <key_file> -n <key_name>"
     echo "   -j <jmeter_distribution> -o <oracle_jdk_distribution> -g <gcviewer_jar_path>"
     echo "   -s <stack_name_prefix> -b <s3_bucket_name> -r <s3_bucket_region>"
     echo "   -J <jmeter_client_ec2_instance_type> -S <jmeter_server_ec2_instance_type>"
@@ -72,6 +73,7 @@ function usage() {
     echo "   [-t <number_of_stacks>] [-p <parallel_parameter_option>] [-w <minimum_stack_creation_wait_time>]"
     echo "   [-h] -- [run_performance_tests_options]"
     echo ""
+    echo "-u: Email of the user running this script."
     echo "-f: Distribution containing the scripts to run performance tests."
     echo "-d: The results directory. Default value is a directory with current time. For example, $default_results_dir."
     echo "-k: Amazon EC2 Key File. Amazon EC2 Key Name must match with this file name."
@@ -97,8 +99,11 @@ function usage() {
     echo ""
 }
 
-while getopts "f:d:k:n:j:o:g:s:b:r:J:S:N:t:p:w:h" opts; do
+while getopts "u:f:d:k:n:j:o:g:s:b:r:J:S:N:t:p:w:h" opts; do
     case $opts in
+    u)
+        user_email=${OPTARG}
+        ;;
     f)
         performance_scripts_distribution=${OPTARG}
         ;;
@@ -160,6 +165,16 @@ done
 shift "$((OPTIND - 1))"
 
 run_performance_tests_options=("$@")
+
+if [[ -z $user_email ]]; then
+    echo "Please provide your email address."
+    exit 1
+fi
+
+if ! [[ "$user_email" =~ (.+)@(.+) ]]; then
+    echo "Provided email address \"$user_email\" is invalid."
+    exit 1
+fi
 
 if [[ ! -f $performance_scripts_distribution ]]; then
     echo "Please provide Performance Distribution."
@@ -463,6 +478,7 @@ echo "Listing files in S3 Bucket $s3_bucket_name..."
 aws --region $s3_bucket_region s3 ls --summarize s3://$s3_bucket_name
 
 declare -A cf_parameters
+cf_parameters[UserEmail]="$user_email"
 cf_parameters[KeyName]="$key_name"
 cf_parameters[BucketName]="$s3_bucket_name"
 cf_parameters[BucketRegion]="$s3_bucket_region"

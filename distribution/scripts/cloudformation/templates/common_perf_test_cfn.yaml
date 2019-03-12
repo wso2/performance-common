@@ -43,6 +43,11 @@ Mappings:
 # User inputs
 #############################
 Parameters:
+  UserEmail:
+    Type: String
+    Description: Email address of the user creating this stack
+    AllowedPattern: '[^\s@]+@[^\s@]+\.[^\s@]+'
+    ConstraintDescription: You should enter a valid email
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
@@ -179,6 +184,8 @@ Resources:
             - ':'
             - - 'VPC'
               - !Ref AWS::StackName
+        - Key: User
+          Value: !Ref UserEmail
   # Configure Public Subnet
   PublicSubnet:
     Type: 'AWS::EC2::Subnet'
@@ -194,6 +201,8 @@ Resources:
             - ':'
             - - 'PublicSubnet'
               - !Ref AWS::StackName
+        - Key: User
+          Value: !Ref UserEmail
   InternetGateway:
     Type: 'AWS::EC2::InternetGateway'
     Properties:
@@ -203,6 +212,8 @@ Resources:
             - ':'
             - - 'InternetGateway'
               - !Ref AWS::StackName
+        - Key: User
+          Value: !Ref UserEmail
   AttachGateway:
     Type: 'AWS::EC2::VPCGatewayAttachment'
     Properties:
@@ -218,6 +229,8 @@ Resources:
             - ':'
             - - 'PublicRouteTable'
               - !Ref AWS::StackName
+        - Key: User
+          Value: !Ref UserEmail
   PublicRoute:
     Type: 'AWS::EC2::Route'
     DependsOn: AttachGateway
@@ -245,6 +258,8 @@ Resources:
             - ':'
             - - 'PrivateSubnet'
               - !Ref AWS::StackName
+        - Key: User
+          Value: !Ref UserEmail
   NatGateway:
     Type: 'AWS::EC2::NatGateway'
     DependsOn: AttachGateway
@@ -259,6 +274,8 @@ Resources:
             - ':'
             - - 'NatGateway'
               - !Ref AWS::StackName
+        - Key: User
+          Value: !Ref UserEmail
   NatGatewayIPAddress:
     Type: 'AWS::EC2::EIP'
     DependsOn: AttachGateway
@@ -274,6 +291,8 @@ Resources:
             - ':'
             - - 'PrivateRouteTable'
               - !Ref AWS::StackName
+        - Key: User
+          Value: !Ref UserEmail
   PrivateRoute:
     Type: 'AWS::EC2::Route'
     DependsOn: AttachGateway
@@ -439,6 +458,8 @@ Resources:
               - ':'
               - - '{{ name }}'
                 - !Ref AWS::StackName
+        - Key: User
+          Value: !Ref UserEmail
       NetworkInterfaces:
         - GroupSet:
             - !Ref InstanceSecurityGroup
