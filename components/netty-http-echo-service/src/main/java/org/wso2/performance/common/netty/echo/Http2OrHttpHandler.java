@@ -60,7 +60,8 @@ public class Http2OrHttpHandler extends ApplicationProtocolNegotiationHandler {
                         .connection(connection).build());
                 ctx.pipeline().addLast(new EchoHttpServerHandler(sleepTime, true));
             } else {
-                ctx.pipeline().addLast(Http2FrameCodecBuilder.forServer().build(), new EchoHttp2ServerHandler());
+                ctx.pipeline()
+                        .addLast(Http2FrameCodecBuilder.forServer().build(), new EchoHttp2ServerHandler(sleepTime));
             }
             return;
         }

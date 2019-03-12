@@ -30,6 +30,8 @@ import io.netty.handler.codec.http2.Http2FrameStream;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2HeadersFrame;
 
+import java.util.concurrent.TimeUnit;
+
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 
 /**
@@ -37,6 +39,12 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
  * frames as soon as they arrive without any content aggregation against stream id.
  */
 public class EchoHttp2ServerHandler extends ChannelDuplexHandler {
+
+    private long sleepTime;
+
+    EchoHttp2ServerHandler(long sleepTime) {
+        this.sleepTime = sleepTime;
+    }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -51,7 +59,11 @@ public class EchoHttp2ServerHandler extends ChannelDuplexHandler {
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
-        ctx.flush();
+        if (sleepTime > 0) {
+            ctx.executor().schedule(ctx::flush, sleepTime, TimeUnit.MILLISECONDS);
+        } else {
+            ctx.flush();
+        }
     }
 
     private static void onDataRead(ChannelHandlerContext ctx, Http2DataFrame data) {

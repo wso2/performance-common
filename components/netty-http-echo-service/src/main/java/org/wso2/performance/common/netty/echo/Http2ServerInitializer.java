@@ -48,13 +48,13 @@ public class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {
 
     private final SslContext sslCtx;
     private final int maxHttpContentLength;
-    private final long sleepTime;
     private final boolean h2AggregateContent;
+    private long sleepTime;
 
-    private static final UpgradeCodecFactory upgradeCodecFactory = protocol -> {
+    private final UpgradeCodecFactory upgradeCodecFactory = protocol -> {
         if (AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)) {
             return new Http2ServerUpgradeCodec(
-                    Http2FrameCodecBuilder.forServer().build(), new EchoHttp2ServerHandler());
+                    Http2FrameCodecBuilder.forServer().build(), new EchoHttp2ServerHandler(sleepTime));
         } else {
             return null;
         }
