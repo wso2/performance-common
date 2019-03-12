@@ -676,8 +676,22 @@ done < <(get_columns)
 echo "Creating summary results markdown file..."
 $script_dir/../jmeter/create-summary-markdown.py --json-files cf-test-metadata.json test-metadata.json --column-names "${column_names[@]}"
 
-echo "Warmup Results:"
-cat summary-warmup.csv | cut -d, -f 1-13 | column -t -s,
+function print_summary() {
+    cat $1 | cut -d, -f 1-13 | column -t -s,
+}
 
+echo -ne "\n\n"
+echo "Warmup Results:"
+print_summary summary-warmup.csv
+
+echo -ne "\n\n"
 echo "Measurement Results:"
-cat summary.csv | cut -d, -f 1-13 | column -t -s,
+print_summary summary.csv
+
+awk -F, '{ if ($8 > 0)  print }' summary.csv >summary-errors.csv
+
+if [[ $(wc -l <summary-errors.csv) -gt 1 ]]; then
+    echo -ne "\n\n"
+    echo "WARNING: There are errors in measurement results! Please check."
+    print_summary summary-errors.csv
+fi
