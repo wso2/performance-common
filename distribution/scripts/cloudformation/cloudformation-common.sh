@@ -513,7 +513,8 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     cf_template=$stack_results_dir/${aws_cloudformation_template_filename}
     jmeter_servers=${jmeter_servers_per_stack[$i]}
     echo "JMeter Servers: $jmeter_servers"
-    $script_dir/create-template.py --template-name ${aws_cloudformation_template_filename} --output-name $cf_template \
+    $script_dir/create-template.py ${CREATE_TEMPLATE_OPTS} --template-name ${aws_cloudformation_template_filename} \
+        --output-name $cf_template \
         --jmeter-servers $jmeter_servers --start-bastion
     echo "Validating stack: $stack_name: $cf_template"
     aws cloudformation validate-template --template-body file://$cf_template
