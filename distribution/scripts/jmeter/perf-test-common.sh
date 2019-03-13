@@ -284,7 +284,7 @@ if ! [[ $jmeter_servers =~ $number_regex ]]; then
 fi
 
 for users in ${concurrent_users_array[@]}; do
-    remainder=$(bc <<< "scale=0; ${users}%${jmeter_servers}")
+    remainder=$(bc <<<"scale=0; ${users}%${jmeter_servers}")
     if ! [[ $remainder -eq 0 ]]; then
         echo "Unable to split $users users into $jmeter_servers JMeter servers."
         exit 1
@@ -513,7 +513,7 @@ function test_scenarios() {
                         fi
                         local start_time=$(date +%s)
                         #requests served by multiple jmeter servers if $jmeter_servers > 1
-                        local users_per_jmeter=$(bc <<< "scale=0; ${users}/${jmeter_servers}")
+                        local users_per_jmeter=$(bc <<<"scale=0; ${users}/${jmeter_servers}")
 
                         test_counter=$((test_counter + 1))
                         local scenario_desc="Test No: ${test_counter}, Scenario Name: ${scenario_name}, Duration: $test_duration"
@@ -566,7 +566,9 @@ function test_scenarios() {
                         echo "Starting JMeter Client with JVM_ARGS=$JVM_ARGS"
                         echo "$jmeter_command"
                         # Run JMeter
-                        $jmeter_command
+                        if ! $jmeter_command; then
+                            echo "WARNING: JMeter execution failed."
+                        fi
 
                         write_server_metrics jmeter
                         write_server_metrics netty $backend_ssh_host netty
@@ -576,10 +578,12 @@ function test_scenarios() {
                             done
                         fi
 
-                        $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -t $warmup_time -u SECONDS -s
+                        if [[ -f ${report_location}/results.jtl ]]; then
+                            $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -t $warmup_time -u SECONDS -s
 
-                        echo "Zipping JTL files in ${report_location}"
-                        zip -jm ${report_location}/jtls.zip ${report_location}/results*.jtl
+                            echo "Zipping JTL files in ${report_location}"
+                            zip -jm ${report_location}/jtls.zip ${report_location}/results*.jtl
+                        fi
 
                         if [[ $sleep_time -ge 0 ]]; then
                             download_file $backend_ssh_host netty-service/logs/netty.log netty.log
