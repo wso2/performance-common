@@ -23,7 +23,6 @@ import seaborn as sns
 
 df_charts = None
 
-
 def format_bytes(b):
     if b >= 1024 and b % 1024 == 0:
         return str(b // 1024) + 'KiB'
@@ -57,15 +56,12 @@ def save_multi_columns_categorical_charts(df, chart, columns, y, title,col,isSin
     filename = chart + ".png"
     print("Creating chart: " + title + ", File name: " + filename)
     fig, ax = plt.subplots()
-
     if isSingleComparison:
         all_columns = [col,'Message Size (Bytes)', 'Concurrent Users','Scenario Name']
     else:
         all_columns = [col, 'Concurrent Users', 'Scenario Name']
-
     all_columns.extend(columns)
     df_results = df[all_columns]
-
     if single_statistic:
         if isSingleComparison:
             df_results['hue'] = df_results['Message Size (Bytes)'] + ' - ' + df_results['Scenario Name']
@@ -79,13 +75,10 @@ def save_multi_columns_categorical_charts(df, chart, columns, y, title,col,isSin
             df_results = df_results.melt(id_vars=['Scenario Name', 'Concurrent Users',col],
                                          value_vars=columns, value_name=y)
             df_results['hue'] = df_results.variable + ' - ' + df_results['Scenario Name']
-
-
     graph = sns.catplot(x="Concurrent Users", y=y,
                            hue='hue', col=col,
                            data=df_results, kind=kind,
                            height=7, aspect=1, col_wrap=2, legend=False)
-
     plt.subplots_adjust(top=0.9, left=0.1)
     graph.fig.suptitle(title)
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.,title="Response Time Summary")
