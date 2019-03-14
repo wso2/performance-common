@@ -18,7 +18,6 @@
 # ----------------------------------------------------------------------------
 import pandas as pd
 import seaborn as sns
-import sys
 import argparse
 
 from . import draw_charts

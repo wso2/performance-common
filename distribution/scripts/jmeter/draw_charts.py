@@ -46,7 +46,7 @@ def add_chart_details(title, filename):
 
 def save_charts_details():
     print("Saving charts' details to charts.csv")
-    df_charts.sort_index().to_csv("charts.csv")
+    df_charts.sort_index().to_csv("all-comparison-plots/charts.csv")
 
 
 atexit.register(save_charts_details)
@@ -82,7 +82,7 @@ def save_multi_columns_categorical_charts(df, chart, columns, y, title,col,isSin
     plt.subplots_adjust(top=0.9, left=0.1)
     graph.fig.suptitle(title)
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.,title="Response Time Summary")
-    graph.savefig(filename)
+    graph.savefig("all-comparison-plots/"+filename)
     plt.clf()
     plt.cla()
     plt.close(fig)
@@ -102,7 +102,7 @@ def save_lmplot(df, chart, x, y, title, hue=None, xlabel=None, ylabel=None):
     g.set_axis_labels(xlabel, ylabel)
     g.set(ylim=(0, None))
     g.fig.suptitle(title)
-    plt.savefig(filename)
+    plt.savefig("all-comparison-plots/"+filename)
     plt.clf()
     plt.cla()
     plt.close(fig)
@@ -119,7 +119,7 @@ def save_point_plot(df, chart, x, y, title, hue=None, xlabel=None, ylabel=None):
     plt.suptitle(title)
     sns_plot.set(xlabel=xlabel, ylabel=ylabel)
     plt.legend(frameon=True)
-    plt.savefig(filename)
+    plt.savefig("all-comparison-plots/"+filename)
     plt.clf()
     plt.close(fig)
 
@@ -137,7 +137,7 @@ def save_bar_plot(df, chart, columns, y, title, hue=None, xlabel=None, ylabel=No
     graph = sns.barplot(x="Concurrent Users", y=y, hue='hue', data=df_results)
     plt.suptitle(title)
     plt.legend(frameon=True)
-    plt.savefig(filename)
+    plt.savefig("all-comparison-plots/"+filename)
     plt.clf()
     plt.close(fig)
     add_chart_details(title, filename)
