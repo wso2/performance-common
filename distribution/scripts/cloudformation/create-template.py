@@ -21,9 +21,8 @@
 # ----------------------------------------------------------------------------
 
 import argparse
-import csv
-import json
 import os
+
 from jinja2 import Environment, FileSystemLoader
 
 PATH = os.path.dirname(os.path.abspath(__file__))

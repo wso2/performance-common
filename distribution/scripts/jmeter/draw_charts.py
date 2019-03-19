@@ -23,6 +23,7 @@ import seaborn as sns
 
 df_charts = None
 
+
 def format_bytes(b):
     if b >= 1024 and b % 1024 == 0:
         return str(b // 1024) + 'KiB'
@@ -56,12 +57,15 @@ def save_multi_columns_categorical_charts(df, chart, columns, y, title,col,isSin
     filename = chart + ".png"
     print("Creating chart: " + title + ", File name: " + filename)
     fig, ax = plt.subplots()
+
     if isSingleComparison:
         all_columns = [col,'Message Size (Bytes)', 'Concurrent Users','Scenario Name']
     else:
         all_columns = [col, 'Concurrent Users', 'Scenario Name']
+
     all_columns.extend(columns)
     df_results = df[all_columns]
+
     if single_statistic:
         if isSingleComparison:
             df_results['hue'] = df_results['Message Size (Bytes)'] + ' - ' + df_results['Scenario Name']
@@ -75,10 +79,13 @@ def save_multi_columns_categorical_charts(df, chart, columns, y, title,col,isSin
             df_results = df_results.melt(id_vars=['Scenario Name', 'Concurrent Users',col],
                                          value_vars=columns, value_name=y)
             df_results['hue'] = df_results.variable + ' - ' + df_results['Scenario Name']
-    graph = sns.catplot(x="Concurrent Users", y=y,
+
+
+    graph = sns.factorplot(x="Concurrent Users", y=y,
                            hue='hue', col=col,
                            data=df_results, kind=kind,
-                           height=7, aspect=1, col_wrap=2, legend=False)
+                           size=7, aspect=1, col_wrap=2, legend=False)
+
     plt.subplots_adjust(top=0.9, left=0.1)
     graph.fig.suptitle(title)
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.,title="Response Time Summary")
@@ -94,7 +101,7 @@ def save_lmplot(df, chart, x, y, title, hue=None, xlabel=None, ylabel=None):
     print("Creating chart: " + title + ", File name: " + filename)
     add_chart_details(title, filename)
     fig, ax = plt.subplots()
-    g = sns.lmplot(data=df, x=x, y=y, hue=hue, height=6)
+    g = sns.lmplot(data=df, x=x, y=y, hue=hue, size=6)
     for ax in g.axes.flatten():
         ax.yaxis.set_major_formatter(
             tkr.FuncFormatter(lambda y_value, p: "{:,}".format(y_value)))
@@ -124,7 +131,7 @@ def save_point_plot(df, chart, x, y, title, hue=None, xlabel=None, ylabel=None):
     plt.close(fig)
 
 
-def save_bar_plot(df, chart, columns, y, title, hue=None, xlabel=None, ylabel=None):
+def save_bar_plot(df, chart, columns, y, title):
     filename = chart + ".png"
     print("Creating chart: " + title + ", File name: " + filename)
     fig, ax = plt.subplots()
