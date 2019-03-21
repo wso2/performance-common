@@ -135,7 +135,7 @@ def save_bar_plot(df, chart, columns, y, title):
     filename = chart + ".png"
     print("Creating chart: " + title + ", File name: " + filename)
     fig, ax = plt.subplots()
-    fig.set_size_inches(8, 4)
+    fig.set_size_inches(20, 8)
     all_columns = ['Scenario Name','Concurrent Users']
     all_columns.extend(columns)
     df_results = df[all_columns]
@@ -143,7 +143,8 @@ def save_bar_plot(df, chart, columns, y, title):
     df_results['hue'] = df_results.variable + ' - ' + df_results['Scenario Name']
     graph = sns.barplot(x="Concurrent Users", y=y, hue='hue', data=df_results)
     plt.suptitle(title)
-    plt.legend(frameon=True)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.,title="Response Time Summary")
+    plt.subplots_adjust(top=0.9, left=0.1, right=0.7)
     plt.savefig("all-comparison-plots/"+filename)
     plt.clf()
     plt.close(fig)
