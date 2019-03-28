@@ -24,6 +24,7 @@ export script_dir=$(dirname "$0")
 
 export aws_cloudformation_template_filename="backend_perf_test_cfn.yaml"
 export application_name="Back-end Server"
+export ec2_instance_name="backend"
 export metrics_file_prefix="netty"
 export run_performance_tests_script_name="run-backend-tests.sh"
 

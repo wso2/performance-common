@@ -57,28 +57,6 @@ function get_ssh_hostname() {
     ssh -G $1 | awk '/^hostname / { print $2 }'
 }
 
-function write_server_metrics() {
-    local server=$1
-    echo "Collecting server metrics for $server."
-    local ssh_host=$2
-    local pgrep_pattern=$3
-    local command_prefix=""
-    export LC_TIME=C
-    if [[ ! -z $ssh_host ]]; then
-        command_prefix="ssh -o SendEnv=LC_TIME $ssh_host"
-    fi
-    $command_prefix ss -s >${report_location}/${server}_ss.txt
-    $command_prefix uptime >${report_location}/${server}_uptime.txt
-    $command_prefix sar -q >${report_location}/${server}_loadavg.txt
-    $command_prefix sar -A >${report_location}/${server}_sar.txt
-    $command_prefix top -bn 1 >${report_location}/${server}_top.txt
-    $command_prefix df -h >${report_location}/${server}_disk_usage.txt
-    $command_prefix free -m >${report_location}/${server}_free_memory.txt
-    if [[ ! -z $pgrep_pattern ]]; then
-        $command_prefix ps u -p \`pgrep -f $pgrep_pattern\` >${report_location}/${server}_ps.txt
-    fi
-}
-
 function download_file() {
     local server=$1
     local remote_file=$2
@@ -88,5 +66,70 @@ function download_file() {
         echo "File transfer succeeded."
     else
         echo "WARNING: File transfer failed!"
+    fi
+}
+
+function write_sar_reports() {
+    local sa_file=$1
+    if [[ ! -f $sa_file ]]; then
+        return
+    fi
+    local server=$2
+    local sar_args=""
+    if [[ ! -z $sar_start_time ]]; then
+        sar_args+=" -s $sar_start_time"
+    fi
+    if [[ ! -z $sar_end_time ]]; then
+        sar_args+=" -e $sar_end_time"
+    fi
+    local file_prefix="${report_location}/${server}_sar_$(basename $sa_file)"
+    sadf $sar_args -d -U $sa_file -- -A >${file_prefix}_all.csv
+    sadf $sar_args -d -h -U $sa_file -- -A >${file_prefix}_all_h.csv
+    sadf $sar_args -g $sa_file -- -A >${file_prefix}_all.svg
+    sar $sar_args -A >${file_prefix}_all.txt
+    sar $sar_args -q >${file_prefix}_loadavg.txt
+    sar $sar_args -u >${file_prefix}_cpu.txt
+    sar $sar_args -r >${file_prefix}_memory.txt
+    sar $sar_args -n DEV >${file_prefix}_network.txt
+    sar $sar_args -d >${file_prefix}_disk.txt
+    sar $sar_args -b >${file_prefix}_io.txt
+    sar $sar_args -w >${file_prefix}_task.txt
+    sar $sar_args -v >${file_prefix}_file.txt
+}
+
+function write_server_metrics() {
+    local server=$1
+    echo "Collecting server metrics for $server."
+    local ssh_host=$2
+    local pgrep_pattern=$3
+    local command_prefix=""
+    export LC_TIME=C
+    local sar_yesterday_file="/var/log/sysstat/sa$(date +%d -d yesterday)"
+    local sar_today_file="/var/log/sysstat/sa$(date +%d)"
+    local local_sar_yesterday_file="${report_location}/${server}_$(basename $sar_yesterday_file)"
+    local local_sar_today_file="${report_location}/${server}_$(basename $sar_today_file)"
+    if [[ ! -z $ssh_host ]]; then
+        command_prefix="ssh -o SendEnv=LC_TIME $ssh_host"
+        download_file $server $sar_yesterday_file $(basename $local_sar_yesterday_file)
+        download_file $server $sar_today_file $(basename $local_sar_today_file)
+    else
+        if [[ -f $sar_yesterday_file ]]; then
+            echo "Copying $sar_yesterday_file to $local_sar_yesterday_file..."
+            cp -v $sar_yesterday_file $local_sar_yesterday_file
+        fi
+        if [[ -f $sar_today_file ]]; then
+            echo "Copying $sar_today_file to $local_sar_today_file..."
+            cp -v $sar_today_file $local_sar_today_file
+        fi
+    fi
+    write_sar_reports $local_sar_yesterday_file $server
+    write_sar_reports $local_sar_today_file $server
+    $command_prefix ss -s >${report_location}/${server}_ss.txt
+    $command_prefix uptime >${report_location}/${server}_uptime.txt
+    $command_prefix top -bn 1 >${report_location}/${server}_top.txt
+    $command_prefix df -h >${report_location}/${server}_disk_usage.txt
+    $command_prefix free -m >${report_location}/${server}_free_memory.txt
+    if [[ ! -z $pgrep_pattern ]]; then
+        $command_prefix ps u -p \`pgrep -f $pgrep_pattern\` >${report_location}/${server}_ps.txt
     fi
 }

@@ -341,6 +341,7 @@ cp $performance_scripts_distribution $results_dir
 
 # Save metadata
 declare -A test_parameters
+test_parameters[number_of_stacks]="$number_of_stacks"
 test_parameters[jmeter_client_ec2_instance_type]="$jmeter_client_ec2_instance_type"
 test_parameters[jmeter_server_ec2_instance_type]="$jmeter_server_ec2_instance_type"
 test_parameters[netty_ec2_instance_type]="$netty_ec2_instance_type"
@@ -581,6 +582,36 @@ function save_logs_and_delete_stack() {
         echo "WARNING: There was an error getting log streams from the log group $log_group_name. Check whether AWS CloudWatch logs are enabled."
     fi
 
+    local stack_resources_json=$stack_results_dir/stack-resources-before-delete.json
+    echo "Saving $stack_name stack resources to $stack_resources_json"
+    aws cloudformation describe-stack-resources --stack-name $stack_id --no-paginate --output json >$stack_resources_json
+
+    local vpc_id="$(jq -r '.StackResources[] | select(.LogicalResourceId=="VPC") | .PhysicalResourceId' $stack_resources_json)"
+    if [[ ! -z $vpc_id ]]; then
+        local stack_instances_json=$stack_results_dir/stack-instances.json
+        aws ec2 describe-instances --filters "Name=vpc-id, Values="$vpc_id"" --query "Reservations[*].Instances[*]" --no-paginate --output json >$stack_instances_json
+        # Try to get a public IP
+        local instance_public_ip="$(jq -r 'first(.[][] | .PublicIpAddress // empty)' $stack_instances_json)"
+        if [[ ! -z $instance_public_ip ]]; then
+            local instance_ips_file=$stack_results_dir/stack-instance-ips.txt
+            cat $stack_instances_json | jq -r '.[][] | (.Tags[] | select(.Key=="Name")) as $tags | ($tags["Value"] + "/" + .PrivateIpAddress) | tostring' >$instance_ips_file
+            echo "Private IPs in $instance_ips_file: "
+            cat $instance_ips_file
+            echo "Uploading $instance_ips_file to $instance_public_ip"
+            if scp -i $key_file -o "StrictHostKeyChecking=no" $instance_ips_file ubuntu@$instance_public_ip:; then
+                download_files_command="ssh -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip ./cloudformation/download-files.sh -f $(basename $instance_ips_file) -k private_key.pem -o /home/ubuntu"
+                echo "Download files command: $download_files_command"
+                $download_files_command
+                echo "Downloading files.zip"
+                scp -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip:files.zip $stack_results_dir
+                local files_dir="$stack_results_dir/files"
+                mkdir -p $files_dir
+                echo "Extracting files.zip to $files_dir"
+                unzip -q $stack_results_dir/files.zip -d $files_dir
+            fi
+        fi
+    fi
+
     delete_stack $stack_id
 }
 
@@ -640,12 +671,6 @@ function run_perf_tests_in_stack() {
         echo "Failed to download the results.zip"
         exit 500
     fi
-
-    download_logs_command="$ssh_command_prefix ./cloudformation/download-logs.sh -o ~"
-    echo "Download logs to JMeter client: $download_logs_command"
-    $download_logs_command
-    echo "Downloading logs.zip"
-    scp -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$jmeter_client_ip:logs.zip $stack_results_dir
 }
 
 for ((i = 0; i < ${#stack_ids[@]}; i++)); do
@@ -656,6 +681,10 @@ for ((i = 0; i < ${#stack_ids[@]}; i++)); do
     run_perf_tests_in_stack $i ${stack_id} ${stack_name} ${stack_results_dir} 2>&1 | ts "[${stack_name}] [%Y-%m-%d %H:%M:%S]" | tee ${log_file} &
 done
 
+if [ "$SUSPEND" = true ]; then
+    sleep infinity &
+fi
+
 # See current jobs
 echo "Jobs: "
 jobs
@@ -663,15 +692,21 @@ echo "Waiting till all performance test jobs are completed..."
 # Wait till parallel tests complete
 wait
 
-echo "Creating summary.csv..."
+declare -a system_information_files
+
 # Extract all results.
 for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     stack_results_dir="$results_dir/results-$(($i + 1))"
     unzip -nq ${stack_results_dir}/results-without-jtls.zip -x '*/test-metadata.json' -d $results_dir
+    system_information_files+=("${stack_results_dir}/files/${ec2_instance_name}/system_info.json")
 done
 cd $results_dir
+echo "Combining system information in following files: ${system_information_files[@]}"
+# Join system_info files
+jq -s . "${system_information_files[@]}" >all_system_info.json
 # Copy metadata before creating CSV
 cp cf-test-metadata.json test-metadata.json results
+echo "Creating summary.csv..."
 # Create warmup summary CSV
 $script_dir/../jmeter/create-summary-csv.sh -d results -n "${application_name}" -p "${metrics_file_prefix}" -j 2 -g "${gcviewer_jar_path}" -i -w -o summary-warmup.csv
 # Create measurement summary CSV
@@ -691,7 +726,8 @@ while read column_name; do
 done < <(get_columns)
 
 echo "Creating summary results markdown file..."
-$script_dir/../jmeter/create-summary-markdown.py --json-files cf-test-metadata.json test-metadata.json --column-names "${column_names[@]}"
+$script_dir/../jmeter/create-summary-markdown.py --json-parameters parameters=cf-test-metadata.json,parameters=test-metadata.json,instances=all_system_info.json \
+    --column-names "${column_names[@]}"
 
 function print_summary() {
     cat $1 | cut -d, -f 1-13 | column -t -s,
