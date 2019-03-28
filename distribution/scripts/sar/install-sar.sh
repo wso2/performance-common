@@ -57,3 +57,6 @@ sed -i "s|^5-55/10|*/1|" /etc/cron.d/sysstat
 
 #Restart the service
 service sysstat restart
+
+echo "Systat service started.. SAR version: "
+sar -V
