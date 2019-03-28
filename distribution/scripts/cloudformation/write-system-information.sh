@@ -88,8 +88,8 @@ function get_value() {
     echo $(remove_quotes ${match##*$separator})
 }
 
-if command_exists ec2-metadata; then
-    ec2-metadata >$output_directory/ec2metadata.txt 2>&1
+if command_exists ec2metadata; then
+    ec2metadata >$output_directory/ec2metadata.txt 2>&1
     add_json_object "AWS" "EC2" "AMI-ID" "$(get_value $output_directory/ec2metadata.txt 'ami-id' :)"
     add_json_object "AWS" "EC2" "Instance Type" "$(get_value $output_directory/ec2metadata.txt 'instance-type' :)"
 fi
@@ -140,7 +140,7 @@ fi
 
 if ls /etc/*release* 1>/dev/null 2>&1; then
     cat /etc/*release* >$output_directory/release_info.txt 2>&1
-    add_json_object "Operating System" "Distribution" "Description" "$(get_value $output_directory/release_info.txt DISTRIB_DESCRIPTION =)"
+    add_json_object "Operating System" "Distribution" "Release" "$(get_value $output_directory/release_info.txt DISTRIB_DESCRIPTION =)"
 fi
 
 if command_exists uname; then
@@ -148,4 +148,4 @@ if command_exists uname; then
     add_json_object "Operating System" "Distribution" "Kernel" "$(cat $output_directory/kernel.txt)"
 fi
 
-jq . -s <<<"$system_info_json" >$output_directory/system_info.json
+jq -s '{system_info: .}' <<<"$system_info_json"  >$output_directory/system_info.json
