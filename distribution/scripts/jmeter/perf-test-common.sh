@@ -567,13 +567,15 @@ function test_scenarios() {
                         echo "$jmeter_command"
 
                         # Start time for SAR reports
-                        sar_start_time="$(date +%H:%M:%S)"
+                        sar_start_timestamp=$(date +%s)
+                        sar_start_time="$(date +%H:%M:%S -d @$sar_start_timestamp)"
                         # Run JMeter
                         if ! $jmeter_command; then
                             echo "WARNING: JMeter execution failed."
                         fi
                         # End time for SAR reports
-                        sar_end_time="$(date +%H:%M:%S --date='1 minute')"
+                        sar_end_timestamp="$(date +%s --date='1 minute')"
+                        sar_end_time="$(date +%H:%M:%S -d @$sar_end_timestamp)"
 
                         write_server_metrics jmeter
                         write_server_metrics netty $backend_ssh_host netty

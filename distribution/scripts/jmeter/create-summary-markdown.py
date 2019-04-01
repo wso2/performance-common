@@ -59,10 +59,6 @@ def pluralize(number, singular='', plural='s'):
         return plural
 
 
-# def humanize_ordinal(number):
-#     return humanize.ordinal(number)
-
-
 def main():
     parser = argparse.ArgumentParser(description='Create summary report')
     parser.add_argument("--json-parameters", dest="parameters", action=StoreJsonParameters,
