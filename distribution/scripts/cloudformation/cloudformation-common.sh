@@ -327,6 +327,19 @@ if ! function_exists get_columns; then
     exit 1
 fi
 
+# Allow to change the script name
+run_performance_tests_script_name=${run_performance_tests_script_name:-run-performance-tests.sh}
+
+declare -a required_variables=("aws_cloudformation_template_filename" "application_name" "ec2_instance_name"
+    "metrics_file_prefix" "run_performance_tests_script_name")
+
+for var in "${required_variables[@]}"; do
+    if [[ -z ${!var} ]]; then
+        echo "Required variable: ${var} is not defined!"
+        exit 1
+    fi
+done
+
 echo "Checking whether python requirements are installed..."
 pip install -r $script_dir/python-requirements.txt
 
@@ -359,9 +372,6 @@ for key in "${!test_parameters[@]}"; do
     test_parameters_args+=("--arg" "$key" "${test_parameters[$key]}")
 done
 jq -n "${test_parameters_args[@]}" "$test_parameters_json" >$results_dir/cf-test-metadata.json
-
-# Allow to change the script name
-run_performance_tests_script_name=${run_performance_tests_script_name:-run-performance-tests.sh}
 
 estimate_command="$script_dir/../jmeter/${run_performance_tests_script_name} -t ${run_performance_tests_options[@]}"
 echo "Estimating total time for performance tests: $estimate_command"
