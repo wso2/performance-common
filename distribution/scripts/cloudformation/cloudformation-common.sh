@@ -307,26 +307,6 @@ if function_exists validate; then
     validate
 fi
 
-if [[ -z $aws_cloudformation_template_filename ]]; then
-    echo "Please set the AWS Cloudformation template file name from the script."
-    exit 1
-fi
-
-if [[ -z $application_name ]]; then
-    echo "Please set the application name from the script."
-    exit 1
-fi
-
-if [[ -z $metrics_file_prefix ]]; then
-    echo "Please set the prefix of application metrics files from the script."
-    exit 1
-fi
-
-if ! function_exists get_columns; then
-    echo "Please define a function named 'get_columns' in the script to get the columns to be included in markdown file."
-    exit 1
-fi
-
 # Allow to change the script name
 run_performance_tests_script_name=${run_performance_tests_script_name:-run-performance-tests.sh}
 
@@ -339,6 +319,11 @@ for var in "${required_variables[@]}"; do
         exit 1
     fi
 done
+
+if ! function_exists get_columns; then
+    echo "Please define a function named 'get_columns' in the script to get the columns to be included in markdown file."
+    exit 1
+fi
 
 echo "Checking whether python requirements are installed..."
 pip install -r $script_dir/python-requirements.txt
@@ -354,6 +339,7 @@ cp $performance_scripts_distribution $results_dir
 
 # Save metadata
 declare -A test_parameters
+test_parameters[application_name]="$application_name"
 test_parameters[number_of_stacks]="$number_of_stacks"
 test_parameters[jmeter_client_ec2_instance_type]="$jmeter_client_ec2_instance_type"
 test_parameters[jmeter_server_ec2_instance_type]="$jmeter_server_ec2_instance_type"
