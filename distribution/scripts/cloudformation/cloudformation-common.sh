@@ -708,12 +708,15 @@ declare -a system_information_files
 for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     stack_results_dir="$results_dir/results-$(($i + 1))"
     unzip -nq ${stack_results_dir}/results-without-jtls.zip -x '*/test-metadata.json' -d $results_dir
-    system_information_files+=("${stack_results_dir}/files/${ec2_instance_name}/system_info.json")
+    system_info_file="${stack_results_dir}/files/${ec2_instance_name}/system-info.json"
+    if [[ -f $system_info_file ]]; then
+        system_information_files+=("$system_info_file")
+    fi
 done
 cd $results_dir
 echo "Combining system information in following files: ${system_information_files[@]}"
-# Join system_info files
-jq -s . "${system_information_files[@]}" >all_system_info.json
+# Join json files containing system information and create an array
+jq -s . "${system_information_files[@]}" >all-system-info.json
 # Copy metadata before creating CSV
 cp cf-test-metadata.json test-metadata.json results
 echo "Creating summary.csv..."
@@ -736,7 +739,7 @@ while read column_name; do
 done < <(get_columns)
 
 echo "Creating summary results markdown file..."
-$script_dir/../jmeter/create-summary-markdown.py --json-parameters parameters=cf-test-metadata.json,parameters=test-metadata.json,instances=all_system_info.json \
+$script_dir/../jmeter/create-summary-markdown.py --json-parameters parameters=cf-test-metadata.json,parameters=test-metadata.json,instances=all-system-info.json \
     --column-names "${column_names[@]}"
 
 function print_summary() {
