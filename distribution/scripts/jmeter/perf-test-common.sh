@@ -119,7 +119,11 @@ declare -A scenario_duration
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 -m <heap_sizes> -u <concurrent_users> -b <message_sizes> -s <sleep_times> [-d <test_duration>] [-w <warmup_time>]"
+    echo "$0 -m <heap_sizes> -u <concurrent_users> -b <message_sizes> -s <sleep_times>"
+    if function_exists usageCommand; then
+        echo "   $(usageCommand)"
+    fi
+    echo "   [-d <test_duration>] [-w <warmup_time>]"
     echo "   [-n <jmeter_servers>] [-j <jmeter_server_heap_size>] [-k <jmeter_client_heap_size>] [-l <netty_service_heap_size>]"
     echo "   [-i <include_scenario_name>] [-e <include_scenario_name>] [-t] [-p <estimated_processing_time_in_between_tests>] [-h]"
     echo ""
@@ -127,6 +131,9 @@ function usage() {
     echo "-u: Concurrent Users to test. You can give multiple options to specify multiple users."
     echo "-b: Message sizes in bytes. You can give multiple options to specify multiple message sizes."
     echo "-s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times."
+    if function_exists usageHelp; then
+        echo "$(usageHelp)"
+    fi
     echo "-d: Test Duration in seconds. Default $default_test_duration."
     echo "-w: Warm-up time in seconds. Default $default_warmup_time."
     echo "-n: Number of JMeter servers. If n=1, only client will be used. If n > 1, remote JMeter servers will be used. Default $default_jmeter_servers."
@@ -141,6 +148,8 @@ function usage() {
     echo ""
 }
 
+# Reset getopts
+OPTIND=0
 while getopts "u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts; do
     case $opts in
     u)
@@ -218,6 +227,10 @@ fi
 if [ ${#backend_sleep_times_array[@]} -eq 0 ]; then
     echo "Please provide backend sleep rimes."
     exit 1
+fi
+
+if function_exists validate; then
+    validate
 fi
 
 if [[ -z $test_duration ]]; then
