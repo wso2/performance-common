@@ -622,6 +622,13 @@ function save_logs_and_delete_stack() {
         fi
     fi
 
+    if [ "$SUSPEND" = true ]; then
+        echo "SUSPEND is true, holding the deletion of stack: $stack_id"
+        if ! sleep infinity; then
+            echo "Sleep terminated! Proceeding to delete the stack: $stack_id"
+        fi
+    fi
+
     delete_stack $stack_id
 }
 
@@ -690,10 +697,6 @@ for ((i = 0; i < ${#stack_ids[@]}; i++)); do
     log_file="${stack_results_dir}/run.log"
     run_perf_tests_in_stack $i ${stack_id} ${stack_name} ${stack_results_dir} 2>&1 | ts "[${stack_name}] [%Y-%m-%d %H:%M:%S]" | tee ${log_file} &
 done
-
-if [ "$SUSPEND" = true ]; then
-    sleep infinity &
-fi
 
 # See current jobs
 echo "Jobs: "
