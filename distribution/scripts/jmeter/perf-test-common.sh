@@ -579,16 +579,25 @@ function test_scenarios() {
                         echo "Starting JMeter Client with JVM_ARGS=$JVM_ARGS"
                         echo "$jmeter_command"
 
-                        # Start time for SAR reports
-                        sar_start_timestamp=$(date +%s)
-                        sar_start_time="$(date +%H:%M:%S -d @$sar_start_timestamp)"
+                        # Start timestamp
+                        test_start_timestamp=$(date +%s)
+                        echo "Start timestamp: $test_start_timestamp"
                         # Run JMeter
                         if ! $jmeter_command; then
                             echo "WARNING: JMeter execution failed."
                         fi
-                        # End time for SAR reports
-                        sar_end_timestamp="$(date +%s --date='1 minute')"
-                        sar_end_time="$(date +%H:%M:%S -d @$sar_end_timestamp)"
+                        # End timestamp
+                        test_end_timestamp="$(date +%s)"
+                        echo "End timestamp: $test_end_timestamp"
+
+                        local test_duration=$(($test_end_timestamp - $test_start_timestamp))
+                        local test_duration_file="${report_location}/test_duration.json"
+                        if jq -n --arg start_timestamp "$test_start_time" \
+                            --arg end_timestamp "$test_end_timestamp" \
+                            --arg test_duration "$test_duration" \
+                            '. | .["start_timestamp"]=$start_timestamp | .["end_timestamp"]=$end_timestamp | .["test_duration"]=$test_duration' >$test_duration_file; then
+                            echo "Wrote test start timestamp, end timestamp and test duration to $test_duration_file."
+                        fi
 
                         write_server_metrics jmeter
                         write_server_metrics netty $backend_ssh_host netty

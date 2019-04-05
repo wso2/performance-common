@@ -70,23 +70,25 @@ function download_file() {
 }
 
 function write_sar_reports() {
-    local server=$1
-    local sa_file=$2
-    local sa_yesterday_file=$3
+    local metrics_location="$1"
+    local server="$2"
+    local sa_file="$3"
+    local sa_yesterday_file="$4"
     if [[ ! -f $sa_file ]]; then
+        echo "SAR file not found!" >&2
         return 1
     fi
     if [[ -z $report_location ]]; then
+        echo "Report location not found" >&2
         return 1
     fi
+    local sar_start_time="$(date +%H:%M:%S -d @$test_start_timestamp)"
+    local sar_end_time="$(date +%H:%M:%S -d @$test_end_timestamp --date='1 minute')"
     local sar_args=""
-    if [[ ! -z $sar_start_time ]]; then
-        sar_args+=" -s $sar_start_time"
-    fi
-    if [[ ! -z $sar_end_time ]]; then
-        sar_args+=" -e $sar_end_time"
-    fi
-    local file_prefix="${report_location}/${server}_sar_report"
+    sar_args+=" -s $sar_start_time"
+    sar_args+=" -e $sar_end_time"
+    local file_prefix="${metrics_location}/${server}_sar_report"
+
     sadf $sar_args -d -U $sa_file -- -A >${file_prefix}_all.csv
     sadf $sar_args -d -h -U $sa_file -- -A >${file_prefix}_all_h.csv
     sadf $sar_args -g $sa_file -- -A >${file_prefix}_all.svg
@@ -94,11 +96,11 @@ function write_sar_reports() {
     sar $sar_args -q >${file_prefix}_loadavg.txt
     sar $sar_args -u >${file_prefix}_cpu.txt
     sar $sar_args -r >${file_prefix}_memory.txt
-    sar $sar_args -n DEV >${file_prefix}_network.txt
     sar $sar_args -d >${file_prefix}_disk.txt
     sar $sar_args -b >${file_prefix}_io.txt
     sar $sar_args -w >${file_prefix}_task.txt
     sar $sar_args -v >${file_prefix}_file.txt
+    sar $sar_args -n DEV >${file_prefix}_network.txt
 
     # Write CSVs
     for sa in $sa_yesterday_file $sa_file; do
@@ -119,9 +121,9 @@ function write_sar_reports() {
 # Write SAR report
 function write_sar_csv_report() {
     if [[ -f $1 ]]; then
-        sed '1d' >>$1
+        sed -e '/RESTART/d' -e '/# /d' >>$1
     else
-        sed '1 s/# //' >$1
+        sed -e '/RESTART/d' -e 's/# //' >$1
     fi
 }
 
@@ -131,6 +133,8 @@ function write_server_metrics() {
         return 1
     fi
     local server=$1
+    local metrics_location="${report_location}/${server}"
+    mkdir -p $metrics_location
     echo "Collecting server metrics for $server."
     local ssh_host=$2
     local pgrep_pattern=$3
@@ -138,30 +142,30 @@ function write_server_metrics() {
     export LC_TIME=C
     local sar_yesterday_file="/var/log/sysstat/sa$(date +%d -d yesterday)"
     local sar_today_file="/var/log/sysstat/sa$(date +%d)"
-    local local_sar_yesterday_file="${report_location}/${server}_$(basename $sar_yesterday_file)"
-    local local_sar_today_file="${report_location}/${server}_$(basename $sar_today_file)"
+    local local_sar_yesterday_file="${metrics_location}/${server}_$(basename $sar_yesterday_file)"
+    local local_sar_today_file="${metrics_location}/${server}_$(basename $sar_today_file)"
     if [[ ! -z $ssh_host ]]; then
         command_prefix="ssh -o SendEnv=LC_TIME $ssh_host"
-        download_file $server $sar_yesterday_file $(basename $local_sar_yesterday_file)
-        download_file $server $sar_today_file $(basename $local_sar_today_file)
+        download_file $server $sar_yesterday_file ${server}/$(basename $local_sar_yesterday_file)
+        download_file $server $sar_today_file ${server}/$(basename $local_sar_today_file)
     else
         if [[ -f $sar_yesterday_file ]]; then
             echo "Copying $sar_yesterday_file to $local_sar_yesterday_file..."
-            cp -v $sar_yesterday_file $local_sar_yesterday_file
+            cp -v "$sar_yesterday_file" "$local_sar_yesterday_file"
         fi
         if [[ -f $sar_today_file ]]; then
             echo "Copying $sar_today_file to $local_sar_today_file..."
-            cp -v $sar_today_file $local_sar_today_file
+            cp -v "$sar_today_file" "$local_sar_today_file"
         fi
     fi
-    write_sar_reports $server $local_sar_today_file $local_sar_yesterday_file
-    $command_prefix date >${report_location}/${server}_date.txt
-    $command_prefix ss -s >${report_location}/${server}_ss.txt
-    $command_prefix uptime >${report_location}/${server}_uptime.txt
-    $command_prefix top -bn 1 >${report_location}/${server}_top.txt
-    $command_prefix df -h >${report_location}/${server}_disk_usage.txt
-    $command_prefix free -m >${report_location}/${server}_free_memory.txt
+    write_sar_reports "${metrics_location}" "$server" "$local_sar_today_file" "$local_sar_yesterday_file"
+    $command_prefix date >"${metrics_location}/${server}_date.txt"
+    $command_prefix ss -s >"${metrics_location}/${server}_ss.txt"
+    $command_prefix uptime >"${metrics_location}/${server}_uptime.txt"
+    $command_prefix top -bn 1 >"${metrics_location}/${server}_top.txt"
+    $command_prefix df -h >"${metrics_location}/${server}_disk_usage.txt"
+    $command_prefix free -m >"${metrics_location}/${server}_free_memory.txt"
     if [[ ! -z $pgrep_pattern ]]; then
-        $command_prefix ps u -p \`pgrep -f $pgrep_pattern\` >${report_location}/${server}_ps.txt
+        $command_prefix ps u -p \`pgrep -f $pgrep_pattern\` >"${metrics_location}/${server}_ps.txt"
     fi
 }

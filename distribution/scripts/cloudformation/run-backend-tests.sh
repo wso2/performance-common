@@ -27,6 +27,7 @@ export application_name="Back-end Server"
 export ec2_instance_name="backend"
 export metrics_file_prefix="netty"
 export run_performance_tests_script_name="run-backend-tests.sh"
+export create_csv_opts="-l"
 
 function get_test_metadata() {
     echo "application_name=$application_name"

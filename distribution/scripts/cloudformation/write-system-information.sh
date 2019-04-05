@@ -148,4 +148,9 @@ if command_exists uname; then
     add_json_object "Operating System" "Distribution" "Kernel" "$(cat $output_directory/kernel.txt)"
 fi
 
-jq -s '{system_info: .}' <<<"$system_info_json"  >$output_directory/system-info.json
+if command_exists lsblk; then
+    lsblk >$output_directory/lsblk.txt 2>&1
+    lsblk -J >$output_directory/lsblk.json 2>&1
+fi
+
+jq -s '{system_info: .}' <<<"$system_info_json" >$output_directory/system-info.json

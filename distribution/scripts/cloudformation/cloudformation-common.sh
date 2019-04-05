@@ -429,6 +429,7 @@ function read_concurrent_users() {
 declare -a jmeter_servers_per_stack
 
 echo "Number of stacks to create: $number_of_stacks."
+max_jmeter_servers=1
 # echo "Performance test options given to stack(s): "
 for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     declare -a options_array=(${performance_test_options[$i]})
@@ -443,6 +444,7 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     jmeter_servers=1
     if [[ $max_concurrent_users -gt 500 ]]; then
         jmeter_servers=2
+        max_jmeter_servers=2
     fi
     jmeter_servers_per_stack+=("$jmeter_servers")
     performance_test_options[$i]+=" -n $jmeter_servers"
@@ -450,6 +452,7 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     echo "$(($i + 1)): Estimating total time for the tests in stack $(($i + 1)) with $jmeter_servers JMeter server(s) handling a maximum of $max_concurrent_users concurrent users: $estimate_command"
     $estimate_command
 done
+echo "Maximum number of JMeter(s): $max_jmeter_servers"
 
 temp_dir=$(mktemp -d)
 
@@ -710,9 +713,9 @@ jq -s . "${system_information_files[@]}" >all-system-info.json
 cp cf-test-metadata.json test-metadata.json results
 echo "Creating summary.csv..."
 # Create warmup summary CSV
-$script_dir/../jmeter/create-summary-csv.sh -d results -n "${application_name}" -p "${metrics_file_prefix}" -j 2 -g "${gcviewer_jar_path}" -i -w -o summary-warmup.csv
+$script_dir/../jmeter/create-summary-csv.sh ${create_csv_opts} -d results -n "${application_name}" -p "${metrics_file_prefix}" -j $max_jmeter_servers -g "${gcviewer_jar_path}" -i -w -o summary-warmup.csv
 # Create measurement summary CSV
-$script_dir/../jmeter/create-summary-csv.sh -d results -n "${application_name}" -p "${metrics_file_prefix}" -j 2 -g "${gcviewer_jar_path}" -i -o summary.csv
+$script_dir/../jmeter/create-summary-csv.sh ${create_csv_opts} -d results -n "${application_name}" -p "${metrics_file_prefix}" -j $max_jmeter_servers -g "${gcviewer_jar_path}" -i -o summary.csv
 # Zip results
 zip -9qmr results-all.zip results/
 
