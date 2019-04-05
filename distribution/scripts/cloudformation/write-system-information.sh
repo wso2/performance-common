@@ -138,6 +138,17 @@ if command_exists lshw; then
     done <<<$(jq -r '.children[] | select(.id=="core") | .children[] | select(.class=="memory") | [.id,.description,.size,.units,.capabilities.data // .capabilities.instruction] | @csv' $output_directory/lshw.json)
 fi
 
+if command_exists lsblk; then
+    lsblk >$output_directory/lsblk.txt 2>&1
+    lsblk -J >$output_directory/lsblk.json 2>&1
+    while IFS=',' read name size; do
+        name="$(remove_quotes $name)"
+        size="$(remove_quotes $size)"
+        description="Block Device: $name"
+        add_json_object "System" "Storage" "$description" "$size"
+    done <<<$(jq -r  '.blockdevices[] | select(.type=="disk") | [.name,.size] | @csv' $output_directory/lsblk.json)
+fi
+
 if ls /etc/*release* 1>/dev/null 2>&1; then
     cat /etc/*release* >$output_directory/release-info.txt 2>&1
     add_json_object "Operating System" "Distribution" "Release" "$(get_value $output_directory/release-info.txt DISTRIB_DESCRIPTION =)"
@@ -146,11 +157,6 @@ fi
 if command_exists uname; then
     uname -a >$output_directory/kernel.txt 2>&1
     add_json_object "Operating System" "Distribution" "Kernel" "$(cat $output_directory/kernel.txt)"
-fi
-
-if command_exists lsblk; then
-    lsblk >$output_directory/lsblk.txt 2>&1
-    lsblk -J >$output_directory/lsblk.json 2>&1
 fi
 
 jq -s '{system_info: .}' <<<"$system_info_json" >$output_directory/system-info.json
