@@ -206,6 +206,13 @@ function add_sar_headers() {
     headers+=("$1 - Memory - Inactive (kB)")
     headers+=("$1 - Memory - Dirty (kB)")
     # Block device activity
+    headers+=("$1 - Block Device - TPS (transfers/s)")
+    headers+=("$1 - Block Device - Read TPS (kB/s)")
+    headers+=("$1 - Block Device - Write TPS (kB/s)")
+    headers+=("$1 - Block Device - Average Request Size (kB)")
+    headers+=("$1 - Block Device - Average Queue Length")
+    headers+=("$1 - Block Device - Average Time (ms)")
+    headers+=("$1 - Block Device - Utilization (%)")
     # I/O and transfer rate statistics
     headers+=("$1 - IO - TPS (transfers/s)")
     headers+=("$1 - IO - Read TPS (reads/s)")
@@ -220,6 +227,15 @@ function add_sar_headers() {
     headers+=("$1 - Number of file handles")
     headers+=("$1 - Number of inode handlers")
     headers+=("$1 - Number of pseudo-terminals")
+    # Network statistics
+    headers+=("$1 - Network - Received packets/s")
+    headers+=("$1 - Network - Transmitted packets/s")
+    headers+=("$1 - Network - Received kB/s")
+    headers+=("$1 - Network - Transmitted kB/s")
+    headers+=("$1 - Network - Received compressed packets/s")
+    headers+=("$1 - Network - Transmitted compressed packets/s")
+    headers+=("$1 - Network - Received multicast packets/s")
+    headers+=("$1 - Network - Utilization (%)")
 }
 
 declare -ag headers
@@ -415,6 +431,13 @@ function add_sar_details() {
         columns+=("${sar_averages[kbinact]}")
         columns+=("${sar_averages[kbdirty]}")
         # Block device activity
+        columns+=("${sar_averages[tps]}")
+        columns+=("${sar_averages[rkBs]}")
+        columns+=("${sar_averages[wkBs]}")
+        columns+=("${sar_averages[areqsz]}")
+        columns+=("${sar_averages[aqusz]}")
+        columns+=("${sar_averages[await]}")
+        columns+=("${sar_averages[util]}")
         # I/O and transfer rate statistics
         columns+=("${sar_averages[tps]}")
         columns+=("${sar_averages[rtps]}")
@@ -429,9 +452,18 @@ function add_sar_details() {
         columns+=("${sar_averages[filenr]}")
         columns+=("${sar_averages[inodenr]}")
         columns+=("${sar_averages[ptynr]}")
+        # Network statistics
+        columns+=("${sar_averages[rxpcks]}")
+        columns+=("${sar_averages[txpcks]}")
+        columns+=("${sar_averages[rxkBs]}")
+        columns+=("${sar_averages[txkBs]}")
+        columns+=("${sar_averages[rxcmps]}")
+        columns+=("${sar_averages[txcmps]}")
+        columns+=("${sar_averages[rxmcsts]}")
+        columns+=("${sar_averages[ifutil]}")
     else
         echo "WARNING: SAR reports are not available!"
-        for i in {1..34}; do
+        for i in {1..49}; do
             columns+=("N/A")
         done
     fi

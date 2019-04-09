@@ -42,7 +42,14 @@ def main():
     sar_averages = {}
 
     for sar_report in args.sar_csv_reports:
-        df = pd.read_csv(sar_report, sep=';')
+        try:
+            print('Reading {filename}'.format(filename=sar_report))
+            df = pd.read_csv(sar_report, sep=';')
+        except pd.errors.EmptyDataError:
+            print('WARNING: {filename} was empty. Skipping.'.format(
+                filename=sar_report))
+            continue
+
         df = df[(df['timestamp'] >= args.start_timestamp)
                 & (df['timestamp'] <= args.end_timestamp)]
         df = df.drop(columns=['hostname', 'interval', 'timestamp'])

@@ -23,8 +23,12 @@ function function_exists() {
     declare -F $1 >/dev/null 2>&1
 }
 
+function command_exists() {
+    command -v $1 >/dev/null 2>&1
+}
+
 function check_command() {
-    if ! command -v $1 >/dev/null 2>&1; then
+    if ! command_exists $1; then
         echo "Please install $1"
         exit 1
     fi
@@ -89,6 +93,20 @@ function write_sar_reports() {
     sar_args+=" -e $sar_end_time"
     local file_prefix="${metrics_location}/${server}_sar_report"
 
+    local sar_block_device_args=""
+    local block_device="$(lsblk -no pkname $(df --output=source . | tail -1) || echo "")"
+    if [[ ! -z $block_device ]]; then
+        echo "Block Device: $block_device"
+        sar_block_device_args="--dev=$block_device"
+    fi
+
+    local sar_network_device_args=""
+    local network_device="$(ip -o link | grep 'state UP' | grep -v docker | head -1 | awk '{print $2}' | sed 's/.$//' || echo "")"
+    if [[ ! -z $network_device ]]; then
+        echo "Network Device: $network_device"
+        sar_network_device_args="--iface=$network_device"
+    fi
+
     sadf $sar_args -d -U $sa_file -- -A >${file_prefix}_all.csv
     sadf $sar_args -d -h -U $sa_file -- -A >${file_prefix}_all_h.csv
     sadf $sar_args -g $sa_file -- -A >${file_prefix}_all.svg
@@ -96,7 +114,7 @@ function write_sar_reports() {
     sar $sar_args -q >${file_prefix}_loadavg.txt
     sar $sar_args -u >${file_prefix}_cpu.txt
     sar $sar_args -r >${file_prefix}_memory.txt
-    sar $sar_args -d >${file_prefix}_disk.txt
+    sar $sar_args -d -p >${file_prefix}_disk.txt
     sar $sar_args -b >${file_prefix}_io.txt
     sar $sar_args -w >${file_prefix}_task.txt
     sar $sar_args -v >${file_prefix}_file.txt
@@ -110,19 +128,21 @@ function write_sar_reports() {
         sadf -U -d $sa -- -q | write_sar_csv_report ${file_prefix}_loadavg.csv
         sadf -U -d $sa -- -u | write_sar_csv_report ${file_prefix}_cpu.csv
         sadf -U -d $sa -- -r | write_sar_csv_report ${file_prefix}_memory.csv
-        sadf -U -d $sa -- -d | write_sar_csv_report ${file_prefix}_disk.csv
+        sadf -U -d $sa $sar_block_device_args -- -d -p | write_sar_csv_report ${file_prefix}_disk.csv
         sadf -U -d $sa -- -b | write_sar_csv_report ${file_prefix}_io.csv
         sadf -U -d $sa -- -w | write_sar_csv_report ${file_prefix}_task.csv
         sadf -U -d $sa -- -v | write_sar_csv_report ${file_prefix}_file.csv
-        sadf -U -d $sa -- -n DEV | write_sar_csv_report ${file_prefix}_network.csv
+        sadf -U -d $sa $sar_network_device_args -- -n DEV | write_sar_csv_report ${file_prefix}_network.csv
     done
 }
 
 # Write SAR report
 function write_sar_csv_report() {
     if [[ -f $1 ]]; then
+        echo "Appending to sar csv report: $1"
         sed -e '/RESTART/d' -e '/# /d' >>$1
     else
+        echo "Creating sar csv report: $1"
         sed -e '/RESTART/d' -e 's/# //' >$1
     fi
 }
