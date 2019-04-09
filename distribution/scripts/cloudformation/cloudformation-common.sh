@@ -587,6 +587,7 @@ function save_logs_and_delete_stack() {
 
     local vpc_id="$(jq -r '.StackResources[] | select(.LogicalResourceId=="VPC") | .PhysicalResourceId' $stack_resources_json)"
     if [[ ! -z $vpc_id ]]; then
+        echo "VPC ID: $vpc_id"
         local stack_instances_json=$stack_results_dir/stack-instances.json
         aws ec2 describe-instances --filters "Name=vpc-id, Values="$vpc_id"" --query "Reservations[*].Instances[*]" --no-paginate --output json >$stack_instances_json
         # Try to get a public IP
@@ -609,6 +610,8 @@ function save_logs_and_delete_stack() {
                 unzip -q $stack_results_dir/files.zip -d $files_dir
             fi
         fi
+    else
+        echo "WARNING: VPC ID not found!"
     fi
 
     if [ "$SUSPEND" = true ]; then
