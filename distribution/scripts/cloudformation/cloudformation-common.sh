@@ -520,6 +520,13 @@ function exit_handler() {
 
 trap exit_handler EXIT
 
+aws_region="$(aws configure get region)"
+echo "Current AWS Region: $aws_region"
+# Find latest Ubuntu AMI ID
+# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami.html
+latest_ami_id="$(aws ec2 describe-images --owners 099720109477 --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-????????' 'Name=state,Values=available' --output json | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId')"
+echo "Latest Ubuntu AMI ID: $latest_ami_id"
+
 # Create stacks
 stack_create_start_time=$(date +%s)
 for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
@@ -530,6 +537,8 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     jmeter_servers=${jmeter_servers_per_stack[$i]}
     echo "JMeter Servers: $jmeter_servers"
     $script_dir/create-template.py ${CREATE_TEMPLATE_OPTS} --template-name ${aws_cloudformation_template_filename} \
+        --region $aws_region \
+        --ami-id $latest_ami_id \
         --output-name $cf_template \
         --jmeter-servers $jmeter_servers --start-bastion
     echo "Validating stack: $stack_name: $cf_template"

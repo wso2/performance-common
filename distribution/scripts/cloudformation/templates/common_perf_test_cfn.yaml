@@ -31,14 +31,8 @@ Description: >-
 ##############################################################################################
 Mappings:
   AWSRegion2AMI:
-    us-east-1:
-      AMI: ami-07025b83b4379007e
-    us-east-2:
-      AMI: ami-026f49896b1af2759
-    us-west-1:
-      AMI: ami-0ea0e2d21f93aa6c9
-    us-west-2:
-      AMI: ami-0013ea6a76d3b8874
+    {{ region }}:
+      AMI: {{ ami_id }}
 #############################
 # User inputs
 #############################
