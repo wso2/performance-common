@@ -209,16 +209,19 @@ function add_sar_headers() {
     headers+=("$1 - Block Device - TPS (transfers/s)")
     headers+=("$1 - Block Device - Read TPS (kB/s)")
     headers+=("$1 - Block Device - Write TPS (kB/s)")
+    headers+=("$1 - Block Device - Discard TPS (kB/s)")
     headers+=("$1 - Block Device - Average Request Size (kB)")
     headers+=("$1 - Block Device - Average Queue Length")
     headers+=("$1 - Block Device - Average Time (ms)")
     headers+=("$1 - Block Device - Utilization (%)")
     # I/O and transfer rate statistics
     headers+=("$1 - IO - TPS (transfers/s)")
-    headers+=("$1 - IO - Read TPS (reads/s)")
-    headers+=("$1 - IO - Write TPS (writes/s)")
-    headers+=("$1 - IO - Data Reads per seconds (blocks/s)")
-    headers+=("$1 - IO - Data Writes per seconds (blocks/s)")
+    headers+=("$1 - IO - Read TPS (requests/s")
+    headers+=("$1 - IO - Write TPS (requests/s)")
+    headers+=("$1 - IO - Discard TPS (requests/s)")
+    headers+=("$1 - IO - Data reads per seconds (blocks/s)")
+    headers+=("$1 - IO - Data writes per seconds (blocks/s)")
+    headers+=("$1 - IO - Data discarded per seconds (blocks/s)")
     # Task creation and system switching activity
     headers+=("$1 - Tasks created per second")
     headers+=("$1 - Context switches per second")
@@ -434,6 +437,7 @@ function add_sar_details() {
         columns+=("${sar_averages[tps]}")
         columns+=("${sar_averages[rkBs]}")
         columns+=("${sar_averages[wkBs]}")
+        columns+=("${sar_averages[dkBs]}")
         columns+=("${sar_averages[areqsz]}")
         columns+=("${sar_averages[aqusz]}")
         columns+=("${sar_averages[await]}")
@@ -442,8 +446,10 @@ function add_sar_details() {
         columns+=("${sar_averages[tps]}")
         columns+=("${sar_averages[rtps]}")
         columns+=("${sar_averages[wtps]}")
+        columns+=("${sar_averages[dtps]}")
         columns+=("${sar_averages[breads]}")
         columns+=("${sar_averages[bwrtns]}")
+        columns+=("${sar_averages[bdscds]}")
         # Task creation and system switching activity
         columns+=("${sar_averages[procs]}")
         columns+=("${sar_averages[cswchs]}")
@@ -463,7 +469,7 @@ function add_sar_details() {
         columns+=("${sar_averages[ifutil]}")
     else
         echo "WARNING: SAR reports are not available!"
-        for i in {1..49}; do
+        for i in {1..52}; do
             columns+=("N/A")
         done
     fi
