@@ -590,11 +590,10 @@ function test_scenarios() {
                         test_end_timestamp="$(date +%s)"
                         echo "End timestamp: $test_end_timestamp"
 
-                        local test_duration=$(($test_end_timestamp - $test_start_timestamp))
                         local test_duration_file="${report_location}/test_duration.json"
-                        if jq -n --arg start_timestamp "$test_start_time" \
+                        if jq -n --arg start_timestamp "$test_start_timestamp" \
                             --arg end_timestamp "$test_end_timestamp" \
-                            --arg test_duration "$test_duration" \
+                            --arg test_duration "$(($test_end_timestamp - $test_start_timestamp))" \
                             '. | .["start_timestamp"]=$start_timestamp | .["end_timestamp"]=$end_timestamp | .["test_duration"]=$test_duration' >$test_duration_file; then
                             echo "Wrote test start timestamp, end timestamp and test duration to $test_duration_file."
                         fi
