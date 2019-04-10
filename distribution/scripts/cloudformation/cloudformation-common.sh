@@ -733,7 +733,7 @@ zip -9qmr results-all.zip results/
 
 # Use following to get all column names:
 echo "Available column names:"
-while read -r line; do echo "\"$line\""; done < <($script_dir/../jmeter/create-summary-csv.sh -n "${application_name}" -j 2 -i -x)
+while read -r line; do echo "\"$line\""; done < <($script_dir/../jmeter/create-summary-csv.sh -n "${application_name}" -j $max_jmeter_servers -i -x)
 echo -ne "\n\n"
 
 declare -a column_names
