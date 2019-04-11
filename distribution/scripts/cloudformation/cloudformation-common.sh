@@ -371,18 +371,24 @@ declare -a performance_test_options
 if [[ $number_of_stacks -gt 1 ]]; then
     # Read options given to the performance test script. Refer jmeter/perf-test-common.sh
     declare -a options
-    # Reset getopts
-    OPTIND=0
-    while getopts ":u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts ${run_performance_tests_options[@]}; do
-        case $opts in
-        $parallel_parameter_option)
-            options+=("${OPTARG}")
-            ;;
-        *)
-            run_performance_tests_remaining_options+=("-${opts}")
-            [[ -n "$OPTARG" ]] && run_performance_tests_remaining_options+=("$OPTARG")
-            ;;
-        esac
+    # Flag to check whether next parameter is an argument to $parallel_parameter_option
+    next_opt_param=false
+    for opt in ${run_performance_tests_options[@]}; do
+        if [[ $opt == -$parallel_parameter_option* ]]; then
+            optarg="${opt:2}"
+            if [[ ! -z $optarg ]]; then
+                options+=("${optarg}")
+            else
+                next_opt_param=true
+            fi
+        else
+            if [[ $next_opt_param == true ]]; then
+                options+=("${opt}")
+                next_opt_param=false
+            else
+                run_performance_tests_remaining_options+=("${opt}")
+            fi
+        fi
     done
     minimum_params_per_stack=$(bc <<<"scale=0; ${#options[@]}/${number_of_stacks}")
     remaining_params=$(bc <<<"scale=0; ${#options[@]}%${number_of_stacks}")
@@ -414,18 +420,6 @@ else
     performance_test_options+=("${run_performance_tests_options[*]}")
 fi
 
-function read_concurrent_users() {
-    declare -ag concurrent_users=()
-    OPTIND=0
-    while getopts ":u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts $@; do
-        case $opts in
-        u)
-            concurrent_users+=("${OPTARG}")
-            ;;
-        esac
-    done
-}
-
 declare -a jmeter_servers_per_stack
 
 echo "Number of stacks to create: $number_of_stacks."
@@ -433,7 +427,25 @@ max_jmeter_servers=1
 # echo "Performance test options given to stack(s): "
 for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     declare -a options_array=(${performance_test_options[$i]})
-    read_concurrent_users ${options_array[@]}
+    declare -a concurrent_users=()
+    # Flag to check whether next parameter is an argument to -u
+    next_opt_param=false
+    for opt in ${options_array[@]}; do
+        if [[ $opt == -$parallel_parameter_option* ]]; then
+            optarg="${opt:2}"
+            if [[ ! -z $optarg ]]; then
+                concurrent_users+=("${optarg}")
+            else
+                next_opt_param=true
+            fi
+        else
+            if [[ $next_opt_param == true ]]; then
+                concurrent_users+=("${opt}")
+                next_opt_param=false
+            fi
+        fi
+    done
+
     # Determine JMeter Servers
     max_concurrent_users="0"
     for users in ${concurrent_users[@]}; do
