@@ -53,7 +53,7 @@ class StoreJsonParameters(argparse.Action):
 
 
 def pluralize(number, singular='', plural='s'):
-    if number == 1:
+    if int(number) == 1:
         return singular
     else:
         return plural
