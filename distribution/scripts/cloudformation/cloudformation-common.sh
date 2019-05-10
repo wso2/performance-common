@@ -335,7 +335,8 @@ echo "Results will be downloaded to $results_dir"
 # Get absolute path of GCViewer
 gcviewer_jar_path=$(realpath $gcviewer_jar_path)
 # Copy scripts to results directory (in case if we need to use the scripts again)
-cp $performance_scripts_distribution $results_dir
+mkdir $results_dir/scripts
+cp -v $performance_scripts_distribution $results_dir/scripts/
 
 # Save metadata
 declare -A test_parameters
@@ -754,7 +755,7 @@ while read column_name; do
     column_names+=("$column_name")
 done < <(get_columns)
 
-echo "Creating summary results markdown file..."
+echo "Creating summary results markdown file... Available column names: ${column_names[@]}"
 $script_dir/../jmeter/create-summary-markdown.py --json-parameters parameters=cf-test-metadata.json,parameters=test-metadata.json,instances=all-system-info.json \
     --column-names "${column_names[@]}"
 
