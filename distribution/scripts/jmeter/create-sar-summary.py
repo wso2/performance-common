@@ -53,7 +53,7 @@ def main():
         df = df[(df['timestamp'] >= args.start_timestamp)
                 & (df['timestamp'] <= args.end_timestamp)]
         df = df.drop(columns=['hostname', 'interval', 'timestamp'])
-        df = df.rename(columns=lambda x: re.sub('[%/\-]', '', x))
+        df = df.rename(columns=lambda x: re.sub(r'[%/\-]', '', x))
         sar_averages.update(df.mean().round(2).to_dict())
 
     with open(args.output_file, 'w') as outfile:

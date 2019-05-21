@@ -544,6 +544,7 @@ function test_scenarios() {
                             echo "Starting Backend Service. Delay: $sleep_time, Additional Flags: ${backend_flags:-N/A}"
                             ssh $backend_ssh_host "./netty-service/netty-start.sh -m $netty_service_heap_size -w \
                                 -- ${backend_flags} --delay $sleep_time"
+                            collect_server_metrics netty $backend_ssh_host netty
                         fi
 
                         declare -ag jmeter_params=("users=$users_per_jmeter" "duration=$test_duration")
@@ -555,6 +556,7 @@ function test_scenarios() {
                             for ix in ${!jmeter_ssh_hosts[@]}; do
                                 echo "Starting Remote JMeter server. SSH Host: ${jmeter_ssh_hosts[ix]}, IP: ${jmeter_hosts[ix]}, Path: $HOME, Heap: $jmeter_server_heap_size"
                                 ssh ${jmeter_ssh_hosts[ix]} "./jmeter/jmeter-server-start.sh -n ${jmeter_hosts[ix]} -i $HOME -m $jmeter_server_heap_size -- $JMETER_JVM_ARGS"
+                                collect_server_metrics ${jmeter_ssh_hosts[ix]} ${jmeter_ssh_hosts[ix]} ApacheJMeter.jar
                             done
                         fi
 
@@ -582,8 +584,11 @@ function test_scenarios() {
                         # Start timestamp
                         test_start_timestamp=$(date +%s)
                         echo "Start timestamp: $test_start_timestamp"
-                        # Run JMeter
-                        if ! $jmeter_command; then
+                        # Run JMeter in background
+                        $jmeter_command &
+                        collect_server_metrics jmeter ApacheJMeter.jar
+                        local jmeter_pid="$!"
+                        if ! wait $jmeter_pid; then
                             echo "WARNING: JMeter execution failed."
                         fi
                         # End timestamp
@@ -598,12 +603,14 @@ function test_scenarios() {
                             echo "Wrote test start timestamp, end timestamp and test duration to $test_duration_file."
                         fi
 
-                        write_server_metrics jmeter
-                        write_server_metrics netty $backend_ssh_host netty
+                        write_server_metrics jmeter ApacheJMeter.jar
                         if [[ $jmeter_servers -gt 1 ]]; then
                             for jmeter_ssh_host in ${jmeter_ssh_hosts[@]}; do
-                                write_server_metrics $jmeter_ssh_host $jmeter_ssh_host
+                                write_server_metrics $jmeter_ssh_host $jmeter_ssh_host ApacheJMeter.jar
                             done
+                        fi
+                        if [[ $sleep_time -ge 0 ]]; then
+                            write_server_metrics netty $backend_ssh_host netty
                         fi
 
                         if [[ -f ${report_location}/results.jtl ]]; then

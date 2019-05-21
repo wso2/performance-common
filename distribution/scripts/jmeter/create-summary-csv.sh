@@ -241,6 +241,14 @@ function add_sar_headers() {
     headers+=("$1 - Network - Utilization (%)")
 }
 
+function add_perf_headers() {
+    # perf stat headers
+    headers+=("$1 - Task clock")
+    headers+=("$1 - Context switches")
+    headers+=("$1 - CPU Migrations")
+    headers+=("$1 - Page faults")
+}
+
 declare -ag headers
 headers+=("Scenario Name")
 for ((i = 0; i < ${#header_names[@]}; i++)); do
@@ -286,13 +294,16 @@ fi
 if [[ $application_instance_count -gt 1 ]]; then
     for ((i = 1; i <= $application_instance_count; i++)); do
         add_sar_headers "${application_name} ${i}"
+        add_perf_headers "${application_name} ${i}"
     done
 else
     add_sar_headers "${application_name}"
+    add_perf_headers "${application_name}"
 fi
 if [ "$include_all" = true ]; then
     if [ "$exclude_netty" = false ]; then
         add_sar_headers "Netty Service"
+        add_perf_headers "Netty Service"
     fi
     add_sar_headers "JMeter Client"
     if [ $jmeter_servers -gt 1 ]; then
@@ -475,6 +486,26 @@ function add_sar_details() {
     fi
 }
 
+function add_perf_details() {
+    local server="$1"
+    local perf_file="${current_dir}/${server}/${server}_perf.csv"
+    if [[ -f $perf_file ]]; then
+        declare -A perf_counters
+        while IFS=";" read -r value name; do
+            perf_counters[$name]="$value"
+        done < <(cat $perf_file | sed -e '/# /d' -e '/^$/d' -e '/<not supported>/d' -e 's/-//' | cut -d\; -f1,3)
+        columns+=("${perf_counters[taskclock]}")
+        columns+=("${perf_counters[contextswitches]}")
+        columns+=("${perf_counters[cpumigrations]}")
+        columns+=("${perf_counters[pagefaults]}")
+    else
+        echo "WARNING: Perf report is not available!"
+        for i in {1..4}; do
+            columns+=("N/A")
+        done
+    fi
+}
+
 data_file="results-measurement-summary.json"
 if [[ $use_warmup == true ]]; then
     data_file="results-warmup-summary.json"
@@ -548,13 +579,16 @@ for summary_json in $(find ${results_dir} -type f -name ${data_file} | sort -V);
         if [[ $application_instance_count -gt 1 ]]; then
             for ((i = 1; i <= $application_instance_count; i++)); do
                 add_sar_details "${file_prefix}${i}"
+                add_perf_details "${file_prefix}${i}"
             done
         else
             add_sar_details "${file_prefix}"
+            add_perf_details "${file_prefix}"
         fi
         if [ "$include_all" = true ]; then
             if [ "$exclude_netty" = false ]; then
                 add_sar_details netty
+                add_perf_details netty
             fi
             add_sar_details jmeter
             if [ $jmeter_servers -gt 1 ]; then

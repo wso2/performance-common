@@ -73,6 +73,36 @@ function download_file() {
     fi
 }
 
+function collect_server_metrics() {
+    if [[ -z $report_location ]]; then
+        echo "Report location not found" >&2
+        return 1
+    fi
+    local server=$1
+    local metrics_location="${report_location}/${server}"
+    mkdir -p $metrics_location
+    echo "Collecting server metrics for $server. Bash sources: ${BASH_SOURCE[@]}"
+    local ssh_host
+    local pgrep_pattern
+    if [[ ! -z $3 ]]; then
+        ssh_host="$2"
+        pgrep_pattern="$3"
+    else
+        pgrep_pattern="$2"
+    fi
+    local command_prefix=""
+    if [[ ! -z $ssh_host ]]; then
+        command_prefix="ssh $ssh_host"
+    fi
+    if [[ ! $server =~ jmeter.* ]]; then
+        declare -a pids=($($command_prefix pgrep -f "$pgrep_pattern" || echo ""))
+        if [[ ${#pids[@]} -gt 0 ]]; then
+            echo "Start collecting perf stats on the processes matching the pattern \"$pgrep_pattern\". PIDs found: ${pids[@]}"
+            $command_prefix $script_dir/../common/perf-stat-start.sh -p $pgrep_pattern
+        fi
+    fi
+}
+
 function write_sar_reports() {
     local metrics_location="$1"
     local server="$2"
@@ -155,9 +185,15 @@ function write_server_metrics() {
     local server=$1
     local metrics_location="${report_location}/${server}"
     mkdir -p $metrics_location
-    echo "Collecting server metrics for $server."
-    local ssh_host=$2
-    local pgrep_pattern=$3
+    local ssh_host
+    local pgrep_pattern
+    if [[ ! -z $3 ]]; then
+        ssh_host="$2"
+        pgrep_pattern="$3"
+    else
+        pgrep_pattern="$2"
+    fi
+    echo "Writing server metrics for $server. Process pattern: $pgrep_pattern, SSH host: ${ssh_host:-N/A}"
     local command_prefix=""
     export LC_TIME=C
     local sar_yesterday_file="/var/log/sa/sa$(date +%d -d yesterday)"
@@ -168,6 +204,8 @@ function write_server_metrics() {
         command_prefix="ssh -o SendEnv=LC_TIME $ssh_host"
         download_file $server $sar_yesterday_file ${server}/$(basename $local_sar_yesterday_file)
         download_file $server $sar_today_file ${server}/$(basename $local_sar_today_file)
+        $command_prefix $script_dir/../common/perf-stat-stop.sh
+        download_file $server /tmp/perf.csv ${server}/${server}_perf.csv
     else
         if [[ -f $sar_yesterday_file ]]; then
             echo "Copying $sar_yesterday_file to $local_sar_yesterday_file..."
@@ -176,6 +214,10 @@ function write_server_metrics() {
         if [[ -f $sar_today_file ]]; then
             echo "Copying $sar_today_file to $local_sar_today_file..."
             cp -v "$sar_today_file" "$local_sar_today_file"
+        fi
+        $script_dir/../common/perf-stat-stop.sh
+        if [[ -f /tmp/perf.csv ]]; then
+            cp -v /tmp/perf.csv "${metrics_location}/${server}_perf.csv"
         fi
     fi
     write_sar_reports "${metrics_location}" "$server" "$local_sar_today_file" "$local_sar_yesterday_file"
@@ -186,6 +228,14 @@ function write_server_metrics() {
     $command_prefix df -h >"${metrics_location}/${server}_disk_usage.txt"
     $command_prefix free -m >"${metrics_location}/${server}_free_memory.txt"
     if [[ ! -z $pgrep_pattern ]]; then
-        $command_prefix ps u -p \`pgrep -f $pgrep_pattern\` >"${metrics_location}/${server}_ps.txt"
+        if [[ ! -z $command_prefix ]]; then
+            if ! $command_prefix ps u -p \$\(pgrep -f $pgrep_pattern\) >"${metrics_location}/${server}_ps.txt" 2>/dev/null; then
+                echo "Unable to get 'ps' details from remote server: $server"
+            fi
+        else
+            if ! ps u -p $(pgrep -f $pgrep_pattern) >"${metrics_location}/${server}_ps.txt" 2>/dev/null; then
+                echo "Unable to get 'ps' details from local server: $server"
+            fi
+        fi
     fi
 }

@@ -746,7 +746,7 @@ zip -9qmr results-all.zip results/
 
 # Use following to get all column names:
 echo "Available column names:"
-while read -r line; do echo "\"$line\""; done < <($script_dir/../jmeter/create-summary-csv.sh -n "${application_name}" -j $max_jmeter_servers -i -x)
+while read -r line; do echo "\"$line\""; done < <($script_dir/../jmeter/create-summary-csv.sh ${create_csv_opts} -n "${application_name}" -j $max_jmeter_servers -i -x)
 echo -ne "\n\n"
 
 declare -a column_names
@@ -755,7 +755,7 @@ while read column_name; do
     column_names+=("$column_name")
 done < <(get_columns)
 
-echo "Creating summary results markdown file... Available column names: ${column_names[@]}"
+echo "Creating summary results markdown file... Using column names: ${column_names[@]}"
 $script_dir/../jmeter/create-summary-markdown.py --json-parameters parameters=cf-test-metadata.json,parameters=test-metadata.json,instances=all-system-info.json \
     --column-names "${column_names[@]}"
 
