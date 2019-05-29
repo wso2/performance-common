@@ -18,16 +18,12 @@
 # ----------------------------------------------------------------------------
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
-import atexit
-import matplotlib.pyplot as plt
-import matplotlib.ticker as tkr
 import pandas as pd
 import seaborn as sns
 import re
 
 sns.set_style("darkgrid")
 
-df_charts = None
 PLOT_COLUMN_RANGE_START = 9
 PLOT_COLUMN_RANGE_END = 23
 
@@ -51,31 +47,10 @@ def format_time(t):
     return str(t) + 'ms'
 
 
-def add_chart_details(filename, title):
-    print("Creating " + filename)
-    print("Title: " + title)
-    global df_charts
-    df = pd.DataFrame.from_records([{'Filename': filename, 'Title': title}], index='Filename')
-    if df_charts is None:
-        df_charts = df
-    else:
-        df_charts = df_charts.append(df)
-
-
-def save_charts_details():
-    if df_charts is not None:
-        print("Saving charts' details to charts.csv")
-        df_charts.sort_index().to_csv("charts.csv")
-
-
-atexit.register(save_charts_details)
-
-
 def save_line_plot(filename, y, maintitle, subtitle, df):
-    add_chart_details(filename, maintitle)
+    print("Creating " + filename)
     fig, ax = plt.subplots(figsize=(8, 6))
-    sns_plot = sns.lineplot(x="Concurrent Users", y=y, hue="Scenario Name", data=df, markers=True,
-                            style="Scenario Name", dashes=False)
+    sns.lineplot(x="Concurrent Users", y=y, hue="Scenario Name", data=df, markers=True, style="Scenario Name", dashes=False)
     ax.yaxis.set_major_formatter(tkr.FuncFormatter(lambda y, p: "{:,}".format(y)))
     plt.suptitle(maintitle)
     plt.title(subtitle)
@@ -85,7 +60,7 @@ def save_line_plot(filename, y, maintitle, subtitle, df):
 
 
 def save_lm_plot(filename, x, y, maintitle, df):
-    add_chart_details(filename, maintitle)
+    print("Creating " + filename)
     g = sns.lmplot(x=x, y=y, hue="Scenario Name", data=df, height=7)
     for ax in g.axes.flatten():
         ax.yaxis.set_major_formatter(tkr.FuncFormatter(lambda y_value, p: "{:,}".format(y_value)))
@@ -96,8 +71,9 @@ def save_lm_plot(filename, x, y, maintitle, df):
     plt.clf()
     plt.close(g.fig)
 
+
 def save_cat_plot(filename, y, maintitle, subtitle, df, col):
-    add_chart_details(filename, maintitle)
+    print("Creating " + filename)
     g = sns.catplot(x="Concurrent Users", y=y, hue="Scenario Name", col=col, data=df, kind='point', height=7, col_wrap=2)
     for ax in g.axes.flatten():
         ax.yaxis.set_major_formatter(tkr.FuncFormatter(lambda y_value, p: "{:,}".format(y_value)))
