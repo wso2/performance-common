@@ -15,6 +15,7 @@
  */
 package org.wso2.performance.common.netty.echo;
 
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -52,28 +53,32 @@ public class EchoHttpServerHandler extends SimpleChannelInboundHandler<FullHttpR
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
         if (h2AggregateContent) {
-            String streamId = getStreamId(request);
-            FullHttpResponse response = EchoHttpServerHandler.buildFullHttpResponse(request);
-            setStreamId(response, streamId);
+            String streamId = request.headers().get(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text());
+            FullHttpResponse response = buildFullHttpResponse(request);
+            response.headers().set(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text(), streamId);
             ctx.write(response);
         } else {
+            // Decide whether to close the connection or not
             boolean keepAlive = HttpUtil.isKeepAlive(request);
+            // Build the response object
             FullHttpResponse response = buildFullHttpResponse(request);
-            if (!keepAlive) {
-                ctx.write(response).addListener(ChannelFutureListener.CLOSE);
-            } else {
+            if (keepAlive) {
+                // Add keep alive header
                 response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-                ctx.write(response);
             }
-        }
-    }
-
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) {
-        if (sleepTime > 0) {
-            ctx.executor().schedule(ctx::flush, sleepTime, TimeUnit.MILLISECONDS);
-        } else {
-            ctx.flush();
+            if (sleepTime > 0) {
+                ctx.executor().schedule(() -> {
+                    ChannelFuture f = ctx.writeAndFlush(response);
+                    if (!keepAlive) {
+                        f.addListener(ChannelFutureListener.CLOSE);
+                    }
+                }, sleepTime, TimeUnit.MILLISECONDS);
+            } else {
+                ChannelFuture f = ctx.writeAndFlush(response);
+                if (!keepAlive) {
+                    f.addListener(ChannelFutureListener.CLOSE);
+                }
+            }
         }
     }
 
@@ -85,13 +90,5 @@ public class EchoHttpServerHandler extends SimpleChannelInboundHandler<FullHttpR
         }
         response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
         return response;
-    }
-
-    private String getStreamId(FullHttpRequest request) {
-        return request.headers().get(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text());
-    }
-
-    private void setStreamId(FullHttpResponse response, String streamId) {
-        response.headers().set(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text(), streamId);
     }
 }
