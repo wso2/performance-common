@@ -119,7 +119,11 @@ declare -A scenario_duration
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 -m <heap_sizes> -u <concurrent_users> -b <message_sizes> -s <sleep_times> [-d <test_duration>] [-w <warmup_time>]"
+    echo "$0 -m <heap_sizes> -u <concurrent_users> -b <message_sizes> -s <sleep_times>"
+    if function_exists usageCommand; then
+        echo "   $(usageCommand)"
+    fi
+    echo "   [-d <test_duration>] [-w <warmup_time>]"
     echo "   [-n <jmeter_servers>] [-j <jmeter_server_heap_size>] [-k <jmeter_client_heap_size>] [-l <netty_service_heap_size>]"
     echo "   [-i <include_scenario_name>] [-e <include_scenario_name>] [-t] [-p <estimated_processing_time_in_between_tests>] [-h]"
     echo ""
@@ -127,6 +131,9 @@ function usage() {
     echo "-u: Concurrent Users to test. You can give multiple options to specify multiple users."
     echo "-b: Message sizes in bytes. You can give multiple options to specify multiple message sizes."
     echo "-s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times."
+    if function_exists usageHelp; then
+        echo "$(usageHelp)"
+    fi
     echo "-d: Test Duration in seconds. Default $default_test_duration."
     echo "-w: Warm-up time in seconds. Default $default_warmup_time."
     echo "-n: Number of JMeter servers. If n=1, only client will be used. If n > 1, remote JMeter servers will be used. Default $default_jmeter_servers."
@@ -141,6 +148,8 @@ function usage() {
     echo ""
 }
 
+# Reset getopts
+OPTIND=0
 while getopts "u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts; do
     case $opts in
     u)
@@ -220,6 +229,10 @@ if [ ${#backend_sleep_times_array[@]} -eq 0 ]; then
     exit 1
 fi
 
+if function_exists validate; then
+    validate
+fi
+
 if [[ -z $test_duration ]]; then
     echo "Please provide the test duration."
     exit 1
@@ -284,7 +297,7 @@ if ! [[ $jmeter_servers =~ $number_regex ]]; then
 fi
 
 for users in ${concurrent_users_array[@]}; do
-    remainder=$(bc <<< "scale=0; ${users}%${jmeter_servers}")
+    remainder=$(bc <<<"scale=0; ${users}%${jmeter_servers}")
     if ! [[ $remainder -eq 0 ]]; then
         echo "Unable to split $users users into $jmeter_servers JMeter servers."
         exit 1
@@ -513,7 +526,7 @@ function test_scenarios() {
                         fi
                         local start_time=$(date +%s)
                         #requests served by multiple jmeter servers if $jmeter_servers > 1
-                        local users_per_jmeter=$(bc <<< "scale=0; ${users}/${jmeter_servers}")
+                        local users_per_jmeter=$(bc <<<"scale=0; ${users}/${jmeter_servers}")
 
                         test_counter=$((test_counter + 1))
                         local scenario_desc="Test No: ${test_counter}, Scenario Name: ${scenario_name}, Duration: $test_duration"
@@ -531,6 +544,7 @@ function test_scenarios() {
                             echo "Starting Backend Service. Delay: $sleep_time, Additional Flags: ${backend_flags:-N/A}"
                             ssh $backend_ssh_host "./netty-service/netty-start.sh -m $netty_service_heap_size -w \
                                 -- ${backend_flags} --delay $sleep_time"
+                            collect_server_metrics netty $backend_ssh_host netty
                         fi
 
                         declare -ag jmeter_params=("users=$users_per_jmeter" "duration=$test_duration")
@@ -542,6 +556,7 @@ function test_scenarios() {
                             for ix in ${!jmeter_ssh_hosts[@]}; do
                                 echo "Starting Remote JMeter server. SSH Host: ${jmeter_ssh_hosts[ix]}, IP: ${jmeter_hosts[ix]}, Path: $HOME, Heap: $jmeter_server_heap_size"
                                 ssh ${jmeter_ssh_hosts[ix]} "./jmeter/jmeter-server-start.sh -n ${jmeter_hosts[ix]} -i $HOME -m $jmeter_server_heap_size -- $JMETER_JVM_ARGS"
+                                collect_server_metrics ${jmeter_ssh_hosts[ix]} ${jmeter_ssh_hosts[ix]} ApacheJMeter.jar
                             done
                         fi
 
@@ -565,21 +580,45 @@ function test_scenarios() {
 
                         echo "Starting JMeter Client with JVM_ARGS=$JVM_ARGS"
                         echo "$jmeter_command"
-                        # Run JMeter
-                        $jmeter_command
 
-                        write_server_metrics jmeter
-                        write_server_metrics netty $backend_ssh_host netty
-                        if [[ $jmeter_servers -gt 1 ]]; then
-                            for jmeter_ssh_host in ${jmeter_ssh_hosts[@]}; do
-                                write_server_metrics $jmeter_ssh_host $jmeter_ssh_host
-                            done
+                        # Start timestamp
+                        test_start_timestamp=$(date +%s)
+                        echo "Start timestamp: $test_start_timestamp"
+                        # Run JMeter in background
+                        $jmeter_command &
+                        collect_server_metrics jmeter ApacheJMeter.jar
+                        local jmeter_pid="$!"
+                        if ! wait $jmeter_pid; then
+                            echo "WARNING: JMeter execution failed."
+                        fi
+                        # End timestamp
+                        test_end_timestamp="$(date +%s)"
+                        echo "End timestamp: $test_end_timestamp"
+
+                        local test_duration_file="${report_location}/test_duration.json"
+                        if jq -n --arg start_timestamp "$test_start_timestamp" \
+                            --arg end_timestamp "$test_end_timestamp" \
+                            --arg test_duration "$(($test_end_timestamp - $test_start_timestamp))" \
+                            '. | .["start_timestamp"]=$start_timestamp | .["end_timestamp"]=$end_timestamp | .["test_duration"]=$test_duration' >$test_duration_file; then
+                            echo "Wrote test start timestamp, end timestamp and test duration to $test_duration_file."
                         fi
 
-                        $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -t $warmup_time -u SECONDS -s
+                        write_server_metrics jmeter ApacheJMeter.jar
+                        if [[ $jmeter_servers -gt 1 ]]; then
+                            for jmeter_ssh_host in ${jmeter_ssh_hosts[@]}; do
+                                write_server_metrics $jmeter_ssh_host $jmeter_ssh_host ApacheJMeter.jar
+                            done
+                        fi
+                        if [[ $sleep_time -ge 0 ]]; then
+                            write_server_metrics netty $backend_ssh_host netty
+                        fi
 
-                        echo "Zipping JTL files in ${report_location}"
-                        zip -jm ${report_location}/jtls.zip ${report_location}/results*.jtl
+                        if [[ -f ${report_location}/results.jtl ]]; then
+                            $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -t $warmup_time -u SECONDS -s
+
+                            echo "Zipping JTL files in ${report_location}"
+                            zip -jm ${report_location}/jtls.zip ${report_location}/results*.jtl
+                        fi
 
                         if [[ $sleep_time -ge 0 ]]; then
                             download_file $backend_ssh_host netty-service/logs/netty.log netty.log

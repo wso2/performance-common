@@ -21,9 +21,8 @@
 # ----------------------------------------------------------------------------
 
 import argparse
-import csv
-import json
 import os
+
 from jinja2 import Environment, FileSystemLoader
 
 PATH = os.path.dirname(os.path.abspath(__file__))
@@ -52,6 +51,10 @@ def main():
         description='Create AWS CloudFormation template.')
     parser.add_argument('--template-name', required=True,
                         help='The template file name.', type=str)
+    parser.add_argument('--region', required=True,
+                        help='AWS Region.', type=str)
+    parser.add_argument('--ami-id', required=True,
+                        help='The Amazon Image ID.', type=str)
     parser.add_argument('--output-name', required=True,
                         help='Output file name.', type=str)
     parser.add_argument('--jmeter-servers', required=True,
@@ -65,8 +68,13 @@ def main():
 
     args = parser.parse_args()
 
-    context = {'jmeter_servers': args.jmeter_servers, 'start_bastion': args.start_bastion,
-               'enable_cloudwatch_logs': args.enable_cloudwatch_logs}
+    context = {
+        'region': args.region,
+        'ami_id': args.ami_id,
+        'jmeter_servers': args.jmeter_servers,
+        'start_bastion': args.start_bastion,
+        'enable_cloudwatch_logs': args.enable_cloudwatch_logs
+    }
     if args.parameters is not None:
         context.update(args.parameters)
 

@@ -34,6 +34,7 @@ check_command python
 check_command ts
 
 script_start_time=$(date +%s)
+user_email=""
 performance_scripts_distribution=""
 default_results_dir="results-$(date +%Y%m%d%H%M%S)"
 results_dir="$default_results_dir"
@@ -61,7 +62,7 @@ ALLOWED_OPTIONS="ubsm"
 function usage() {
     echo ""
     echo "Usage: "
-    echo "${script_name:-$0} -f <performance_scripts_distribution> [-d <results_dir>] -k <key_file> -n <key_name>"
+    echo "${script_name:-$0} -u <user_email> -f <performance_scripts_distribution> [-d <results_dir>] -k <key_file> -n <key_name>"
     echo "   -j <jmeter_distribution> -o <oracle_jdk_distribution> -g <gcviewer_jar_path>"
     echo "   -s <stack_name_prefix> -b <s3_bucket_name> -r <s3_bucket_region>"
     echo "   -J <jmeter_client_ec2_instance_type> -S <jmeter_server_ec2_instance_type>"
@@ -72,6 +73,7 @@ function usage() {
     echo "   [-t <number_of_stacks>] [-p <parallel_parameter_option>] [-w <minimum_stack_creation_wait_time>]"
     echo "   [-h] -- [run_performance_tests_options]"
     echo ""
+    echo "-u: Email of the user running this script."
     echo "-f: Distribution containing the scripts to run performance tests."
     echo "-d: The results directory. Default value is a directory with current time. For example, $default_results_dir."
     echo "-k: Amazon EC2 Key File. Amazon EC2 Key Name must match with this file name."
@@ -97,8 +99,11 @@ function usage() {
     echo ""
 }
 
-while getopts "f:d:k:n:j:o:g:s:b:r:J:S:N:t:p:w:h" opts; do
+while getopts "u:f:d:k:n:j:o:g:s:b:r:J:S:N:t:p:w:h" opts; do
     case $opts in
+    u)
+        user_email=${OPTARG}
+        ;;
     f)
         performance_scripts_distribution=${OPTARG}
         ;;
@@ -160,6 +165,16 @@ done
 shift "$((OPTIND - 1))"
 
 run_performance_tests_options=("$@")
+
+if [[ -z $user_email ]]; then
+    echo "Please provide your email address."
+    exit 1
+fi
+
+if ! [[ "$user_email" =~ (.+)@(.+) ]]; then
+    echo "Provided email address \"$user_email\" is invalid."
+    exit 1
+fi
 
 if [[ ! -f $performance_scripts_distribution ]]; then
     echo "Please provide Performance Distribution."
@@ -292,20 +307,18 @@ if function_exists validate; then
     validate
 fi
 
-if [[ -z $aws_cloudformation_template_filename ]]; then
-    echo "Please set the AWS Cloudformation template file name from the script."
-    exit 1
-fi
+# Allow to change the script name
+run_performance_tests_script_name=${run_performance_tests_script_name:-run-performance-tests.sh}
 
-if [[ -z $application_name ]]; then
-    echo "Please set the application name from the script."
-    exit 1
-fi
+declare -a required_variables=("aws_cloudformation_template_filename" "application_name" "ec2_instance_name"
+    "metrics_file_prefix" "run_performance_tests_script_name")
 
-if [[ -z $metrics_file_prefix ]]; then
-    echo "Please set the prefix of application metrics files from the script."
-    exit 1
-fi
+for var in "${required_variables[@]}"; do
+    if [[ -z ${!var} ]]; then
+        echo "Required variable: ${var} is not defined!"
+        exit 1
+    fi
+done
 
 if ! function_exists get_columns; then
     echo "Please define a function named 'get_columns' in the script to get the columns to be included in markdown file."
@@ -322,10 +335,13 @@ echo "Results will be downloaded to $results_dir"
 # Get absolute path of GCViewer
 gcviewer_jar_path=$(realpath $gcviewer_jar_path)
 # Copy scripts to results directory (in case if we need to use the scripts again)
-cp $performance_scripts_distribution $results_dir
+mkdir $results_dir/scripts
+cp -v $performance_scripts_distribution $results_dir/scripts/
 
 # Save metadata
 declare -A test_parameters
+test_parameters[application_name]="$application_name"
+test_parameters[number_of_stacks]="$number_of_stacks"
 test_parameters[jmeter_client_ec2_instance_type]="$jmeter_client_ec2_instance_type"
 test_parameters[jmeter_server_ec2_instance_type]="$jmeter_server_ec2_instance_type"
 test_parameters[netty_ec2_instance_type]="$netty_ec2_instance_type"
@@ -344,9 +360,6 @@ for key in "${!test_parameters[@]}"; do
 done
 jq -n "${test_parameters_args[@]}" "$test_parameters_json" >$results_dir/cf-test-metadata.json
 
-# Allow to change the script name
-run_performance_tests_script_name=${run_performance_tests_script_name:-run-performance-tests.sh}
-
 estimate_command="$script_dir/../jmeter/${run_performance_tests_script_name} -t ${run_performance_tests_options[@]}"
 echo "Estimating total time for performance tests: $estimate_command"
 # Estimating this script will also validate the options. It's important to validate options before creating the stack.
@@ -359,18 +372,24 @@ declare -a performance_test_options
 if [[ $number_of_stacks -gt 1 ]]; then
     # Read options given to the performance test script. Refer jmeter/perf-test-common.sh
     declare -a options
-    # Reset getopts
-    OPTIND=0
-    while getopts ":u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts ${run_performance_tests_options[@]}; do
-        case $opts in
-        $parallel_parameter_option)
-            options+=("${OPTARG}")
-            ;;
-        *)
-            run_performance_tests_remaining_options+=("-${opts}")
-            [[ -n "$OPTARG" ]] && run_performance_tests_remaining_options+=("$OPTARG")
-            ;;
-        esac
+    # Flag to check whether next parameter is an argument to $parallel_parameter_option
+    next_opt_param=false
+    for opt in ${run_performance_tests_options[@]}; do
+        if [[ $opt == -$parallel_parameter_option* ]]; then
+            optarg="${opt:2}"
+            if [[ ! -z $optarg ]]; then
+                options+=("${optarg}")
+            else
+                next_opt_param=true
+            fi
+        else
+            if [[ $next_opt_param == true ]]; then
+                options+=("${opt}")
+                next_opt_param=false
+            else
+                run_performance_tests_remaining_options+=("${opt}")
+            fi
+        fi
     done
     minimum_params_per_stack=$(bc <<<"scale=0; ${#options[@]}/${number_of_stacks}")
     remaining_params=$(bc <<<"scale=0; ${#options[@]}%${number_of_stacks}")
@@ -402,25 +421,32 @@ else
     performance_test_options+=("${run_performance_tests_options[*]}")
 fi
 
-function read_concurrent_users() {
-    declare -ag concurrent_users=()
-    OPTIND=0
-    while getopts ":u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts $@; do
-        case $opts in
-        u)
-            concurrent_users+=("${OPTARG}")
-            ;;
-        esac
-    done
-}
-
 declare -a jmeter_servers_per_stack
 
 echo "Number of stacks to create: $number_of_stacks."
+max_jmeter_servers=1
 # echo "Performance test options given to stack(s): "
 for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     declare -a options_array=(${performance_test_options[$i]})
-    read_concurrent_users ${options_array[@]}
+    declare -a concurrent_users=()
+    # Flag to check whether next parameter is an argument to -u
+    next_opt_param=false
+    for opt in ${options_array[@]}; do
+        if [[ $opt == -$parallel_parameter_option* ]]; then
+            optarg="${opt:2}"
+            if [[ ! -z $optarg ]]; then
+                concurrent_users+=("${optarg}")
+            else
+                next_opt_param=true
+            fi
+        else
+            if [[ $next_opt_param == true ]]; then
+                concurrent_users+=("${opt}")
+                next_opt_param=false
+            fi
+        fi
+    done
+
     # Determine JMeter Servers
     max_concurrent_users="0"
     for users in ${concurrent_users[@]}; do
@@ -431,6 +457,7 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     jmeter_servers=1
     if [[ $max_concurrent_users -gt 500 ]]; then
         jmeter_servers=2
+        max_jmeter_servers=2
     fi
     jmeter_servers_per_stack+=("$jmeter_servers")
     performance_test_options[$i]+=" -n $jmeter_servers"
@@ -438,6 +465,7 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     echo "$(($i + 1)): Estimating total time for the tests in stack $(($i + 1)) with $jmeter_servers JMeter server(s) handling a maximum of $max_concurrent_users concurrent users: $estimate_command"
     $estimate_command
 done
+echo "Maximum number of JMeter(s): $max_jmeter_servers"
 
 temp_dir=$(mktemp -d)
 
@@ -463,6 +491,7 @@ echo "Listing files in S3 Bucket $s3_bucket_name..."
 aws --region $s3_bucket_region s3 ls --summarize s3://$s3_bucket_name
 
 declare -A cf_parameters
+cf_parameters[UserEmail]="$user_email"
 cf_parameters[KeyName]="$key_name"
 cf_parameters[BucketName]="$s3_bucket_name"
 cf_parameters[BucketRegion]="$s3_bucket_region"
@@ -504,6 +533,13 @@ function exit_handler() {
 
 trap exit_handler EXIT
 
+aws_region="$(aws configure get region)"
+echo "Current AWS Region: $aws_region"
+# Find latest Ubuntu AMI ID
+# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami.html
+latest_ami_id="$(aws ec2 describe-images --owners 099720109477 --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-????????' 'Name=state,Values=available' --output json | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId')"
+echo "Latest Ubuntu AMI ID: $latest_ami_id"
+
 # Create stacks
 stack_create_start_time=$(date +%s)
 for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
@@ -513,7 +549,10 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     cf_template=$stack_results_dir/${aws_cloudformation_template_filename}
     jmeter_servers=${jmeter_servers_per_stack[$i]}
     echo "JMeter Servers: $jmeter_servers"
-    $script_dir/create-template.py --template-name ${aws_cloudformation_template_filename} --output-name $cf_template \
+    $script_dir/create-template.py ${CREATE_TEMPLATE_OPTS} --template-name ${aws_cloudformation_template_filename} \
+        --region $aws_region \
+        --ami-id $latest_ami_id \
+        --output-name $cf_template \
         --jmeter-servers $jmeter_servers --start-bastion
     echo "Validating stack: $stack_name: $cf_template"
     aws cloudformation validate-template --template-body file://$cf_template
@@ -562,6 +601,46 @@ function save_logs_and_delete_stack() {
         done
     else
         echo "WARNING: There was an error getting log streams from the log group $log_group_name. Check whether AWS CloudWatch logs are enabled."
+    fi
+
+    local stack_resources_json=$stack_results_dir/stack-resources-before-delete.json
+    echo "Saving $stack_name stack resources to $stack_resources_json"
+    aws cloudformation describe-stack-resources --stack-name $stack_id --no-paginate --output json >$stack_resources_json
+
+    local vpc_id="$(jq -r '.StackResources[] | select(.LogicalResourceId=="VPC") | .PhysicalResourceId' $stack_resources_json)"
+    if [[ ! -z $vpc_id ]]; then
+        echo "VPC ID: $vpc_id"
+        local stack_instances_json=$stack_results_dir/stack-instances.json
+        aws ec2 describe-instances --filters "Name=vpc-id, Values="$vpc_id"" --query "Reservations[*].Instances[*]" --no-paginate --output json >$stack_instances_json
+        # Try to get a public IP
+        local instance_public_ip="$(jq -r 'first(.[][] | .PublicIpAddress // empty)' $stack_instances_json)"
+        if [[ ! -z $instance_public_ip ]]; then
+            local instance_ips_file=$stack_results_dir/stack-instance-ips.txt
+            cat $stack_instances_json | jq -r '.[][] | (.Tags[] | select(.Key=="Name")) as $tags | ($tags["Value"] + "/" + .PrivateIpAddress) | tostring' >$instance_ips_file
+            echo "Private IPs in $instance_ips_file: "
+            cat $instance_ips_file
+            echo "Uploading $instance_ips_file to $instance_public_ip"
+            if scp -i $key_file -o "StrictHostKeyChecking=no" $instance_ips_file ubuntu@$instance_public_ip:; then
+                download_files_command="ssh -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip ./cloudformation/download-files.sh -f $(basename $instance_ips_file) -k private_key.pem -o /home/ubuntu"
+                echo "Download files command: $download_files_command"
+                $download_files_command
+                echo "Downloading files.zip"
+                scp -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip:files.zip $stack_results_dir
+                local files_dir="$stack_results_dir/files"
+                mkdir -p $files_dir
+                echo "Extracting files.zip to $files_dir"
+                unzip -q $stack_results_dir/files.zip -d $files_dir
+            fi
+        fi
+    else
+        echo "WARNING: VPC ID not found!"
+    fi
+
+    if [ "$SUSPEND" = true ]; then
+        echo "SUSPEND is true, holding the deletion of stack: $stack_id"
+        if ! sleep infinity; then
+            echo "Sleep terminated! Proceeding to delete the stack: $stack_id"
+        fi
     fi
 
     delete_stack $stack_id
@@ -623,12 +702,6 @@ function run_perf_tests_in_stack() {
         echo "Failed to download the results.zip"
         exit 500
     fi
-
-    download_logs_command="$ssh_command_prefix ./cloudformation/download-logs.sh -o ~"
-    echo "Download logs to JMeter client: $download_logs_command"
-    $download_logs_command
-    echo "Downloading logs.zip"
-    scp -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$jmeter_client_ip:logs.zip $stack_results_dir
 }
 
 for ((i = 0; i < ${#stack_ids[@]}; i++)); do
@@ -646,23 +719,34 @@ echo "Waiting till all performance test jobs are completed..."
 # Wait till parallel tests complete
 wait
 
-echo "Creating summary.csv..."
+declare -a system_information_files
+
 # Extract all results.
 for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     stack_results_dir="$results_dir/results-$(($i + 1))"
     unzip -nq ${stack_results_dir}/results-without-jtls.zip -x '*/test-metadata.json' -d $results_dir
+    system_info_file="${stack_results_dir}/files/${ec2_instance_name}/system-info.json"
+    if [[ -f $system_info_file ]]; then
+        system_information_files+=("$system_info_file")
+    fi
 done
 cd $results_dir
+echo "Combining system information in following files: ${system_information_files[@]}"
+# Join json files containing system information and create an array
+jq -s . "${system_information_files[@]}" >all-system-info.json
 # Copy metadata before creating CSV
 cp cf-test-metadata.json test-metadata.json results
-# Create CSV
-$script_dir/../jmeter/create-summary-csv.sh -d results -n "${application_name}" -p "${metrics_file_prefix}" -j 2 -g "${gcviewer_jar_path}" -i
+echo "Creating summary.csv..."
+# Create warmup summary CSV
+$script_dir/../jmeter/create-summary-csv.sh ${create_csv_opts} -d results -n "${application_name}" -p "${metrics_file_prefix}" -j $max_jmeter_servers -g "${gcviewer_jar_path}" -i -w -o summary-warmup.csv
+# Create measurement summary CSV
+$script_dir/../jmeter/create-summary-csv.sh ${create_csv_opts} -d results -n "${application_name}" -p "${metrics_file_prefix}" -j $max_jmeter_servers -g "${gcviewer_jar_path}" -i -o summary.csv
 # Zip results
 zip -9qmr results-all.zip results/
 
 # Use following to get all column names:
 echo "Available column names:"
-while read -r line; do echo "\"$line\""; done < <($script_dir/../jmeter/create-summary-csv.sh -n "${application_name}" -j 2 -i -x)
+while read -r line; do echo "\"$line\""; done < <($script_dir/../jmeter/create-summary-csv.sh ${create_csv_opts} -n "${application_name}" -j $max_jmeter_servers -i -x)
 echo -ne "\n\n"
 
 declare -a column_names
@@ -671,8 +755,26 @@ while read column_name; do
     column_names+=("$column_name")
 done < <(get_columns)
 
-echo "Creating summary results markdown file..."
-$script_dir/../jmeter/create-summary-markdown.py --json-files cf-test-metadata.json test-metadata.json --column-names "${column_names[@]}"
+echo "Creating summary results markdown file... Using column names: ${column_names[@]}"
+$script_dir/../jmeter/create-summary-markdown.py --json-parameters parameters=cf-test-metadata.json,parameters=test-metadata.json,instances=all-system-info.json \
+    --column-names "${column_names[@]}"
 
-echo "Results:"
-cat summary.csv | cut -d, -f 1-11 | column -t -s,
+function print_summary() {
+    cat $1 | cut -d, -f 1-13 | column -t -s,
+}
+
+echo -ne "\n\n"
+echo "Warmup Results:"
+print_summary summary-warmup.csv
+
+echo -ne "\n\n"
+echo "Measurement Results:"
+print_summary summary.csv
+
+awk -F, '{ if ($8 > 0)  print }' summary.csv >summary-errors.csv
+
+if [[ $(wc -l <summary-errors.csv) -gt 1 ]]; then
+    echo -ne "\n\n"
+    echo "WARNING: There are errors in measurement results! Please check."
+    print_summary summary-errors.csv
+fi

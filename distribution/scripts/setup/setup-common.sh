@@ -115,6 +115,9 @@ if [ "$upgrade" = true ]; then
     apt-get -y autoclean
 fi
 
+# Default packages to install
+packages+=("jq" "zip" "unzip" "linux-tools-common" "linux-tools-aws" "linux-tools-$(uname -r)")
+
 # Install OS Packages
 for p in ${packages[*]}; do
     echo "Installing $p package"
@@ -132,6 +135,13 @@ done
 # Install SAR
 echo "Installing and configuring System Activity Report"
 $script_dir/../sar/install-sar.sh
+
+echo -ne "\n"
+
+# Allow users to run perf
+echo "Allowing all users to collect perf stats"
+echo -1 >/proc/sys/kernel/perf_event_paranoid
+echo 'kernel.perf_event_paranoid = -1' >>/etc/sysctl.conf
 
 echo -ne "\n"
 

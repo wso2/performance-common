@@ -24,6 +24,7 @@ import argparse
 import csv
 import json
 import os
+import humanize
 from jinja2 import Environment, FileSystemLoader
 
 PATH = os.path.dirname(os.path.abspath(__file__))
@@ -38,17 +39,40 @@ def render_template(template_filename, context):
     return TEMPLATE_ENVIRONMENT.get_template(template_filename).render(context)
 
 
+class StoreJsonParameters(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        my_dict = {}
+        for kv in values.split(","):
+            k, v = kv.split("=")
+            with open(v) as f:
+                if k in my_dict:
+                    my_dict[k].update(json.load(f))
+                else:
+                    my_dict[k] = json.load(f)
+        setattr(namespace, self.dest, my_dict)
+
+
+def pluralize(number, singular='', plural='s'):
+    if int(number) == 1:
+        return singular
+    else:
+        return plural
+
+
 def main():
     parser = argparse.ArgumentParser(description='Create summary report')
-    parser.add_argument('--json-files', required=True, help='JSON files with parameters.', nargs='+', type=str)
-    parser.add_argument('--column-names', required=True, help='Columns to include in the report.', nargs='+', type=str)
+    parser.add_argument("--json-parameters", dest="parameters", action=StoreJsonParameters,
+                        help="Additional parameters in JSON files with a prefix.", metavar="prefix1=json-file1,prefix2=json-file2...")
+    parser.add_argument('--column-names', required=True,
+                        help='Columns to include in the report.', nargs='+', type=str)
     args = parser.parse_args()
 
-    json_parameters = {}
+    context = {
+        'column_names': args.column_names
+    }
 
-    for j in args.json_files:
-        with open(j) as f:
-            json_parameters.update(json.load(f))
+    if args.parameters is not None:
+        context.update(args.parameters)
 
     column_names_set = set(args.column_names)
     rows = []
@@ -60,13 +84,10 @@ def main():
                 (name, value) for name, value in row.items() if name in column_names_set
             )
             rows.append(filtered_row)
+        context['rows'] = rows
 
-        context = {
-            'column_names': args.column_names,
-            'parameters': json_parameters,
-            'rows': rows
-        }
-
+    TEMPLATE_ENVIRONMENT.filters['pluralize'] = pluralize
+    TEMPLATE_ENVIRONMENT.filters['humanize_ordinal'] = humanize.ordinal
     markdown_filename = "summary.md"
     with open(markdown_filename, 'wb') as f:
         markdown_file = render_template(markdown_filename, context)

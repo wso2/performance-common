@@ -17,6 +17,8 @@
 # Installation script for setting up System Activity Report
 # ----------------------------------------------------------------------------
 
+script_dir=$(dirname "$0")
+
 # Make sure the script is running as root.
 if [ "$UID" -ne "0" ]; then
     echo "You must be root to run $0. Try following"
@@ -46,14 +48,28 @@ while getopts "h" opts; do
     esac
 done
 
-#Install sysstat package
-apt-get install -y sysstat
-
-#Enable
-sed -i "s|ENABLED=\"false\"|ENABLED=\"true\"|" /etc/default/sysstat
+#Install latest sysstat version
+latest_version=$(curl -s https://api.github.com/repos/sysstat/sysstat/tags | jq -r '.[] | .name' | sort -rV | head -1 || echo "")
+if [[ -z $latest_version ]]; then
+    return 1
+fi
+sysstat_source_url="https://github.com/sysstat/sysstat/archive/$latest_version.tar.gz"
+echo "Downloading latest sysstat version from $sysstat_source_url"
+sar_dir=$(realpath $script_dir)
+wget "$sysstat_source_url" -O $sar_dir/sysstat.tar.gz
+extracted_dir_name="$(tar -tzf $sar_dir/sysstat.tar.gz | head -1 | cut -f1 -d"/")"
+tar -xvf $sar_dir/sysstat.tar.gz -C $sar_dir
+pushd $sar_dir/$extracted_dir_name
+./configure --enable-install-cron --enable-collect-all
+make
+make install
+popd
 
 #Change interval to 1 minute
-sed -i "s|^5-55/10|*/1|" /etc/cron.d/sysstat
+sed -i "s|^*/10|*/1|" /etc/cron.d/sysstat
 
 #Restart the service
 service sysstat restart
+
+echo "Systat service started.. SAR version: "
+sar -V

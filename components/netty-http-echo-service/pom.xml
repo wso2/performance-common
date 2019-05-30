@@ -99,6 +99,7 @@
                                     <outputDirectory>${project.build.directory}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
+                            <skip>${skipTests}</skip>
                         </configuration>
                     </execution>
                 </executions>
@@ -123,6 +124,7 @@
                                 <argument>--size</argument>
                                 <argument>1024</argument>
                             </arguments>
+                            <skip>${skipTests}</skip>
                         </configuration>
                     </execution>
                     <execution>
@@ -139,6 +141,7 @@
                                 <argument>-jar</argument>
                                 <argument>${project.artifactId}-${project.version}.jar</argument>
                             </arguments>
+                            <skip>${skipTests}</skip>
                         </configuration>
                     </execution>
                 </executions>

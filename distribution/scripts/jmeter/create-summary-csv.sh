@@ -20,6 +20,8 @@
 script_dir=$(dirname "$0")
 # Application Name to be used in column headers
 application_name=""
+default_filename="summary.csv"
+filename="$default_filename"
 default_header_names=("Heap Size" "Concurrent Users" "Message Size (Bytes)" "Back-end Service Delay (ms)")
 declare -a header_names
 # Results are usually in following directory structure:
@@ -57,11 +59,12 @@ function join_by() {
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 -n <application_name> [-c <column_header_name>] [-r <regex>] [-x] "
+    echo "$0 -n <application_name> [-o <filename>] [-c <column_header_name>] [-r <regex>] [-x] "
     echo "   [-p <file_prefix>] [-g <gcviewer_jar_path>] [-d <results_dir>]"
     echo "   [-j <jmeter_servers>] [-k <application_instance_count>] [-w] [-i] [-l] [-h]"
     echo ""
     echo "-n: Name of the application to be used in column headers."
+    echo "-o: Output filename. Default: $default_filename"
     echo "-c: Column header name for each parameter."
     echo "    You should give multiple header names in order for each directory in the results directory structure."
     echo "    Default: $(join_by , "${default_header_names[@]}")"
@@ -71,9 +74,9 @@ function usage() {
     echo "-x: Print column names and exit."
     echo "-p: Prefix of the files to get metrics (Load Average, GC, etc)."
     echo "-g: Path of GCViewer Jar file, which will be used to analyze GC logs."
-    echo "-d: Results directory. Default $default_results_dir."
-    echo "-j: Number of JMeter servers. If n=1, only client was used. If n > 1, remote JMeter servers were used. Default $default_jmeter_servers."
-    echo "-k: Number of Application instances. Default $default_application_instance_count."
+    echo "-d: Results directory. Default: $default_results_dir."
+    echo "-j: Number of JMeter servers. If n=1, only client was used. If n > 1, remote JMeter servers were used. Default: $default_jmeter_servers."
+    echo "-k: Number of Application instances. Default: $default_application_instance_count."
     echo "-w: Use warmup results instead of measurement results."
     echo "-i: Include GC statistics and load averages for other servers."
     echo "-l: Exclude Netty Backend Service statistics. Works with -i."
@@ -81,10 +84,13 @@ function usage() {
     echo ""
 }
 
-while getopts "n:c:r:xp:g:d:j:k:wilh" opts; do
+while getopts "n:o:c:r:xp:g:d:j:k:wilh" opts; do
     case $opts in
     n)
         application_name=${OPTARG}
+        ;;
+    o)
+        filename=${OPTARG}
         ;;
     c)
         header_names+=("${OPTARG}")
@@ -150,6 +156,11 @@ if [[ -z $application_name ]]; then
     exit 1
 fi
 
+if [[ -z $filename ]]; then
+    echo "Please specify the output filename."
+    exit 1
+fi
+
 if [[ -z $jmeter_servers ]]; then
     echo "Please specify the number of JMeter servers."
     exit 1
@@ -167,10 +178,75 @@ function add_gc_headers() {
     headers+=("Standard Deviation of $1 Memory Footprint After Full GC (M)")
 }
 
-function add_loadavg_headers() {
-    headers+=("$1 Load Average - Last 1 minute")
-    headers+=("$1 Load Average - Last 5 minutes")
-    headers+=("$1 Load Average - Last 15 minutes")
+function add_sar_headers() {
+    # Queue length and load averages
+    headers+=("$1 - Run queue length")
+    headers+=("$1 - Number of tasks")
+    headers+=("$1 - System Load Average - Last 1 minute")
+    headers+=("$1 - System Load Average - Last 5 minutes")
+    headers+=("$1 - System Load Average - Last 15 minutes")
+    headers+=("$1 - Blocked")
+    # CPU utilization
+    headers+=("$1 - CPU - User (%)")
+    headers+=("$1 - CPU - Nice (%)")
+    headers+=("$1 - CPU - System (%)")
+    headers+=("$1 - CPU - I/O Wait (%)")
+    headers+=("$1 - CPU - Steal (%)")
+    headers+=("$1 - CPU - Idle (%)")
+    # Memory utilization statistics
+    headers+=("$1 - Memory - Free (kB)")
+    headers+=("$1 - Memory - Available (kB)")
+    headers+=("$1 - Memory - Used (kB)")
+    headers+=("$1 - Memory - Used (%)")
+    headers+=("$1 - Memory - Buffers (kB)")
+    headers+=("$1 - Memory - Cached (kB)")
+    headers+=("$1 - Memory - Commit (kB)")
+    headers+=("$1 - Memory - Commit (%)")
+    headers+=("$1 - Memory - Active (kB)")
+    headers+=("$1 - Memory - Inactive (kB)")
+    headers+=("$1 - Memory - Dirty (kB)")
+    # Block device activity
+    headers+=("$1 - Block Device - TPS (transfers/s)")
+    headers+=("$1 - Block Device - Read TPS (kB/s)")
+    headers+=("$1 - Block Device - Write TPS (kB/s)")
+    headers+=("$1 - Block Device - Discard TPS (kB/s)")
+    headers+=("$1 - Block Device - Average Request Size (kB)")
+    headers+=("$1 - Block Device - Average Queue Length")
+    headers+=("$1 - Block Device - Average Time (ms)")
+    headers+=("$1 - Block Device - Utilization (%)")
+    # I/O and transfer rate statistics
+    headers+=("$1 - IO - TPS (transfers/s)")
+    headers+=("$1 - IO - Read TPS (requests/s")
+    headers+=("$1 - IO - Write TPS (requests/s)")
+    headers+=("$1 - IO - Discard TPS (requests/s)")
+    headers+=("$1 - IO - Data reads per seconds (blocks/s)")
+    headers+=("$1 - IO - Data writes per seconds (blocks/s)")
+    headers+=("$1 - IO - Data discarded per seconds (blocks/s)")
+    # Task creation and system switching activity
+    headers+=("$1 - Tasks created per second")
+    headers+=("$1 - Context switches per second")
+    # Status  of inode, file and other kernel tables
+    headers+=("$1 - Unused directory cache entries")
+    headers+=("$1 - Number of file handles")
+    headers+=("$1 - Number of inode handlers")
+    headers+=("$1 - Number of pseudo-terminals")
+    # Network statistics
+    headers+=("$1 - Network - Received packets/s")
+    headers+=("$1 - Network - Transmitted packets/s")
+    headers+=("$1 - Network - Received kB/s")
+    headers+=("$1 - Network - Transmitted kB/s")
+    headers+=("$1 - Network - Received compressed packets/s")
+    headers+=("$1 - Network - Transmitted compressed packets/s")
+    headers+=("$1 - Network - Received multicast packets/s")
+    headers+=("$1 - Network - Utilization (%)")
+}
+
+function add_perf_headers() {
+    # perf stat headers
+    headers+=("$1 - Task clock")
+    headers+=("$1 - Context switches")
+    headers+=("$1 - CPU Migrations")
+    headers+=("$1 - Page faults")
 }
 
 declare -ag headers
@@ -184,6 +260,7 @@ headers+=("Error Count")
 headers+=("Error %")
 headers+=("Throughput (Requests/sec)")
 headers+=("Average Response Time (ms)")
+headers+=("Average Users in the System")
 headers+=("Standard Deviation of Response Time (ms)")
 headers+=("Minimum Response Time (ms)")
 headers+=("Maximum Response Time (ms)")
@@ -216,19 +293,22 @@ if [ "$include_all" = true ]; then
 fi
 if [[ $application_instance_count -gt 1 ]]; then
     for ((i = 1; i <= $application_instance_count; i++)); do
-        add_loadavg_headers "${application_name} ${i}"
+        add_sar_headers "${application_name} ${i}"
+        add_perf_headers "${application_name} ${i}"
     done
 else
-    add_loadavg_headers "${application_name}"
+    add_sar_headers "${application_name}"
+    add_perf_headers "${application_name}"
 fi
 if [ "$include_all" = true ]; then
     if [ "$exclude_netty" = false ]; then
-        add_loadavg_headers "Netty Service"
+        add_sar_headers "Netty Service"
+        add_perf_headers "Netty Service"
     fi
-    add_loadavg_headers "JMeter Client"
+    add_sar_headers "JMeter Client"
     if [ $jmeter_servers -gt 1 ]; then
         for ((c = 1; c <= $jmeter_servers; c++)); do
-            add_loadavg_headers "JMeter Server $c"
+            add_sar_headers "JMeter Server $c"
         done
     fi
 fi
@@ -240,6 +320,7 @@ if [ "$print_column_names" = true ]; then
     exit 0
 fi
 
+# Following should be validated only if "$print_column_names" = false
 if [[ -z $file_prefix ]]; then
     echo "Please specify the prefix of the files."
     exit 1
@@ -250,18 +331,15 @@ if [[ -z $application_instance_count ]]; then
     exit 1
 fi
 
-if [[ ! -d $results_dir ]]; then
-    echo "Please specify the results directory."
-    exit 1
-fi
-
 if [[ ! -f $gcviewer_jar_path ]]; then
     echo "Please specify the path to GCViewer JAR file."
     exit 1
 fi
 
-# Output file name
-filename="summary.csv"
+if [[ ! -d $results_dir ]]; then
+    echo "Please specify the results directory."
+    exit 1
+fi
 
 if [[ -f $filename ]]; then
     echo "$filename already exists"
@@ -301,9 +379,10 @@ function get_value_from_gc_summary() {
 }
 
 function add_gc_summary_details() {
-    local gc_log_file="${current_dir}/$1_gc.log"
+    local server="$1"
+    local gc_log_file="${current_dir}/${server}_gc.log"
     if [[ -f $gc_log_file ]]; then
-        local gc_summary_file="/tmp/gc.txt"
+        local gc_summary_file="${current_dir}/${server}_gc.txt"
         echo "Reading $gc_log_file"
         java -Xms128m -Xmx128m -jar $gcviewer_jar_path $gc_log_file $gc_summary_file -t SUMMARY &>/dev/null
         columns+=("$(get_value_from_gc_summary $gc_summary_file throughput)")
@@ -316,18 +395,114 @@ function add_gc_summary_details() {
     fi
 }
 
-function add_loadavg_details() {
-    local loadavg_file="${current_dir}/$1_loadavg.txt"
-    if [[ -f $loadavg_file ]]; then
-        echo "Reading $loadavg_file"
-        local loadavg_values=$(tail -2 $loadavg_file | head -1)
-        declare -a loadavg_array=($loadavg_values)
-        columns+=("${loadavg_array[3]}")
-        columns+=("${loadavg_array[4]}")
-        columns+=("${loadavg_array[5]}")
+function add_sar_details() {
+    local server="$1"
+    declare -a sar_csv_reports
+    for report in "loadavg" "cpu" "memory" "disk" "io" "task" "file" "network"; do
+        local report_file="${current_dir}/${server}/${server}_sar_report_${report}.csv"
+        if [[ -f $report_file ]]; then
+            sar_csv_reports+=("$report_file")
+        fi
+    done
+    local test_duration_file="${current_dir}/test_duration.json"
+    if [[ ${#sar_csv_reports[@]} -gt 0 ]] && [[ -f $test_duration_file ]]; then
+        sar_start_timestamp=$(jq -r '.start_timestamp' $test_duration_file)
+        sar_end_timestamp=$(jq -r '.end_timestamp' $test_duration_file)
+        sar_end_timestamp=$(($sar_end_timestamp + 60))
+        # Create summary
+        local sar_summary_file="${current_dir}/${server}_sar_summary.json"
+        $script_dir/create-sar-summary.py --sar-csv-reports "${sar_csv_reports[@]}" \
+            --start-timestamp $sar_start_timestamp --end-timestamp $sar_end_timestamp \
+            --output-file "${sar_summary_file}"
+        declare -A sar_averages
+        while IFS="=" read -r key value; do
+            sar_averages[$key]="$value"
+        done < <(jq -r ".|to_entries|map(\"\(.key)=\(.value)\")|.[]" "${sar_summary_file}")
+        # Queue length and load averages
+        columns+=("${sar_averages[runqsz]}")
+        columns+=("${sar_averages[plistsz]}")
+        columns+=("${sar_averages[ldavg1]}")
+        columns+=("${sar_averages[ldavg5]}")
+        columns+=("${sar_averages[ldavg15]}")
+        columns+=("${sar_averages[blocked]}")
+        # CPU utilization
+        columns+=("${sar_averages[user]}")
+        columns+=("${sar_averages[nice]}")
+        columns+=("${sar_averages[system]}")
+        columns+=("${sar_averages[iowait]}")
+        columns+=("${sar_averages[steal]}")
+        columns+=("${sar_averages[idle]}")
+        # Memory utilization statistics
+        columns+=("${sar_averages[kbmemfree]}")
+        columns+=("${sar_averages[kbavail]}")
+        columns+=("${sar_averages[kbmemused]}")
+        columns+=("${sar_averages[memused]}")
+        columns+=("${sar_averages[kbbuffers]}")
+        columns+=("${sar_averages[kbcached]}")
+        columns+=("${sar_averages[kbcommit]}")
+        columns+=("${sar_averages[commit]}")
+        columns+=("${sar_averages[kbactive]}")
+        columns+=("${sar_averages[kbinact]}")
+        columns+=("${sar_averages[kbdirty]}")
+        # Block device activity
+        columns+=("${sar_averages[tps]}")
+        columns+=("${sar_averages[rkBs]}")
+        columns+=("${sar_averages[wkBs]}")
+        columns+=("${sar_averages[dkBs]}")
+        columns+=("${sar_averages[areqsz]}")
+        columns+=("${sar_averages[aqusz]}")
+        columns+=("${sar_averages[await]}")
+        columns+=("${sar_averages[util]}")
+        # I/O and transfer rate statistics
+        columns+=("${sar_averages[tps]}")
+        columns+=("${sar_averages[rtps]}")
+        columns+=("${sar_averages[wtps]}")
+        columns+=("${sar_averages[dtps]}")
+        columns+=("${sar_averages[breads]}")
+        columns+=("${sar_averages[bwrtns]}")
+        columns+=("${sar_averages[bdscds]}")
+        # Task creation and system switching activity
+        columns+=("${sar_averages[procs]}")
+        columns+=("${sar_averages[cswchs]}")
+        # Status  of inode, file and other kernel tables
+        columns+=("${sar_averages[dentunusd]}")
+        columns+=("${sar_averages[filenr]}")
+        columns+=("${sar_averages[inodenr]}")
+        columns+=("${sar_averages[ptynr]}")
+        # Network statistics
+        columns+=("${sar_averages[rxpcks]}")
+        columns+=("${sar_averages[txpcks]}")
+        columns+=("${sar_averages[rxkBs]}")
+        columns+=("${sar_averages[txkBs]}")
+        columns+=("${sar_averages[rxcmps]}")
+        columns+=("${sar_averages[txcmps]}")
+        columns+=("${sar_averages[rxmcsts]}")
+        columns+=("${sar_averages[ifutil]}")
     else
-        echo "WARNING: File missing! $loadavg_file"
-        columns+=("N/A" "N/A" "N/A")
+        echo "WARNING: SAR reports are not available!"
+        for i in {1..52}; do
+            columns+=("N/A")
+        done
+    fi
+}
+
+function add_perf_details() {
+    local server="$1"
+    local perf_file="${current_dir}/${server}/${server}_perf.csv"
+    if [[ -f $perf_file ]]; then
+        declare -A perf_counters
+        while IFS=";" read -r value name; do
+            perf_counters[$name]="$value"
+        done < <(cat $perf_file | sed -e '/# /d' -e '/^$/d' -e '/<not supported>/d' -e 's/-//' | cut -d\; -f1,3)
+        columns+=("${perf_counters[taskclock]}")
+        columns+=("${perf_counters[contextswitches]}")
+        columns+=("${perf_counters[cpumigrations]}")
+        columns+=("${perf_counters[pagefaults]}")
+    else
+        echo "WARNING: Perf report is not available!"
+        for i in {1..4}; do
+            columns+=("N/A")
+        done
     fi
 }
 
@@ -368,6 +543,8 @@ for summary_json in $(find ${results_dir} -type f -name ${data_file} | sort -V);
         columns+=("${summary_results[errorPercentage]}")
         columns+=("${summary_results[throughput]}")
         columns+=("${summary_results[mean]}")
+        average_users="$(bc <<<"scale=0; ${summary_results[throughput]}*${summary_results[mean]}/1000")"
+        columns+=("${average_users}")
         columns+=("${summary_results[stddev]}")
         columns+=("${summary_results[min]}")
         columns+=("${summary_results[max]}")
@@ -401,19 +578,22 @@ for summary_json in $(find ${results_dir} -type f -name ${data_file} | sort -V);
 
         if [[ $application_instance_count -gt 1 ]]; then
             for ((i = 1; i <= $application_instance_count; i++)); do
-                add_loadavg_details "${file_prefix}${i}"
+                add_sar_details "${file_prefix}${i}"
+                add_perf_details "${file_prefix}${i}"
             done
         else
-            add_loadavg_details "${file_prefix}"
+            add_sar_details "${file_prefix}"
+            add_perf_details "${file_prefix}"
         fi
         if [ "$include_all" = true ]; then
             if [ "$exclude_netty" = false ]; then
-                add_loadavg_details netty
+                add_sar_details netty
+                add_perf_details netty
             fi
-            add_loadavg_details jmeter
+            add_sar_details jmeter
             if [ $jmeter_servers -gt 1 ]; then
                 for ((c = 1; c <= $jmeter_servers; c++)); do
-                    add_loadavg_details jmeter$c
+                    add_sar_details jmeter$c
                 done
             fi
         fi

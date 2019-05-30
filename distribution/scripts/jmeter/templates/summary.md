@@ -36,7 +36,16 @@ The following are the test parameters.
 The duration of each test is **{{ parameters.test_duration }} seconds**. The warm-up period is **{{ parameters.warmup_time }} seconds**.
 The measurement results are collected after the warm-up period.
 
-A [**{{ parameters.netty_ec2_instance_type }}** Amazon EC2 instance](https://aws.amazon.com/ec2/instance-types/) was used to install {{ parameters.application_name }}.
+The performance tests were executed on {{ parameters.number_of_stacks }} AWS CloudFormation stack{{ parameters.number_of_stacks|pluralize }}.
+{% for instance in instances %}
+System information for {{ parameters.application_name }} in {{ loop.index|humanize_ordinal }} AWS CloudFormation stack.
+
+| Class | Subclass | Description | Value |
+| --- | --- | --- | --- |
+{%- for system_info in instance.system_info %}
+| {{ system_info['class'] }} | {{ system_info['subclass'] }} | {{ system_info['description'] }} | {{ system_info['value'] }} |
+{%- endfor %}
+{%- endfor %}
 
 The following are the measurements collected from each performance test conducted for a given combination of
 test parameters.

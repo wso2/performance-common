@@ -17,5 +17,8 @@ hs_err_pid*
 # Maven Target
 target
 
+# Python Cache
+__pycache__
+
 # Generated POM
 dependency-reduced-pom.xml
