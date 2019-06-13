@@ -577,6 +577,45 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     echo "Created stack: $stack_name. ID: $stack_id"
 done
 
+function download_files() {
+    local stack_id="$1"
+    local stack_name="$2"
+    local stack_results_dir="$3"
+    local suffix="$(date +%Y%m%d%H%M%S)"
+    local stack_resources_json=$stack_results_dir/stack-resources-$suffix.json
+    echo "Saving $stack_name stack resources to $stack_resources_json"
+    aws cloudformation describe-stack-resources --stack-name $stack_id --no-paginate --output json >$stack_resources_json
+    local vpc_id="$(jq -r '.StackResources[] | select(.LogicalResourceId=="VPC") | .PhysicalResourceId' $stack_resources_json)"
+    if [[ ! -z $vpc_id ]]; then
+        echo "VPC ID: $vpc_id"
+        local stack_instances_json=$stack_results_dir/stack-instances-$suffix.json
+        aws ec2 describe-instances --filters "Name=vpc-id, Values="$vpc_id"" --query "Reservations[*].Instances[*]" --no-paginate --output json >$stack_instances_json
+        # Try to get a public IP
+        local instance_public_ip="$(jq -r 'first(.[][] | .PublicIpAddress // empty)' $stack_instances_json)"
+        if [[ ! -z $instance_public_ip ]]; then
+            local instance_ips_file=$stack_results_dir/stack-instance-ips-$suffix.txt
+            cat $stack_instances_json | jq -r '.[][] | (.Tags[] | select(.Key=="Name")) as $tags | ($tags["Value"] + "/" + .PrivateIpAddress) | tostring' >$instance_ips_file
+            echo "Private IPs in $instance_ips_file: "
+            cat $instance_ips_file
+            echo "Uploading $instance_ips_file to $instance_public_ip"
+            if scp -i $key_file -o "StrictHostKeyChecking=no" $instance_ips_file ubuntu@$instance_public_ip:; then
+                download_files_command="ssh -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip ./cloudformation/download-files.sh -f $(basename $instance_ips_file) -k private_key.pem -o /home/ubuntu"
+                echo "Download files command: $download_files_command"
+                $download_files_command
+                echo "Downloading files.zip"
+                local files_zip_file=$stack_results_dir/files-$suffix.zip
+                scp -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip:files.zip $files_zip_file
+                local files_dir="$stack_results_dir/files"
+                mkdir -p $files_dir
+                echo "Extracting files.zip to $files_dir"
+                unzip -o $files_zip_file -d $files_dir
+            fi
+        fi
+    else
+        echo "WARNING: VPC ID not found!"
+    fi
+}
+
 function save_logs_and_delete_stack() {
     local stack_id="$1"
     local stack_name="$2"
@@ -603,38 +642,8 @@ function save_logs_and_delete_stack() {
         echo "WARNING: There was an error getting log streams from the log group $log_group_name. Check whether AWS CloudWatch logs are enabled."
     fi
 
-    local stack_resources_json=$stack_results_dir/stack-resources-before-delete.json
-    echo "Saving $stack_name stack resources to $stack_resources_json"
-    aws cloudformation describe-stack-resources --stack-name $stack_id --no-paginate --output json >$stack_resources_json
-
-    local vpc_id="$(jq -r '.StackResources[] | select(.LogicalResourceId=="VPC") | .PhysicalResourceId' $stack_resources_json)"
-    if [[ ! -z $vpc_id ]]; then
-        echo "VPC ID: $vpc_id"
-        local stack_instances_json=$stack_results_dir/stack-instances.json
-        aws ec2 describe-instances --filters "Name=vpc-id, Values="$vpc_id"" --query "Reservations[*].Instances[*]" --no-paginate --output json >$stack_instances_json
-        # Try to get a public IP
-        local instance_public_ip="$(jq -r 'first(.[][] | .PublicIpAddress // empty)' $stack_instances_json)"
-        if [[ ! -z $instance_public_ip ]]; then
-            local instance_ips_file=$stack_results_dir/stack-instance-ips.txt
-            cat $stack_instances_json | jq -r '.[][] | (.Tags[] | select(.Key=="Name")) as $tags | ($tags["Value"] + "/" + .PrivateIpAddress) | tostring' >$instance_ips_file
-            echo "Private IPs in $instance_ips_file: "
-            cat $instance_ips_file
-            echo "Uploading $instance_ips_file to $instance_public_ip"
-            if scp -i $key_file -o "StrictHostKeyChecking=no" $instance_ips_file ubuntu@$instance_public_ip:; then
-                download_files_command="ssh -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip ./cloudformation/download-files.sh -f $(basename $instance_ips_file) -k private_key.pem -o /home/ubuntu"
-                echo "Download files command: $download_files_command"
-                $download_files_command
-                echo "Downloading files.zip"
-                scp -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip:files.zip $stack_results_dir
-                local files_dir="$stack_results_dir/files"
-                mkdir -p $files_dir
-                echo "Extracting files.zip to $files_dir"
-                unzip -q $stack_results_dir/files.zip -d $files_dir
-            fi
-        fi
-    else
-        echo "WARNING: VPC ID not found!"
-    fi
+    # Download files
+    download_files ${stack_id} ${stack_name} ${stack_results_dir}
 
     if [ "$SUSPEND" = true ]; then
         echo "SUSPEND is true, holding the deletion of stack: $stack_id"
@@ -646,6 +655,23 @@ function save_logs_and_delete_stack() {
     delete_stack $stack_id
 }
 
+function wait_and_download_files() {
+    local stack_id="$1"
+    local stack_name="$2"
+    local stack_results_dir="$3"
+    local wait_time="$4"
+    sleep $wait_time
+    local suffix="$(date +%Y%m%d%H%M%S)"
+    local stack_status_json=$stack_results_dir/stack-status-$suffix.json
+    echo "Saving $stack_name stack status to $stack_status_json"
+    aws cloudformation describe-stacks --stack-name $stack_id --no-paginate --output json >$stack_status_json
+    local stack_status="$(jq -r '.Stacks[] | .StackStatus' $stack_status_json || echo "")"
+    echo "Current status of $stack_name stack is $stack_status"
+    if [[ "$stack_status" != "CREATE_COMPLETE" ]]; then
+        download_files ${stack_id} ${stack_name} ${stack_results_dir}
+    fi
+}
+
 function run_perf_tests_in_stack() {
     local index=$1
     local stack_id=$2
@@ -655,6 +681,10 @@ function run_perf_tests_in_stack() {
     trap "save_logs_and_delete_stack ${stack_id} ${stack_name} ${stack_results_dir}" RETURN
     printf "Running performance tests on '%s' stack.\n" "$stack_name"
 
+    # Download files periodically
+    for wait_time in $(seq 5 5 30); do
+        wait_and_download_files ${stack_id} ${stack_name} ${stack_results_dir} ${wait_time}m &
+    done
     # Sleep for sometime before waiting
     # This is required since the 'aws cloudformation wait stack-create-complete' will exit with a
     # return code of 255 after 120 failed checks. The command polls every 30 seconds, which means that the
