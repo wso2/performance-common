@@ -338,6 +338,9 @@ gcviewer_jar_path=$(realpath $gcviewer_jar_path)
 mkdir $results_dir/scripts
 cp -v $performance_scripts_distribution $results_dir/scripts/
 
+aws_region="$(aws configure get region)"
+echo "Current AWS Region: $aws_region"
+
 # Save metadata
 declare -A test_parameters
 test_parameters[application_name]="$application_name"
@@ -364,8 +367,63 @@ estimate_command="$script_dir/../jmeter/${run_performance_tests_script_name} -t 
 echo "Estimating total time for performance tests: $estimate_command"
 # Estimating this script will also validate the options. It's important to validate options before creating the stack.
 $estimate_command
+
 # Save test metadata
 mv test-metadata.json $results_dir
+mv test-duration.json $results_dir
+
+# Region Display Names
+declare -A region_names
+region_names[us_east_1]="US East (N. Virginia)"
+region_names[us_east_2]="US East (Ohio)"
+region_names[us_west_1]="US West (N. California)"
+region_names[us_west_2]="US West (Oregon)"
+region_names[ap_east_1]="Asia Pacific (Hong Kong)"
+region_names[ap_south_1]="Asia Pacific (Mumbai)"
+region_names[ap_northeast_2]="Asia Pacific (Seoul)"
+region_names[ap_southeast_1]="Asia Pacific"
+region_names[ap_southeast_2]="Asia Pacific (Sydney)"
+region_names[ap_northeast_1]="Asia Pacific (Tokyo)"
+region_names[ca_central_1]="Canada (Central)"
+region_names[eu_central_1]="EU (Frankfurt)"
+region_names[eu_west_1]="EU (Ireland)"
+region_names[eu_west_2]="EU (London)"
+region_names[eu_west_3]="EU (Paris)"
+region_names[eu_north_1]="EU (Stockholm)"
+region_names[sa_east_1]="South America (Sao Paulo)"
+
+# Estimate AWS EC2 cost
+total_cost="0"
+while read count ec2_instance_type; do
+    pricing_json="$results_dir/pricing.json"
+    price_in_usd=""
+    total_hours=""
+    region_name="${aws_region//-/_}"
+    if aws pricing get-products --filters \
+        Type=TERM_MATCH,Field=ServiceCode,Value=AmazonEC2 \
+        Type=TERM_MATCH,Field=InstanceType,Value=$ec2_instance_type \
+        Type=TERM_MATCH,Field=operatingSystem,Value=Linux \
+        Type=TERM_MATCH,Field=tenancy,Value=Shared \
+        Type=TERM_MATCH,Field=capacitystatus,Value=Used \
+        Type=TERM_MATCH,Field=preInstalledSw,Value=NA \
+        "Type=TERM_MATCH,Field=location,Value=${region_names[$region_name]}" \
+        --format-version aws_v1 --max-results 1 \
+        --service-code AmazonEC2 --output json >$pricing_json; then
+        price_in_usd="$(jq -r '.PriceList[] | fromjson.terms.OnDemand[].priceDimensions[].pricePerUnit.USD' $pricing_json || echo "")"
+        total_duration="$(jq -r '.total_duration' $results_dir/test-duration.json || echo "")"
+        total_hours="$(bc <<<"scale=4;hrs=$total_duration/60;scale=0;if (hrs % 60) hrs/60+1 else hrs/60" || echo "")"
+    fi
+    if [[ -n $price_in_usd ]] && [[ -n $total_hours ]]; then
+        cost="$(bc <<<"scale=4;$count*$price_in_usd*$total_hours" | awk '{printf "%.4f\n", $0}')"
+        total_cost="$(bc <<<"$total_cost+$cost" | awk '{printf "%.4f\n", $0}' || echo "0")"
+        printf "Cost to run %s instance(s) from instance type %10s is USD %s.\n" "$count" "$ec2_instance_type" "$cost"
+    else
+        printf "WARNING: Could not calculate the cost to run %10s instance(s) from instance type %s.\n" "$count" "$ec2_instance_type"
+    fi
+done < <(jq -r '. as $type | keys_unsorted[] | select(endswith("ec2_instance_type")) | $type[.]' $results_dir/cf-test-metadata.json | sort | uniq -c | sort -nr)
+if [[ $(bc <<<"scale=4;$total_cost > 0") -eq 1 ]]; then
+    printf "Total cost is USD %s.\n" "$total_cost"
+fi
 
 declare -a performance_test_options
 
@@ -533,8 +591,6 @@ function exit_handler() {
 
 trap exit_handler EXIT
 
-aws_region="$(aws configure get region)"
-echo "Current AWS Region: $aws_region"
 # Find latest Ubuntu AMI ID
 # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami.html
 latest_ami_id="$(aws ec2 describe-images --owners 099720109477 --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-????????' 'Name=state,Values=available' --output json | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId')"
