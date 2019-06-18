@@ -621,8 +621,10 @@ function test_scenarios() {
                         fi
 
                         if [[ -f ${report_location}/results.jtl ]]; then
-                            $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -t $warmup_time -u SECONDS -s
-
+                            # Delete the original JTL file to save space.
+                            # Can merge files using the command: awk 'FNR==1 && NR!=1{next;}{print}'
+                            # However, the merged file may not be same as original and that should be okay
+                            $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -d -t $warmup_time -u SECONDS -s
                             echo "Zipping JTL files in ${report_location}"
                             zip -jm ${report_location}/jtls.zip ${report_location}/results*.jtl
                         fi
