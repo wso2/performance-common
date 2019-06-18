@@ -97,6 +97,9 @@ cat /etc/hosts
 
 echo -ne "\n"
 
+# Make sure apt-get does not prompt anything
+export DEBIAN_FRONTEND=noninteractive
+
 # Update packages
 echo "Updating packages"
 apt-get update
@@ -108,7 +111,7 @@ if [ "$upgrade" = true ]; then
     echo "Upgrading the distribution"
     # Use upgrade instead of dist-upgrade
     echo "Running upgrade command..."
-    DEBIAN_FRONTEND='noninteractive' apt-get -y -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' upgrade
+    apt-get -y -q -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' upgrade
     echo "Running clean command..."
     apt-get -y clean
     echo "Running autoclean command..."
@@ -121,7 +124,7 @@ packages+=("jq" "zip" "unzip" "linux-tools-common" "linux-tools-aws" "linux-tool
 # Install OS Packages
 for p in ${packages[*]}; do
     echo "Installing $p package"
-    apt-get install -y $p
+    apt-get -y -q -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' install $p
     echo -ne "\n"
 done
 
