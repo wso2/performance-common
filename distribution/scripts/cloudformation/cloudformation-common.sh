@@ -373,6 +373,9 @@ mv test-metadata.json $results_dir
 mv test-duration.json $results_dir
 
 # Region Display Names
+# The AWS Pricing API uses display names to filter location.
+# There is no API to get AWS Region Display Name.
+# See also: https://maori.geek.nz/aws-api-to-get-ec2-instance-prices-b04a155860da
 declare -A region_names
 region_names[us_east_1]="US East (N. Virginia)"
 region_names[us_east_2]="US East (Ohio)"
@@ -393,6 +396,7 @@ region_names[eu_north_1]="EU (Stockholm)"
 region_names[sa_east_1]="South America (Sao Paulo)"
 
 # Estimate AWS EC2 cost
+echo "Getting the AWS EC2 Pricing for given instance types..."
 total_cost="0"
 while read count ec2_instance_type; do
     pricing_json="$results_dir/pricing.json"
@@ -422,7 +426,7 @@ while read count ec2_instance_type; do
     fi
 done < <(jq -r '. as $type | keys_unsorted[] | select(endswith("ec2_instance_type")) | $type[.]' $results_dir/cf-test-metadata.json | sort | uniq -c | sort -nr)
 if [[ $(bc <<<"scale=4;$total_cost > 0") -eq 1 ]]; then
-    printf "Total cost is USD %s.\n" "$total_cost"
+    printf "\nTotal cost is USD %s.\n\n" "$total_cost"
 fi
 
 declare -a performance_test_options
@@ -638,18 +642,20 @@ function download_files() {
     local stack_name="$2"
     local stack_results_dir="$3"
     local suffix="$(date +%Y%m%d%H%M%S)"
-    local stack_resources_json=$stack_results_dir/stack-resources-$suffix.json
+    local stack_files_dir="$stack_results_dir/stack-files"
+    mkdir -p $stack_files_dir
+    local stack_resources_json=$stack_files_dir/stack-resources-$suffix.json
     echo "Saving $stack_name stack resources to $stack_resources_json"
     aws cloudformation describe-stack-resources --stack-name $stack_id --no-paginate --output json >$stack_resources_json
     local vpc_id="$(jq -r '.StackResources[] | select(.LogicalResourceId=="VPC") | .PhysicalResourceId' $stack_resources_json)"
     if [[ ! -z $vpc_id ]]; then
         echo "VPC ID: $vpc_id"
-        local stack_instances_json=$stack_results_dir/stack-instances-$suffix.json
+        local stack_instances_json=$stack_files_dir/stack-instances-$suffix.json
         aws ec2 describe-instances --filters "Name=vpc-id, Values="$vpc_id"" --query "Reservations[*].Instances[*]" --no-paginate --output json >$stack_instances_json
         # Try to get a public IP
         local instance_public_ip="$(jq -r 'first(.[][] | .PublicIpAddress // empty)' $stack_instances_json)"
         if [[ ! -z $instance_public_ip ]]; then
-            local instance_ips_file=$stack_results_dir/stack-instance-ips-$suffix.txt
+            local instance_ips_file=$stack_files_dir/stack-instance-ips-$suffix.txt
             cat $stack_instances_json | jq -r '.[][] | (.Tags[] | select(.Key=="Name")) as $tags | ($tags["Value"] + "/" + .PrivateIpAddress) | tostring' >$instance_ips_file
             echo "Private IPs in $instance_ips_file: "
             cat $instance_ips_file
@@ -659,7 +665,7 @@ function download_files() {
                 echo "Download files command: $download_files_command"
                 $download_files_command
                 echo "Downloading files.zip"
-                local files_zip_file=$stack_results_dir/files-$suffix.zip
+                local files_zip_file=$stack_files_dir/files-$suffix.zip
                 scp -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip:files.zip $files_zip_file
                 local files_dir="$stack_results_dir/files"
                 mkdir -p $files_dir
@@ -718,7 +724,9 @@ function wait_and_download_files() {
     local wait_time="$4"
     sleep $wait_time
     local suffix="$(date +%Y%m%d%H%M%S)"
-    local stack_status_json=$stack_results_dir/stack-status-$suffix.json
+    local stack_files_dir="$stack_results_dir/stack-files"
+    mkdir -p $stack_files_dir
+    local stack_status_json=$stack_files_dir/stack-status-$suffix.json
     echo "Saving $stack_name stack status to $stack_status_json"
     aws cloudformation describe-stacks --stack-name $stack_id --no-paginate --output json >$stack_status_json
     local stack_status="$(jq -r '.Stacks[] | .StackStatus' $stack_status_json || echo "")"
