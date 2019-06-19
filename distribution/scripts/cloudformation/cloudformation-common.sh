@@ -338,6 +338,9 @@ gcviewer_jar_path=$(realpath $gcviewer_jar_path)
 mkdir $results_dir/scripts
 cp -v $performance_scripts_distribution $results_dir/scripts/
 
+aws_region="$(aws configure get region)"
+echo "Current AWS Region: $aws_region"
+
 # Save metadata
 declare -A test_parameters
 test_parameters[application_name]="$application_name"
@@ -364,8 +367,67 @@ estimate_command="$script_dir/../jmeter/${run_performance_tests_script_name} -t 
 echo "Estimating total time for performance tests: $estimate_command"
 # Estimating this script will also validate the options. It's important to validate options before creating the stack.
 $estimate_command
+
 # Save test metadata
 mv test-metadata.json $results_dir
+mv test-duration.json $results_dir
+
+# Region Display Names
+# The AWS Pricing API uses display names to filter location.
+# There is no API to get AWS Region Display Name.
+# See also: https://maori.geek.nz/aws-api-to-get-ec2-instance-prices-b04a155860da
+declare -A region_names
+region_names[us_east_1]="US East (N. Virginia)"
+region_names[us_east_2]="US East (Ohio)"
+region_names[us_west_1]="US West (N. California)"
+region_names[us_west_2]="US West (Oregon)"
+region_names[ap_east_1]="Asia Pacific (Hong Kong)"
+region_names[ap_south_1]="Asia Pacific (Mumbai)"
+region_names[ap_northeast_2]="Asia Pacific (Seoul)"
+region_names[ap_southeast_1]="Asia Pacific"
+region_names[ap_southeast_2]="Asia Pacific (Sydney)"
+region_names[ap_northeast_1]="Asia Pacific (Tokyo)"
+region_names[ca_central_1]="Canada (Central)"
+region_names[eu_central_1]="EU (Frankfurt)"
+region_names[eu_west_1]="EU (Ireland)"
+region_names[eu_west_2]="EU (London)"
+region_names[eu_west_3]="EU (Paris)"
+region_names[eu_north_1]="EU (Stockholm)"
+region_names[sa_east_1]="South America (Sao Paulo)"
+
+# Estimate AWS EC2 cost
+echo "Getting the AWS EC2 Pricing for given instance types..."
+total_cost="0"
+while read count ec2_instance_type; do
+    pricing_json="$results_dir/pricing.json"
+    price_in_usd=""
+    total_hours=""
+    region_name="${aws_region//-/_}"
+    if aws pricing get-products --filters \
+        Type=TERM_MATCH,Field=ServiceCode,Value=AmazonEC2 \
+        Type=TERM_MATCH,Field=InstanceType,Value=$ec2_instance_type \
+        Type=TERM_MATCH,Field=operatingSystem,Value=Linux \
+        Type=TERM_MATCH,Field=tenancy,Value=Shared \
+        Type=TERM_MATCH,Field=capacitystatus,Value=Used \
+        Type=TERM_MATCH,Field=preInstalledSw,Value=NA \
+        "Type=TERM_MATCH,Field=location,Value=${region_names[$region_name]}" \
+        --format-version aws_v1 --max-results 1 \
+        --service-code AmazonEC2 --output json >$pricing_json; then
+        price_in_usd="$(jq -r '.PriceList[] | fromjson.terms.OnDemand[].priceDimensions[].pricePerUnit.USD' $pricing_json || echo "")"
+        total_duration="$(jq -r '.total_duration' $results_dir/test-duration.json || echo "")"
+        total_hours="$(bc <<<"scale=4;hrs=$total_duration/60;scale=0;if (hrs % 60) hrs/60+1 else hrs/60" || echo "")"
+    fi
+    if [[ -n $price_in_usd ]] && [[ -n $total_hours ]]; then
+        cost="$(bc <<<"scale=4;$count*$price_in_usd*$total_hours" | awk '{printf "%.4f\n", $0}')"
+        total_cost="$(bc <<<"$total_cost+$cost" | awk '{printf "%.4f\n", $0}' || echo "0")"
+        printf "Cost to run %s instance(s) from instance type %10s is USD %s.\n" "$count" "$ec2_instance_type" "$cost"
+    else
+        printf "WARNING: Could not calculate the cost to run %10s instance(s) from instance type %s.\n" "$count" "$ec2_instance_type"
+    fi
+done < <(jq -r '. as $type | keys_unsorted[] | select(endswith("ec2_instance_type")) | $type[.]' $results_dir/cf-test-metadata.json | sort | uniq -c | sort -nr)
+if [[ $(bc <<<"scale=4;$total_cost > 0") -eq 1 ]]; then
+    printf "\nTotal cost is USD %s.\n\n" "$total_cost"
+fi
 
 declare -a performance_test_options
 
@@ -533,8 +595,6 @@ function exit_handler() {
 
 trap exit_handler EXIT
 
-aws_region="$(aws configure get region)"
-echo "Current AWS Region: $aws_region"
 # Find latest Ubuntu AMI ID
 # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami.html
 latest_ami_id="$(aws ec2 describe-images --owners 099720109477 --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-????????' 'Name=state,Values=available' --output json | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId')"
@@ -577,6 +637,47 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     echo "Created stack: $stack_name. ID: $stack_id"
 done
 
+function download_files() {
+    local stack_id="$1"
+    local stack_name="$2"
+    local stack_results_dir="$3"
+    local suffix="$(date +%Y%m%d%H%M%S)"
+    local stack_files_dir="$stack_results_dir/stack-files"
+    mkdir -p $stack_files_dir
+    local stack_resources_json=$stack_files_dir/stack-resources-$suffix.json
+    echo "Saving $stack_name stack resources to $stack_resources_json"
+    aws cloudformation describe-stack-resources --stack-name $stack_id --no-paginate --output json >$stack_resources_json
+    local vpc_id="$(jq -r '.StackResources[] | select(.LogicalResourceId=="VPC") | .PhysicalResourceId' $stack_resources_json)"
+    if [[ ! -z $vpc_id ]]; then
+        echo "VPC ID: $vpc_id"
+        local stack_instances_json=$stack_files_dir/stack-instances-$suffix.json
+        aws ec2 describe-instances --filters "Name=vpc-id, Values="$vpc_id"" --query "Reservations[*].Instances[*]" --no-paginate --output json >$stack_instances_json
+        # Try to get a public IP
+        local instance_public_ip="$(jq -r 'first(.[][] | .PublicIpAddress // empty)' $stack_instances_json)"
+        if [[ ! -z $instance_public_ip ]]; then
+            local instance_ips_file=$stack_files_dir/stack-instance-ips-$suffix.txt
+            cat $stack_instances_json | jq -r '.[][] | (.Tags[] | select(.Key=="Name")) as $tags | ($tags["Value"] + "/" + .PrivateIpAddress) | tostring' >$instance_ips_file
+            echo "Private IPs in $instance_ips_file: "
+            cat $instance_ips_file
+            echo "Uploading $instance_ips_file to $instance_public_ip"
+            if scp -i $key_file -o "StrictHostKeyChecking=no" $instance_ips_file ubuntu@$instance_public_ip:; then
+                download_files_command="ssh -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip ./cloudformation/download-files.sh -f $(basename $instance_ips_file) -k private_key.pem -o /home/ubuntu"
+                echo "Download files command: $download_files_command"
+                $download_files_command
+                echo "Downloading files.zip"
+                local files_zip_file=$stack_files_dir/files-$suffix.zip
+                scp -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip:files.zip $files_zip_file
+                local files_dir="$stack_results_dir/files"
+                mkdir -p $files_dir
+                echo "Extracting files.zip to $files_dir"
+                unzip -o $files_zip_file -d $files_dir
+            fi
+        fi
+    else
+        echo "WARNING: VPC ID not found!"
+    fi
+}
+
 function save_logs_and_delete_stack() {
     local stack_id="$1"
     local stack_name="$2"
@@ -603,38 +704,8 @@ function save_logs_and_delete_stack() {
         echo "WARNING: There was an error getting log streams from the log group $log_group_name. Check whether AWS CloudWatch logs are enabled."
     fi
 
-    local stack_resources_json=$stack_results_dir/stack-resources-before-delete.json
-    echo "Saving $stack_name stack resources to $stack_resources_json"
-    aws cloudformation describe-stack-resources --stack-name $stack_id --no-paginate --output json >$stack_resources_json
-
-    local vpc_id="$(jq -r '.StackResources[] | select(.LogicalResourceId=="VPC") | .PhysicalResourceId' $stack_resources_json)"
-    if [[ ! -z $vpc_id ]]; then
-        echo "VPC ID: $vpc_id"
-        local stack_instances_json=$stack_results_dir/stack-instances.json
-        aws ec2 describe-instances --filters "Name=vpc-id, Values="$vpc_id"" --query "Reservations[*].Instances[*]" --no-paginate --output json >$stack_instances_json
-        # Try to get a public IP
-        local instance_public_ip="$(jq -r 'first(.[][] | .PublicIpAddress // empty)' $stack_instances_json)"
-        if [[ ! -z $instance_public_ip ]]; then
-            local instance_ips_file=$stack_results_dir/stack-instance-ips.txt
-            cat $stack_instances_json | jq -r '.[][] | (.Tags[] | select(.Key=="Name")) as $tags | ($tags["Value"] + "/" + .PrivateIpAddress) | tostring' >$instance_ips_file
-            echo "Private IPs in $instance_ips_file: "
-            cat $instance_ips_file
-            echo "Uploading $instance_ips_file to $instance_public_ip"
-            if scp -i $key_file -o "StrictHostKeyChecking=no" $instance_ips_file ubuntu@$instance_public_ip:; then
-                download_files_command="ssh -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip ./cloudformation/download-files.sh -f $(basename $instance_ips_file) -k private_key.pem -o /home/ubuntu"
-                echo "Download files command: $download_files_command"
-                $download_files_command
-                echo "Downloading files.zip"
-                scp -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip:files.zip $stack_results_dir
-                local files_dir="$stack_results_dir/files"
-                mkdir -p $files_dir
-                echo "Extracting files.zip to $files_dir"
-                unzip -q $stack_results_dir/files.zip -d $files_dir
-            fi
-        fi
-    else
-        echo "WARNING: VPC ID not found!"
-    fi
+    # Download files
+    download_files ${stack_id} ${stack_name} ${stack_results_dir}
 
     if [ "$SUSPEND" = true ]; then
         echo "SUSPEND is true, holding the deletion of stack: $stack_id"
@@ -646,6 +717,25 @@ function save_logs_and_delete_stack() {
     delete_stack $stack_id
 }
 
+function wait_and_download_files() {
+    local stack_id="$1"
+    local stack_name="$2"
+    local stack_results_dir="$3"
+    local wait_time="$4"
+    sleep $wait_time
+    local suffix="$(date +%Y%m%d%H%M%S)"
+    local stack_files_dir="$stack_results_dir/stack-files"
+    mkdir -p $stack_files_dir
+    local stack_status_json=$stack_files_dir/stack-status-$suffix.json
+    echo "Saving $stack_name stack status to $stack_status_json"
+    aws cloudformation describe-stacks --stack-name $stack_id --no-paginate --output json >$stack_status_json
+    local stack_status="$(jq -r '.Stacks[] | .StackStatus' $stack_status_json || echo "")"
+    echo "Current status of $stack_name stack is $stack_status"
+    if [[ "$stack_status" != "CREATE_COMPLETE" ]]; then
+        download_files ${stack_id} ${stack_name} ${stack_results_dir}
+    fi
+}
+
 function run_perf_tests_in_stack() {
     local index=$1
     local stack_id=$2
@@ -655,6 +745,10 @@ function run_perf_tests_in_stack() {
     trap "save_logs_and_delete_stack ${stack_id} ${stack_name} ${stack_results_dir}" RETURN
     printf "Running performance tests on '%s' stack.\n" "$stack_name"
 
+    # Download files periodically
+    for wait_time in $(seq 5 5 30); do
+        wait_and_download_files ${stack_id} ${stack_name} ${stack_results_dir} ${wait_time}m &
+    done
     # Sleep for sometime before waiting
     # This is required since the 'aws cloudformation wait stack-create-complete' will exit with a
     # return code of 255 after 120 failed checks. The command polls every 30 seconds, which means that the

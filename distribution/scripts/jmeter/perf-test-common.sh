@@ -360,10 +360,10 @@ function print_durations() {
             echo "$name"
         done | sort
     ))
+    # Count scenarios
+    local total_counter=0
+    local total_duration=0
     if [[ ${#sorted_names[@]} -gt 0 ]]; then
-        # Count scenarios
-        local total_counter=0
-        local total_duration=0
         printf "%-40s  %20s  %50s\n" "Scenario" "Combination(s)" "$time_header Time"
         for name in "${sorted_names[@]}"; do
             let total_counter=total_counter+${scenario_counter[$name]}
@@ -375,6 +375,13 @@ function print_durations() {
         echo "WARNING: None of the test scenarios were executed."
         exit 1
     fi
+    local test_total_duration_json='.'
+    test_total_duration_json+=' | .["test_scenarios"]=$test_scenarios'
+    test_total_duration_json+=' | .["total_duration"]=$total_duration'
+    jq -n \
+        --arg test_scenarios "$total_counter" \
+        --arg total_duration "$total_duration" \
+        "$test_total_duration_json" >test-duration.json
     printf "Script execution time: %s\n" "$(format_time $(measure_time $test_start_time))"
 }
 
@@ -614,8 +621,10 @@ function test_scenarios() {
                         fi
 
                         if [[ -f ${report_location}/results.jtl ]]; then
-                            $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -t $warmup_time -u SECONDS -s
-
+                            # Delete the original JTL file to save space.
+                            # Can merge files using the command: awk 'FNR==1 && NR!=1{next;}{print}'
+                            # However, the merged file may not be same as original and that should be okay
+                            $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -d -t $warmup_time -u SECONDS -s
                             echo "Zipping JTL files in ${report_location}"
                             zip -jm ${report_location}/jtls.zip ${report_location}/results*.jtl
                         fi
