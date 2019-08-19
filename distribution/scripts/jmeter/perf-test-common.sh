@@ -466,7 +466,6 @@ function initialize_test() {
             exit 1
         fi
         mkdir results
-        cp $0 results/
         mv test-metadata.json results/
 
         declare -a payload_sizes
@@ -622,7 +621,7 @@ function test_scenarios() {
 
                         if [[ -f ${report_location}/results.jtl ]]; then
                             # Delete the original JTL file to save space.
-                            # Can merge files using the command: awk 'FNR==1 && NR!=1{next;}{print}'
+                            # Can merge files using the command: awk 'FNR==1 && NR!=1{next;}{print}' results-warmup.jtl results-measurement.jtl >results.jtl
                             # However, the merged file may not be same as original and that should be okay
                             $HOME/jtl-splitter/jtl-splitter.sh -- -f ${report_location}/results.jtl -d -t $warmup_time -u SECONDS -s
                             echo "Zipping JTL files in ${report_location}"
