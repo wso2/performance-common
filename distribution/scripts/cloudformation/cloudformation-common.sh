@@ -166,7 +166,6 @@ shift "$((OPTIND - 1))"
 
 run_performance_tests_options=("$@")
 
-user_email="chanakal@wso2.com"
 if [[ -z $user_email ]]; then
     echo "Please provide your email address."
     exit 1
