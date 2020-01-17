@@ -43,16 +43,16 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class EchoHttpServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     private long sleepTime;
-    private boolean h2AggregateContent;
+    private boolean h2ContentAggregate;
 
-    EchoHttpServerHandler(long sleepTime, boolean h2AggregateContent) {
+    EchoHttpServerHandler(long sleepTime, boolean h2ContentAggregate) {
         this.sleepTime = sleepTime;
-        this.h2AggregateContent = h2AggregateContent;
+        this.h2ContentAggregate = h2ContentAggregate;
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
-        if (h2AggregateContent) {
+        if (h2ContentAggregate) {
             String streamId = request.headers().get(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text());
             FullHttpResponse response = buildFullHttpResponse(request);
             response.headers().set(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text(), streamId);
