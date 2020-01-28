@@ -77,7 +77,7 @@ fi
 zip_file="$(realpath $output_directory)/files.zip"
 
 if [[ -f $zip_file ]]; then
-    echo "WARNING: The files.zip already exists."
+    echo "The $zip_file already exists. It will be updated."
 fi
 
 declare -A names_and_ips

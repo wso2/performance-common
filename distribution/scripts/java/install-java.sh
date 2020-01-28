@@ -20,7 +20,8 @@
 # ----------------------------------------------------------------------------
 
 java_dist=""
-java_dir=""
+default_java_dir="/usr/lib/jvm"
+java_dir="$default_java_dir"
 default_user=""
 if [[ ! -z $SUDO_USER ]]; then
     default_user="$SUDO_USER"
@@ -35,7 +36,7 @@ function usage() {
     echo "$0 -f <java_dist> [-p <java_dir>] [-u <user>] [-h]"
     echo ""
     echo "-f: The jdk tar.gz file."
-    echo "-p: Java installation directory."
+    echo "-p: Java installation directory. Default: $default_java_dir."
     echo "-u: Target user. Default: $default_user."
     echo "-h: Display this help and exit."
     echo ""
@@ -77,19 +78,26 @@ if ! command -v unzip >/dev/null 2>&1; then
 fi
 
 if [[ ! -f $java_dist ]]; then
-    echo "Please specify the java distribution file (tar.gz)."
+    echo "Please specify the Java distribution file."
     exit 1
 fi
 
-#If no directory was provided, we need to create the default one
-if [[ -z $java_dir ]]; then
-    java_dir="/usr/lib/jvm"
+# Validate Java Distribution
+java_dist_filename=$(basename $java_dist)
+
+if [[ ${java_dist_filename: -7} != ".tar.gz" ]]; then
+    echo "Java distribution must be a valid tar.gz file."
+    exit 1
+fi
+
+# Create the default directory if user has not specified any other path
+if [[ $java_dir == $default_java_dir ]]; then
     mkdir -p $java_dir
 fi
 
 #Validate java directory
 if [[ ! -d $java_dir ]]; then
-    echo "Please specify a valid java installation directory."
+    echo "Please specify a valid Java installation directory."
     exit 1
 fi
 
@@ -98,33 +106,43 @@ if ! id "$user" >/dev/null 2>&1; then
     exit 1
 fi
 
+echo "Installing: $java_dist_filename"
+
+# Check Java executable
+java_exec="$(tar -tzf $java_dist | grep ^[^/]*/bin/java$ || echo "")"
+
+if [[ -z $java_exec ]]; then
+    echo "Could not find \"java\" executable in the distribution. Please specify a valid Java distribution."
+    exit 1
+fi
+
+# JDK Directory with version
+jdk_dir="$(echo $java_exec | cut -f1 -d"/")"
+extracted_dirname=$java_dir"/"$jdk_dir
+
 # Extract Java Distribution
-java_dist_filename=$(basename $java_dist)
-
-dirname=$(tar -tf $java_dist | head -1 | sed -e 's@/.*@@')
-
-extracted_dirname=$java_dir"/"$dirname
-
 if [[ ! -d $extracted_dirname ]]; then
     echo "Extracting $java_dist to $java_dir"
     tar -xof $java_dist -C $java_dir
     echo "JDK is extracted to $extracted_dirname"
 else
-    echo "JDK is already extracted to $extracted_dirname"
-fi
-
-if [[ ! -f $extracted_dirname"/bin/java" ]]; then
-    echo "Couldn't check the extracted directory. Please check the installation script"
+    echo "WARN: JDK was not extracted to $java_dir. There is an existing directory with name $jdk_dir."
     exit 1
 fi
 
-# Install Unlimited JCE Policy
+if [[ ! -f "${extracted_dirname}/bin/java" ]]; then
+    echo "ERROR: The path $extracted_dirname is not a valid Java installation."
+    exit 1
+fi
+
+# Install Unlimited JCE Policy (only for Oracle JDK 7 & 8)
+# Java 9 and above: default JCE policy files already allow for \"unlimited\" cryptographic strengths.
 
 unlimited_jce_policy_dist=""
 
-if [[ "$java_dist_filename" =~ ^jdk-7.* ]]; then
+if [[ $jdk_dir =~ ^jdk1\.7.* ]]; then
     unlimited_jce_policy_dist="$(dirname $java_dist)/UnlimitedJCEPolicyJDK7.zip"
-elif [[ "$java_dist_filename" =~ ^jdk-8.* ]]; then
+elif [[ $jdk_dir =~ ^jdk1\.8.* ]]; then
     unlimited_jce_policy_dist="$(dirname $java_dist)/jce_policy-8.zip"
 fi
 
@@ -133,15 +151,13 @@ if [[ -f $unlimited_jce_policy_dist ]]; then
     unzip -j -o $unlimited_jce_policy_dist *.jar -d $extracted_dirname/jre/lib/security
 fi
 
-commands=("jar" "java" "javac" "javadoc" "javah" "javap" "javaws" "jcmd" "jconsole" "jarsigner" "jhat" "jinfo" "jmap" "jmc" "jps" "jstack" "jstat" "jstatd" "jvisualvm" "keytool" "policytool" "wsgen" "wsimport")
-
-echo "Running update-alternatives --install and --config for ${commands[@]}"
-
-for i in "${commands[@]}"; do
-    command_path=$extracted_dirname/bin/$i
-    if [[ -f $command_path ]]; then
-        update-alternatives --install "/usr/bin/$i" "$i" "$command_path" 10000
-        update-alternatives --set "$i" "$command_path"
+echo "Running update-alternatives..."
+declare -a commands=($(ls -1 ${extracted_dirname}/bin))
+for command in "${commands[@]}"; do
+    command_path=$extracted_dirname/bin/$command
+    if [[ -x $command_path ]]; then
+        update-alternatives --install "/usr/bin/$command" "$command" "$command_path" 10000
+        update-alternatives --set "$command" "$command_path"
     fi
 done
 
