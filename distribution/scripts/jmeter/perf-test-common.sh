@@ -477,7 +477,7 @@ function initialize_test() {
         if [[ $jmeter_servers -gt 1 ]]; then
             for jmeter_ssh_host in ${jmeter_ssh_hosts[@]}; do
                 echo "Generating Payloads in $jmeter_ssh_host"
-                ssh -t $jmeter_ssh_host "sudo ./payloads/generate-payloads.sh" -p $payload_type ${payload_sizes[@]}
+                ssh $jmeter_ssh_host "./payloads/generate-payloads.sh" -p $payload_type ${payload_sizes[@]}
             done
         else
             pushd $HOME
@@ -562,7 +562,7 @@ function test_scenarios() {
                             echo "Starting Remote JMeter servers"
                             for ix in ${!jmeter_ssh_hosts[@]}; do
                                 echo "Starting Remote JMeter server. SSH Host: ${jmeter_ssh_hosts[ix]}, IP: ${jmeter_hosts[ix]}, Path: $HOME, Heap: $jmeter_server_heap_size"
-                                ssh -t ${jmeter_ssh_hosts[ix]} "sudo ./jmeter/jmeter-server-start.sh -n
+                                ssh ${jmeter_ssh_hosts[ix]} "./jmeter/jmeter-server-start.sh -n
                                 ${jmeter_hosts[ix]} -i $HOME -m $jmeter_server_heap_size -- $JMETER_JVM_ARGS"
                                 collect_server_metrics ${jmeter_ssh_hosts[ix]} ${jmeter_ssh_hosts[ix]} ApacheJMeter.jar
                             done
