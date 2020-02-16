@@ -562,8 +562,7 @@ function test_scenarios() {
                             echo "Starting Remote JMeter servers"
                             for ix in ${!jmeter_ssh_hosts[@]}; do
                                 echo "Starting Remote JMeter server. SSH Host: ${jmeter_ssh_hosts[ix]}, IP: ${jmeter_hosts[ix]}, Path: $HOME, Heap: $jmeter_server_heap_size"
-                                ssh ${jmeter_ssh_hosts[ix]} "./jmeter/jmeter-server-start.sh -n
-                                ${jmeter_hosts[ix]} -i $HOME -m $jmeter_server_heap_size -- $JMETER_JVM_ARGS"
+                                ssh ${jmeter_ssh_hosts[ix]} "./jmeter/jmeter-server-start.sh -n ${jmeter_hosts[ix]} -i $HOME -m $jmeter_server_heap_size -- $JMETER_JVM_ARGS"
                                 collect_server_metrics ${jmeter_ssh_hosts[ix]} ${jmeter_ssh_hosts[ix]} ApacheJMeter.jar
                             done
                         fi
