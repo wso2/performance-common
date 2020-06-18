@@ -71,6 +71,10 @@ declare -a message_sizes_array
 # Common backend sleep times (in milliseconds).
 declare -a backend_sleep_times_array
 
+#--cpus option for docker
+default_cpus=1
+cpus=$default_cpus
+
 # Test Duration in seconds
 default_test_duration=900
 test_duration=$default_test_duration
@@ -144,13 +148,14 @@ function usage() {
     echo "-e: Scenario name to to be excluded. You can give multiple options to filter scenarios."
     echo "-t: Estimate time without executing tests."
     echo "-p: Estimated processing time in between tests in seconds. Default $default_estimated_processing_time_in_between_tests."
+    echo "-c: --cpus option for the the docker container. Default $default_cpus"
     echo "-h: Display this help and exit."
     echo ""
 }
 
 # Reset getopts
 OPTIND=0
-while getopts "u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts; do
+while getopts "u:b:s:m:c:d:w:n:j:k:l:i:e:tp:h" opts; do
     case $opts in
     u)
         concurrent_users_array+=("${OPTARG}")
@@ -163,6 +168,9 @@ while getopts "u:b:s:m:d:w:n:j:k:l:i:e:tp:h" opts; do
         ;;
     m)
         heap_sizes_array+=("${OPTARG}")
+        ;;
+    c)
+        cpus=${OPTARG}
         ;;
     d)
         test_duration=${OPTARG}
@@ -207,6 +215,7 @@ done
 
 # Validate options
 number_regex='^[0-9]+$'
+float_number_regex="^[0-9]+\.?[0-9]*$"
 heap_regex='^[0-9]+[MG]$'
 
 if [ ${#heap_sizes_array[@]} -eq 0 ]; then
@@ -264,6 +273,11 @@ for heap in ${heap_sizes_array[@]}; do
         exit 1
     fi
 done
+
+if ! [[ $cpus =~ $float_number_regex ]]; then
+    echo "cpus must be a positive floating/int number."
+    exit 1
+fi
 
 for users in ${concurrent_users_array[@]}; do
     if ! [[ $users =~ $number_regex ]]; then
