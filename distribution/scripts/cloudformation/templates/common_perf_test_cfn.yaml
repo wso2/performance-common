@@ -300,9 +300,11 @@ Resources:
   InstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupName: "no-ingress-sg"
-      GroupDescription: "Security group with no ingress rule"
       VpcId: !Ref VPC
+        GroupDescription: Security Group for EC2 instances
+        SecurityGroupIngress:
+            - IpProtocol: -1
+              CidrIp: 0.0.0.0/0
   {% block resources %}{% endblock %}
   #######################
   # EC2 Instances
