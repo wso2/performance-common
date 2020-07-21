@@ -466,6 +466,9 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
+          echo "running server hostname: "`hostname`
+          echo "running server public ip: "`curl ifconfig.me`
+          echo "running server /etc/hosts: "`cat /etc/hosts`
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
           # Install required packages
