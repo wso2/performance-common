@@ -301,10 +301,10 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       VpcId: !Ref VPC
-        GroupDescription: Security Group for EC2 instances
-        SecurityGroupIngress:
-            - IpProtocol: -1
-              CidrIp: 0.0.0.0/0
+      GroupDescription: Security Group for EC2 instances
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
   {% block resources %}{% endblock %}
   #######################
   # EC2 Instances
