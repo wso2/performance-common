@@ -137,7 +137,7 @@ function usage() {
     echo "-m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Allowed suffixes: M, G."
     echo "-u: Concurrent Users to test. You can give multiple options to specify multiple users."
     echo "-b: Message sizes in bytes. You can give multiple options to specify multiple message sizes."
-    echo "-ie: Message Iterations"
+    echo "-q: Message Iterations"
     echo "-s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times."
     if function_exists usageHelp; then
         echo "$(usageHelp)"
@@ -159,7 +159,7 @@ function usage() {
 
 # Reset getopts
 OPTIND=0
-while getopts "u:b:ie:s:m:c:d:w:n:j:k:l:i:e:tp:h" opts; do
+while getopts "u:b:q:s:m:c:d:w:n:j:k:l:i:e:tp:h" opts; do
     case $opts in
     u)
         concurrent_users_array+=("${OPTARG}")
@@ -167,7 +167,7 @@ while getopts "u:b:ie:s:m:c:d:w:n:j:k:l:i:e:tp:h" opts; do
     b)
         message_sizes_array+=("${OPTARG}")
         ;;
-    ie)
+    q)
         message_iteratations_array+=("${OPTARG}")
         ;;
     s)
@@ -414,12 +414,20 @@ function print_durations() {
 }
 
 function initialize_test() {
+    echo "ARUNAN - test 31"
+    echo ${#include_scenario_names[@]}
     # Filter scenarios
     if [[ ${#include_scenario_names[@]} -gt 0 ]] || [[ ${#exclude_scenario_names[@]} -gt 0 ]]; then
+        echo "ARUNAN - test 32"
         declare -n scenario
         for scenario in ${!test_scenario@}; do
+            echo "ARUNAN - test 33"
             scenario[skip]=true
             for name in ${include_scenario_names[@]}; do
+                echo "ARUNAN - test 33.1"
+                echo $name
+                echo ${scenario[name]}
+                echo "ARUNAN - test 34"
                 if [[ ${scenario[name]} =~ $name ]]; then
                     scenario[skip]=false
                 fi
