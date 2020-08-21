@@ -71,6 +71,9 @@ declare -a message_sizes_array
 # Common backend sleep times (in milliseconds).
 declare -a backend_sleep_times_array
 
+# Message Iterations
+declare -a message_iteratations_array
+
 #--cpus option for docker
 default_cpus=1
 cpus=$default_cpus
@@ -134,6 +137,7 @@ function usage() {
     echo "-m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Allowed suffixes: M, G."
     echo "-u: Concurrent Users to test. You can give multiple options to specify multiple users."
     echo "-b: Message sizes in bytes. You can give multiple options to specify multiple message sizes."
+    echo "-ie: Message Iterations"
     echo "-s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times."
     if function_exists usageHelp; then
         echo "$(usageHelp)"
@@ -155,13 +159,16 @@ function usage() {
 
 # Reset getopts
 OPTIND=0
-while getopts "u:b:s:m:c:d:w:n:j:k:l:i:e:tp:h" opts; do
+while getopts "u:b:ie:s:m:c:d:w:n:j:k:l:i:e:tp:h" opts; do
     case $opts in
     u)
         concurrent_users_array+=("${OPTARG}")
         ;;
     b)
         message_sizes_array+=("${OPTARG}")
+        ;;
+    ie)
+        message_iteratations_array+=("${OPTARG}")
         ;;
     s)
         backend_sleep_times_array+=("${OPTARG}")
@@ -289,6 +296,13 @@ done
 for msize in ${message_sizes_array[@]}; do
     if ! [[ $msize =~ $number_regex ]]; then
         echo "Please specify a valid number for message size."
+        exit 1
+    fi
+done
+
+for iteration in ${message_iteratations_array[@]}; do
+    if ! [[ $iteration =~ $number_regex ]]; then
+        echo "Please specify a valid number for message iterations."
         exit 1
     fi
 done
@@ -445,6 +459,7 @@ function initialize_test() {
     test_parameters_json+=' | .["test_scenarios"]=$test_scenarios'
     test_parameters_json+=' | .["heap_sizes"]=$heap_sizes | .["concurrent_users"]=$concurrent_users'
     test_parameters_json+=' | .["message_sizes"]=$message_sizes | .["backend_sleep_times"]=$backend_sleep_times'
+    test_parameters_json+=' | .["iteration_elements"]=$iteration_elements'
     jq -n \
         --arg test_duration "$test_duration" \
         --arg warmup_time "$warmup_time" \
@@ -456,6 +471,7 @@ function initialize_test() {
         --argjson heap_sizes "$(printf '%s\n' "${heap_sizes_array[@]}" | jq -nR '[inputs]')" \
         --argjson concurrent_users "$(printf '%s\n' "${concurrent_users_array[@]}" | jq -nR '[inputs]')" \
         --argjson message_sizes "$(printf '%s\n' "${message_sizes_array[@]}" | jq -nR '[inputs]')" \
+        --argjson iteration_elements "$(printf '%s\n' "${message_iteratations_array[@]}" | jq -nR '[inputs]')" \
         --argjson backend_sleep_times "$(printf '%s\n' "${backend_sleep_times_array[@]}" | jq -nR '[inputs]')" \
         "$test_parameters_json" >test-metadata.json
 
