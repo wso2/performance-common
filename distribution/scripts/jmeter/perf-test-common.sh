@@ -414,20 +414,12 @@ function print_durations() {
 }
 
 function initialize_test() {
-    echo "ARUNAN - test 31"
-    echo ${#include_scenario_names[@]}
     # Filter scenarios
     if [[ ${#include_scenario_names[@]} -gt 0 ]] || [[ ${#exclude_scenario_names[@]} -gt 0 ]]; then
-        echo "ARUNAN - test 32"
         declare -n scenario
         for scenario in ${!test_scenario@}; do
-            echo "ARUNAN - test 33"
             scenario[skip]=true
             for name in ${include_scenario_names[@]}; do
-                echo "ARUNAN - test 33.1"
-                echo $name
-                echo ${scenario[name]}
-                echo "ARUNAN - test 34"
                 if [[ ${scenario[name]} =~ $name ]]; then
                     scenario[skip]=false
                 fi
