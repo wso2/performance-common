@@ -208,7 +208,7 @@ Resources:
               - !Ref AWS::StackName
         - Key: User
           Value: !Ref UserEmail
-  AttachGateway:
+  InternetGatewayAttachment:
     Type: 'AWS::EC2::VPCGatewayAttachment'
     Properties:
       VpcId: !Ref VPC
@@ -225,9 +225,9 @@ Resources:
               - !Ref AWS::StackName
         - Key: User
           Value: !Ref UserEmail
-  PublicRoute:
+  DefaultPublicRoute:
     Type: 'AWS::EC2::Route'
-    DependsOn: AttachGateway
+    DependsOn: InternetGatewayAttachment
     Properties:
       RouteTableId: !Ref PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
@@ -256,11 +256,9 @@ Resources:
           Value: !Ref UserEmail
   NatGateway:
     Type: 'AWS::EC2::NatGateway'
-    DependsOn: AttachGateway
+    DependsOn: InternetGatewayAttachment
     Properties:
-      AllocationId: !GetAtt
-        - NatGatewayIPAddress
-        - AllocationId
+      AllocationId: !GetAtt NatGatewayIPAddress.AllocationId
       SubnetId: !Ref PublicSubnet
       Tags:
         - Key: Name
@@ -272,7 +270,7 @@ Resources:
           Value: !Ref UserEmail
   NatGatewayIPAddress:
     Type: 'AWS::EC2::EIP'
-    DependsOn: AttachGateway
+    DependsOn: InternetGatewayAttachment
     Properties:
       Domain: vpc
   PrivateRouteTable:
@@ -289,7 +287,7 @@ Resources:
           Value: !Ref UserEmail
   PrivateRoute:
     Type: 'AWS::EC2::Route'
-    DependsOn: AttachGateway
+    DependsOn: InternetGatewayAttachment
     Properties:
       RouteTableId: !Ref PrivateRouteTable
       DestinationCidrBlock: 0.0.0.0/0
@@ -314,7 +312,7 @@ Resources:
 {%- macro ec2instance(resource_name, name, instance_type, files=[], public=false, volume_size=None) %}
   {{ resource_name }}:
     Type: 'AWS::EC2::Instance'
-    DependsOn: [AttachGateway, BucketPolicy]
+    DependsOn: [InternetGatewayAttachment, BucketPolicy]
     Metadata:
       'AWS::CloudFormation::Init':
         config:
@@ -466,6 +464,9 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
+          echo "running server hostname: "`hostname`
+          echo "running server public ip: "`curl ifconfig.me`
+          echo "running server /etc/hosts: "`cat /etc/hosts`
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
           # Install required packages
