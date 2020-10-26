@@ -468,7 +468,6 @@ Resources:
           echo "running server public ip: "`curl ifconfig.me`
           echo "running server /etc/hosts: "`cat /etc/hosts`
           export DEBIAN_FRONTEND=noninteractive
-          ping -c 5 google.com
           sleep 5m
           ping -c 5 google.com
           apt-get update
