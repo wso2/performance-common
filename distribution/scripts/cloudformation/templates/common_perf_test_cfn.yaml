@@ -468,8 +468,6 @@ Resources:
           echo "running server public ip: "`curl ifconfig.me`
           echo "running server /etc/hosts: "`cat /etc/hosts`
           export DEBIAN_FRONTEND=noninteractive
-          sleep 5m
-          ping -c 5 google.com
           apt-get update
           # Install required packages
           apt-get -y -q -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' install python-pip jq zip unzip
