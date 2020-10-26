@@ -76,7 +76,7 @@ function before_execute_test_scenario() {
         return 0
     fi
     echo "Restarting Backend Service. Heap: $heap, Delay: $sleep_time, Additional Flags: ${backend_flags:-N/A}"
-    ssh $backend_ssh_host "./netty-service/netty-start.sh -m $heap -w \
+    ssh -t $backend_ssh_host "sudo ./netty-service/netty-start.sh -m $heap -w \
      -- ${backend_flags} --delay $sleep_time"
     collect_server_metrics netty $backend_ssh_host netty
 }

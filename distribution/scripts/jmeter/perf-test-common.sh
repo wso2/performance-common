@@ -579,7 +579,7 @@ function test_scenarios() {
                         if [[ $sleep_time -ge 0 ]]; then
                             local backend_flags="${scenario[backend_flags]}"
                             echo "Starting Backend Service. Delay: $sleep_time, Additional Flags: ${backend_flags:-N/A}"
-                            ssh $backend_ssh_host "./netty-service/netty-start.sh -m $netty_service_heap_size -w \
+                            ssh -t $backend_ssh_host "sudo ./netty-service/netty-start.sh -m $netty_service_heap_size -w \
                                 -- ${backend_flags} --delay $sleep_time"
                             collect_server_metrics netty $backend_ssh_host netty
                         fi
