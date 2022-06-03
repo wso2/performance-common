@@ -38,7 +38,7 @@ function get_columns() {
     echo "Scenario Name"
     echo "Heap Size"
     echo "Concurrent Users"
-    echo "Message Size (Bytes)"
+    echo "GraphQL Query Number"
     echo "Back-end Service Delay (ms)"
     echo "Error %"
     echo "Throughput (Requests/sec)"
