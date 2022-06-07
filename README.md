@@ -78,7 +78,7 @@ See following sections for more details.
 The performance test scripts can create AWS resources to run standard server performance tests on AWS.
 
 Standard server performance tests include a Back-end service and the parameters include "Application heap memory sizes",
-"Concurrent users", "Message sizes", and "Back-end Sleep Times".
+"Concurrent Users", "GraphQL Query Number", and "Back-end Sleep Times".
 
 The `create-template.py` script can create AWS CloudFormation template based on a `Jinja2` template. The `common_perf_test_cfn.yaml` file
 is a common `Jinja2` template, which has necessary configurations to create a performance test environment on AWS.
