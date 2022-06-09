@@ -48,7 +48,7 @@ def main():
                        'Back-end Service Delay (ms)': 'Back-end Service Delay'},
               inplace=True)
     # Format query number values
-    df['Query Number'] = df['Query Number'].map(plotcommon.format_bytes)
+    df['Query Number'] = df['Query Number'].map(plotcommon.format_query_number)
     # Format time
     df['Back-end Service Delay'] = df['Back-end Service Delay'].map(plotcommon.format_time)
 
