@@ -30,7 +30,7 @@ The following are the test parameters.
 | Scenario Name | The name of the test scenario. | Refer to the above table. |
 | Heap Size | The amount of memory allocated to the application | {{ parameters.heap_sizes|join(', ') }} |
 | Concurrent Users | The number of users accessing the application at the same time. | {{ parameters.concurrent_users|join(', ') }} |
-| GraphQL Query | The GraphQL query number(s) | {{ parameters.query_numbers|join(', ') }} |
+| GraphQL Query | The GraphQL query number | {{ parameters.query_numbers|join(', ') }} |
 | Back-end Delay (ms) | The delay added by the Back-end service. | {{ parameters.backend_sleep_times|join(', ') }} |
 
 The duration of each test is **{{ parameters.test_duration }} seconds**. The warm-up period is **{{ parameters.warmup_time }} seconds**.

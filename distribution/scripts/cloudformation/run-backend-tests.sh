@@ -33,7 +33,7 @@ function get_test_metadata() {
     echo "application_name=$application_name"
 }
 export -f get_test_metadata
-
+create-plots.py
 function get_columns() {
     echo "Scenario Name"
     echo "Heap Size"

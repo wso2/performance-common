@@ -52,17 +52,17 @@ def main():
             df = df.append(df_csv, ignore_index=True)
 
 
-    df.rename(columns={'Message Size (Bytes)': 'Message Size',
+    df.rename(columns={'GraphQL Query Number': 'Query Number',
                        'Back-end Service Delay (ms)': 'Back-end Service Delay'},
               inplace=True)
-    # Format message size values
-    df['Message Size'] = df['Message Size'].map(plotcommon.format_bytes)
+    # Format query number values
+    df['Query Number'] = df['Query Number'].map(plotcommon.format_bytes)
     # Format time
     df['Back-end Service Delay'] = df['Back-end Service Delay'].map(plotcommon.format_time)
 
     unique_heap_sizes = df['Heap Size'].unique()
     unique_backend_delays = df['Back-end Service Delay'].unique()
-    unique_message_sizes = df['Message Size'].unique()
+    unique_query_numbers = df['Query Number'].unique()
 
     PLOT_COLUMN_RANGE_START = plotcommon.PLOT_COLUMN_RANGE_START + 1
     PLOT_COLUMN_RANGE_END = plotcommon.PLOT_COLUMN_RANGE_END + 1
@@ -70,11 +70,11 @@ def main():
     for heap_size in unique_heap_sizes:
         df_heap = df.loc[df['Heap Size'] == heap_size]
         for backend_delay in unique_backend_delays:
-            for message_size in unique_message_sizes:
+            for query_number in unique_query_numbers:
                 df_data = df_heap.loc[
-                    (df_heap['Message Size'] == message_size) & (df_heap['Back-end Service Delay'] == backend_delay)]
-                file_suffix = "-" + heap_size + "-" + message_size + "-" + backend_delay + ".png"
-                subtitle = "Memory = " + heap_size + ", Message Size = " + message_size + ", Back-end Service Delay = " + backend_delay
+                    (df_heap['Query Number'] == query_number) & (df_heap['Back-end Service Delay'] == backend_delay)]
+                file_suffix = "-" + heap_size + "-" + query_number + "-" + backend_delay + ".png"
+                subtitle = "Memory = " + heap_size + ", Query Number = " + query_number + ", Back-end Service Delay = " + backend_delay
                 for ycolumn in df.columns[PLOT_COLUMN_RANGE_START:PLOT_COLUMN_RANGE_END]:
                     plotcommon.save_cat_plot("comparison-catplot-" + plotcommon.get_filename(ycolumn) + file_suffix,
                                              ycolumn, ycolumn + " vs Concurrent Users", subtitle, df_data,

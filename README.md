@@ -176,8 +176,8 @@ Usage:
 
 #### Running standard server performance tests.
 
-You shoud extend `perf-test-common.sh` to run standard server performance tests. It supports testing with multiple concurrent
-users, different message sizes, different Back-end service delays and different heap memory sizes of the target server.
+You should extend `perf-test-common.sh` to run standard server performance tests. It supports testing with multiple concurrent
+users, different GraphQL queries, different Back-end service delays and different heap memory sizes of the target server.
 
 The script also supports running remote (distributed) JMeter tests and it will also summarize the results for warmup and
 measurement periods.
@@ -272,7 +272,7 @@ Usage:
 -n: Name of the application to be used in column headers.
 -c: Column header name for each parameter.
     You should give multiple header names in order for each directory in the results directory structure.
-    Default: Heap Size,Concurrent Users,Message Size (Bytes),Back-end Service Delay (ms)
+    Default: Heap Size,Concurrent Users,Query Number,Back-end Service Delay (ms)
 -r: Regular expression with a single group to extract parameter value from directory name.
     You should give multiple regular expressions in order for each directory in the results directory structure.
     Default: ([0-9]+[a-zA-Z])_heap,([0-9]+)_users,([0-9]+)B,([0-9]+)ms_sleep
