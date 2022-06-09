@@ -18,6 +18,11 @@ package org.wso2.performance.common.netty.echo;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.opencsv.CSVParser;
+import com.opencsv.CSVParserBuilder;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.exceptions.CsvException;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -46,12 +51,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;
 
@@ -63,6 +72,10 @@ public final class EchoHttpServer {
     private static final Logger logger = LoggerFactory.getLogger(EchoHttpServer.class);
 
     private static final PrintStream consoleErr = System.err;
+
+    // Load GraphQL query responses by performing a CSV file read
+    ArrayList<String> graphqlQueryResponses = getQueryResponseList(
+            EchoHttpServer.class.getClassLoader().getResourceAsStream("GraphqlQueryResponses.csv"));
 
     @Parameter(names = "--port", description = "Server Port")
     private int port = 8688;
@@ -228,5 +241,24 @@ public final class EchoHttpServer {
             }
         }
         return keyStore;
+    }
+
+    private static ArrayList<String> getQueryResponseList(InputStream resourceAsStream) {
+        ArrayList<String> responseList = new ArrayList<>();
+        CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
+        CSVReader reader;
+        try {
+            reader = new CSVReaderBuilder(
+                    new InputStreamReader(resourceAsStream, StandardCharsets.UTF_8)).withCSVParser(parser).build();
+            List<String[]> entries = reader.readAll();
+            for (String[] row : entries) {
+                String queryResponse = row[0];
+                responseList.add(queryResponse);
+            }
+            return responseList;
+        } catch (IOException | CsvException e) {
+            logger.error("An error occurred while reading the GraphQL query responses csv file", e);
+        }
+        return null;
     }
 }

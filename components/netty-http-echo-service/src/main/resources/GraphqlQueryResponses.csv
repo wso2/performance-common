@@ -1,0 +1,1663 @@
+"{
+  ""data"": {
+    ""hero"": {
+      ""id"": ""2001"",
+      ""name"": ""R2-D2"",
+      ""friends"": [
+        {
+          ""id"": ""1000"",
+          ""name"": ""Luke Skywalker"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1002"",
+          ""name"": ""Han Solo"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1003"",
+          ""name"": ""Leia Organa"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        }
+      ],
+      ""friendsConnection"": {
+        ""totalCount"": 3
+      },
+      ""appearsIn"": [
+        ""NEWHOPE"",
+        ""EMPIRE"",
+        ""JEDI""
+      ]
+    }
+  }
+}"
+"{
+  ""data"": {
+    ""hero"": {
+      ""id"": ""2001"",
+      ""name"": ""R2-D2"",
+      ""friends"": [
+        {
+          ""id"": ""1000"",
+          ""name"": ""Luke Skywalker"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1002"",
+          ""name"": ""Han Solo"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1003"",
+          ""name"": ""Leia Organa"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        }
+      ],
+      ""friendsConnection"": {
+        ""totalCount"": 3
+      },
+      ""appearsIn"": [
+        ""NEWHOPE"",
+        ""EMPIRE"",
+        ""JEDI""
+      ]
+    },
+    ""search"": [
+      {
+        ""id"": ""1000"",
+        ""name"": ""Luke Skywalker"",
+        ""homePlanet"": ""Tatooine"",
+        ""height"": 1.72,
+        ""mass"": 77,
+        ""friends"": [
+          {
+            ""id"": ""1002"",
+            ""name"": ""Han Solo"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1003"",
+            ""name"": ""Leia Organa"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1006"",
+            ""name"": ""Yoda"",
+            ""appearsIn"": [
+              ""EMPIRE"",
+              ""SITH""
+            ]
+          },
+          {
+            ""id"": ""1007"",
+            ""name"": ""Chewbacca"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2000"",
+            ""name"": ""C-3PO"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2001"",
+            ""name"": ""R2-D2"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 6
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ],
+        ""starships"": [
+          {
+            ""id"": ""3001"",
+            ""name"": ""X-Wing"",
+            ""length"": 12.5,
+            ""coordinates"": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          },
+          {
+            ""id"": ""3003"",
+            ""name"": ""Imperial shuttle"",
+            ""length"": 20,
+            ""coordinates"": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    ""character"": {
+      ""id"": ""1000"",
+      ""name"": ""Luke Skywalker"",
+      ""friends"": [
+        {
+          ""id"": ""1002"",
+          ""name"": ""Han Solo"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1003"",
+          ""name"": ""Leia Organa"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1006"",
+          ""name"": ""Yoda"",
+          ""appearsIn"": [
+            ""EMPIRE"",
+            ""SITH""
+          ]
+        },
+        {
+          ""id"": ""1007"",
+          ""name"": ""Chewbacca"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""2000"",
+          ""name"": ""C-3PO"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""2001"",
+          ""name"": ""R2-D2"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        }
+      ],
+      ""friendsConnection"": {
+        ""totalCount"": 6
+      },
+      ""appearsIn"": [
+        ""NEWHOPE"",
+        ""EMPIRE"",
+        ""JEDI""
+      ]
+    },
+    ""droid"": {
+      ""id"": ""2000"",
+      ""name"": ""C-3PO"",
+      ""friends"": [
+        {
+          ""id"": ""1000"",
+          ""name"": ""Luke Skywalker"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1002"",
+          ""name"": ""Han Solo"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1003"",
+          ""name"": ""Leia Organa"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""2001"",
+          ""name"": ""R2-D2"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        }
+      ],
+      ""friendsConnection"": {
+        ""totalCount"": 4
+      },
+      ""appearsIn"": [
+        ""NEWHOPE"",
+        ""EMPIRE"",
+        ""JEDI""
+      ],
+      ""primaryFunction"": ""Protocol""
+    }
+  }
+}"
+"{
+  ""data"": {
+    ""hero"": {
+      ""id"": ""2001"",
+      ""name"": ""R2-D2"",
+      ""friends"": [
+        {
+          ""id"": ""1000"",
+          ""name"": ""Luke Skywalker"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1002"",
+          ""name"": ""Han Solo"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1003"",
+          ""name"": ""Leia Organa"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        }
+      ],
+      ""friendsConnection"": {
+        ""totalCount"": 3
+      },
+      ""appearsIn"": [
+        ""NEWHOPE"",
+        ""EMPIRE"",
+        ""JEDI""
+      ]
+    },
+    ""search"": [
+      {
+        ""id"": ""1000"",
+        ""name"": ""Luke Skywalker"",
+        ""homePlanet"": ""Tatooine"",
+        ""height"": 1.72,
+        ""mass"": 77,
+        ""friends"": [
+          {
+            ""id"": ""1002"",
+            ""name"": ""Han Solo"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1003"",
+            ""name"": ""Leia Organa"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1006"",
+            ""name"": ""Yoda"",
+            ""appearsIn"": [
+              ""EMPIRE"",
+              ""SITH""
+            ]
+          },
+          {
+            ""id"": ""1007"",
+            ""name"": ""Chewbacca"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2000"",
+            ""name"": ""C-3PO"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2001"",
+            ""name"": ""R2-D2"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 6
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ],
+        ""starships"": [
+          {
+            ""id"": ""3001"",
+            ""name"": ""X-Wing"",
+            ""length"": 12.5,
+            ""coordinates"": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          },
+          {
+            ""id"": ""3003"",
+            ""name"": ""Imperial shuttle"",
+            ""length"": 20,
+            ""coordinates"": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    ""character"": {
+      ""id"": ""1000"",
+      ""name"": ""Luke Skywalker"",
+      ""friends"": [
+        {
+          ""id"": ""1002"",
+          ""name"": ""Han Solo"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1003"",
+          ""name"": ""Leia Organa"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1006"",
+          ""name"": ""Yoda"",
+          ""appearsIn"": [
+            ""EMPIRE"",
+            ""SITH""
+          ]
+        },
+        {
+          ""id"": ""1007"",
+          ""name"": ""Chewbacca"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""2000"",
+          ""name"": ""C-3PO"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""2001"",
+          ""name"": ""R2-D2"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        }
+      ],
+      ""friendsConnection"": {
+        ""totalCount"": 6
+      },
+      ""appearsIn"": [
+        ""NEWHOPE"",
+        ""EMPIRE"",
+        ""JEDI""
+      ]
+    },
+    ""droid"": {
+      ""id"": ""2000"",
+      ""name"": ""C-3PO"",
+      ""friends"": [
+        {
+          ""id"": ""1000"",
+          ""name"": ""Luke Skywalker"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1002"",
+          ""name"": ""Han Solo"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1003"",
+          ""name"": ""Leia Organa"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""2001"",
+          ""name"": ""R2-D2"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        }
+      ],
+      ""friendsConnection"": {
+        ""totalCount"": 4
+      },
+      ""appearsIn"": [
+        ""NEWHOPE"",
+        ""EMPIRE"",
+        ""JEDI""
+      ],
+      ""primaryFunction"": ""Protocol""
+    },
+    ""human"": {
+      ""id"": ""1000"",
+      ""name"": ""Luke Skywalker"",
+      ""homePlanet"": ""Tatooine"",
+      ""height"": 1.72,
+      ""mass"": 77,
+      ""friends"": [
+        {
+          ""id"": ""1002"",
+          ""name"": ""Han Solo"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1003"",
+          ""name"": ""Leia Organa"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""1006"",
+          ""name"": ""Yoda"",
+          ""appearsIn"": [
+            ""EMPIRE"",
+            ""SITH""
+          ]
+        },
+        {
+          ""id"": ""1007"",
+          ""name"": ""Chewbacca"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""2000"",
+          ""name"": ""C-3PO"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        },
+        {
+          ""id"": ""2001"",
+          ""name"": ""R2-D2"",
+          ""appearsIn"": [
+            ""NEWHOPE"",
+            ""EMPIRE"",
+            ""JEDI""
+          ]
+        }
+      ],
+      ""friendsConnection"": {
+        ""totalCount"": 6
+      },
+      ""appearsIn"": [
+        ""NEWHOPE"",
+        ""EMPIRE"",
+        ""JEDI""
+      ],
+      ""starships"": [
+        {
+          ""id"": ""3001"",
+          ""name"": ""X-Wing"",
+          ""length"": 12.5,
+          ""coordinates"": [
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              4
+            ]
+          ]
+        },
+        {
+          ""id"": ""3003"",
+          ""name"": ""Imperial shuttle"",
+          ""length"": 20,
+          ""coordinates"": [
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              4
+            ]
+          ]
+        }
+      ]
+    },
+    ""allHumans"": [
+      {
+        ""id"": ""1000"",
+        ""name"": ""Luke Skywalker"",
+        ""homePlanet"": ""Tatooine"",
+        ""height"": 1.72,
+        ""mass"": 77,
+        ""friends"": [
+          {
+            ""id"": ""1002"",
+            ""name"": ""Han Solo"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1003"",
+            ""name"": ""Leia Organa"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1006"",
+            ""name"": ""Yoda"",
+            ""appearsIn"": [
+              ""EMPIRE"",
+              ""SITH""
+            ]
+          },
+          {
+            ""id"": ""1007"",
+            ""name"": ""Chewbacca"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2000"",
+            ""name"": ""C-3PO"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2001"",
+            ""name"": ""R2-D2"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 6
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ],
+        ""starships"": [
+          {
+            ""id"": ""3001"",
+            ""name"": ""X-Wing"",
+            ""length"": 12.5,
+            ""coordinates"": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          },
+          {
+            ""id"": ""3003"",
+            ""name"": ""Imperial shuttle"",
+            ""length"": 20,
+            ""coordinates"": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        ""id"": ""1001"",
+        ""name"": ""Darth Vader"",
+        ""homePlanet"": ""Tatooine"",
+        ""height"": 2.02,
+        ""mass"": 136,
+        ""friends"": [
+          {
+            ""id"": ""1004"",
+            ""name"": ""Wilhuff Tarkin"",
+            ""appearsIn"": [
+              ""NEWHOPE""
+            ]
+          },
+          {
+            ""id"": ""1005"",
+            ""name"": ""Palpatine"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI"",
+              ""SITH""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 2
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI"",
+          ""SITH""
+        ],
+        ""starships"": [
+          {
+            ""id"": ""3002"",
+            ""name"": ""TIE Advanced x1"",
+            ""length"": 9.2,
+            ""coordinates"": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        ""id"": ""1002"",
+        ""name"": ""Han Solo"",
+        ""homePlanet"": null,
+        ""height"": 1.8,
+        ""mass"": 80,
+        ""friends"": [
+          {
+            ""id"": ""1000"",
+            ""name"": ""Luke Skywalker"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1003"",
+            ""name"": ""Leia Organa"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1007"",
+            ""name"": ""Chewbacca"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2001"",
+            ""name"": ""R2-D2"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 4
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ],
+        ""starships"": [
+          {
+            ""id"": ""3000"",
+            ""name"": ""Millenium Falcon"",
+            ""length"": 34.37,
+            ""coordinates"": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          },
+          {
+            ""id"": ""3003"",
+            ""name"": ""Imperial shuttle"",
+            ""length"": 20,
+            ""coordinates"": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        ""id"": ""1003"",
+        ""name"": ""Leia Organa"",
+        ""homePlanet"": ""Alderaan"",
+        ""height"": 1.5,
+        ""mass"": 49,
+        ""friends"": [
+          {
+            ""id"": ""1000"",
+            ""name"": ""Luke Skywalker"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1002"",
+            ""name"": ""Han Solo"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1007"",
+            ""name"": ""Chewbacca"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2000"",
+            ""name"": ""C-3PO"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2001"",
+            ""name"": ""R2-D2"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 5
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ],
+        ""starships"": []
+      },
+      {
+        ""id"": ""1004"",
+        ""name"": ""Wilhuff Tarkin"",
+        ""homePlanet"": null,
+        ""height"": 1.8,
+        ""mass"": null,
+        ""friends"": [
+          {
+            ""id"": ""1001"",
+            ""name"": ""Darth Vader"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI"",
+              ""SITH""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 1
+        },
+        ""appearsIn"": [
+          ""NEWHOPE""
+        ],
+        ""starships"": []
+      },
+      {
+        ""id"": ""1005"",
+        ""name"": ""Palpatine"",
+        ""homePlanet"": null,
+        ""height"": 1.5,
+        ""mass"": null,
+        ""friends"": [
+          {
+            ""id"": ""1001"",
+            ""name"": ""Darth Vader"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI"",
+              ""SITH""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 1
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI"",
+          ""SITH""
+        ],
+        ""starships"": []
+      },
+      {
+        ""id"": ""1006"",
+        ""name"": ""Yoda"",
+        ""homePlanet"": null,
+        ""height"": 0.8,
+        ""mass"": null,
+        ""friends"": [
+          {
+            ""id"": ""1000"",
+            ""name"": ""Luke Skywalker"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 1
+        },
+        ""appearsIn"": [
+          ""EMPIRE"",
+          ""SITH""
+        ],
+        ""starships"": []
+      },
+      {
+        ""id"": ""1007"",
+        ""name"": ""Chewbacca"",
+        ""homePlanet"": null,
+        ""height"": 2.3,
+        ""mass"": null,
+        ""friends"": [
+          {
+            ""id"": ""1000"",
+            ""name"": ""Luke Skywalker"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1002"",
+            ""name"": ""Han Solo"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1003"",
+            ""name"": ""Leia Organa"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 3
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ],
+        ""starships"": [
+          {
+            ""id"": ""3000"",
+            ""name"": ""Millenium Falcon"",
+            ""length"": 34.37,
+            ""coordinates"": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          },
+          {
+            ""id"": ""3003"",
+            ""name"": ""Imperial shuttle"",
+            ""length"": 20,
+            ""coordinates"": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    ""allDroids"": [
+      {
+        ""id"": ""2000"",
+        ""name"": ""C-3PO"",
+        ""friends"": [
+          {
+            ""id"": ""1000"",
+            ""name"": ""Luke Skywalker"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1002"",
+            ""name"": ""Han Solo"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1003"",
+            ""name"": ""Leia Organa"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2001"",
+            ""name"": ""R2-D2"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 4
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ],
+        ""primaryFunction"": ""Protocol""
+      },
+      {
+        ""id"": ""2001"",
+        ""name"": ""R2-D2"",
+        ""friends"": [
+          {
+            ""id"": ""1000"",
+            ""name"": ""Luke Skywalker"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1002"",
+            ""name"": ""Han Solo"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1003"",
+            ""name"": ""Leia Organa"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 3
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ],
+        ""primaryFunction"": ""Astromech""
+      }
+    ],
+    ""allCharacters"": [
+      {
+        ""id"": ""1000"",
+        ""name"": ""Luke Skywalker"",
+        ""friends"": [
+          {
+            ""id"": ""1002"",
+            ""name"": ""Han Solo"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1003"",
+            ""name"": ""Leia Organa"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1006"",
+            ""name"": ""Yoda"",
+            ""appearsIn"": [
+              ""EMPIRE"",
+              ""SITH""
+            ]
+          },
+          {
+            ""id"": ""1007"",
+            ""name"": ""Chewbacca"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2000"",
+            ""name"": ""C-3PO"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2001"",
+            ""name"": ""R2-D2"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 6
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ]
+      },
+      {
+        ""id"": ""1001"",
+        ""name"": ""Darth Vader"",
+        ""friends"": [
+          {
+            ""id"": ""1004"",
+            ""name"": ""Wilhuff Tarkin"",
+            ""appearsIn"": [
+              ""NEWHOPE""
+            ]
+          },
+          {
+            ""id"": ""1005"",
+            ""name"": ""Palpatine"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI"",
+              ""SITH""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 2
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI"",
+          ""SITH""
+        ]
+      },
+      {
+        ""id"": ""1002"",
+        ""name"": ""Han Solo"",
+        ""friends"": [
+          {
+            ""id"": ""1000"",
+            ""name"": ""Luke Skywalker"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1003"",
+            ""name"": ""Leia Organa"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1007"",
+            ""name"": ""Chewbacca"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2001"",
+            ""name"": ""R2-D2"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 4
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ]
+      },
+      {
+        ""id"": ""1003"",
+        ""name"": ""Leia Organa"",
+        ""friends"": [
+          {
+            ""id"": ""1000"",
+            ""name"": ""Luke Skywalker"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1002"",
+            ""name"": ""Han Solo"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1007"",
+            ""name"": ""Chewbacca"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2000"",
+            ""name"": ""C-3PO"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2001"",
+            ""name"": ""R2-D2"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 5
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ]
+      },
+      {
+        ""id"": ""1004"",
+        ""name"": ""Wilhuff Tarkin"",
+        ""friends"": [
+          {
+            ""id"": ""1001"",
+            ""name"": ""Darth Vader"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI"",
+              ""SITH""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 1
+        },
+        ""appearsIn"": [
+          ""NEWHOPE""
+        ]
+      },
+      {
+        ""id"": ""1005"",
+        ""name"": ""Palpatine"",
+        ""friends"": [
+          {
+            ""id"": ""1001"",
+            ""name"": ""Darth Vader"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI"",
+              ""SITH""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 1
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI"",
+          ""SITH""
+        ]
+      },
+      {
+        ""id"": ""1006"",
+        ""name"": ""Yoda"",
+        ""friends"": [
+          {
+            ""id"": ""1000"",
+            ""name"": ""Luke Skywalker"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 1
+        },
+        ""appearsIn"": [
+          ""EMPIRE"",
+          ""SITH""
+        ]
+      },
+      {
+        ""id"": ""1007"",
+        ""name"": ""Chewbacca"",
+        ""friends"": [
+          {
+            ""id"": ""1000"",
+            ""name"": ""Luke Skywalker"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1002"",
+            ""name"": ""Han Solo"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1003"",
+            ""name"": ""Leia Organa"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 3
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ]
+      },
+      {
+        ""id"": ""2000"",
+        ""name"": ""C-3PO"",
+        ""friends"": [
+          {
+            ""id"": ""1000"",
+            ""name"": ""Luke Skywalker"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1002"",
+            ""name"": ""Han Solo"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1003"",
+            ""name"": ""Leia Organa"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""2001"",
+            ""name"": ""R2-D2"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 4
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ]
+      },
+      {
+        ""id"": ""2001"",
+        ""name"": ""R2-D2"",
+        ""friends"": [
+          {
+            ""id"": ""1000"",
+            ""name"": ""Luke Skywalker"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1002"",
+            ""name"": ""Han Solo"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          },
+          {
+            ""id"": ""1003"",
+            ""name"": ""Leia Organa"",
+            ""appearsIn"": [
+              ""NEWHOPE"",
+              ""EMPIRE"",
+              ""JEDI""
+            ]
+          }
+        ],
+        ""friendsConnection"": {
+          ""totalCount"": 3
+        },
+        ""appearsIn"": [
+          ""NEWHOPE"",
+          ""EMPIRE"",
+          ""JEDI""
+        ]
+      }
+    ],
+    ""starship"": {
+      ""id"": ""3000"",
+      ""name"": ""Millenium Falcon"",
+      ""length"": 34.37,
+      ""coordinates"": [
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          4
+        ]
+      ]
+    }
+  }
+}"

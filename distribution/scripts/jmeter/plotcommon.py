@@ -35,11 +35,15 @@ def get_filename(value):
     return value
 
 
-def format_bytes(b):
-    if b >= 1024 and b % 1024 == 0:
-        return str(b // 1024) + 'KiB'
-    return str(b) + 'B'
-
+def format_query_number(q):
+    if q == 1:
+        return q + ' (Operation count:1 | Query depth: 2 | Query size: 157B | Response size: 790B)'
+    elif q == 2:
+        return q + ' (Operation count:4 | Query depth: 2 | Query size: 1KB | Response size: 5KB)'
+    elif q == 3:
+        return q + ' (Operation count:9 | Query depth: 2 | Query size: 2KB | Response size: 27KB)'
+    else:
+        return q
 
 def format_time(t):
     if t >= 1000 and t % 1000 == 0:

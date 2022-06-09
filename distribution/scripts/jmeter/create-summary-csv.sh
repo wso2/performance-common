@@ -22,7 +22,7 @@ script_dir=$(dirname "$0")
 application_name=""
 default_filename="summary.csv"
 filename="$default_filename"
-default_header_names=("Heap Size" "Concurrent Users" "Message Size (Bytes)" "Back-end Service Delay (ms)")
+default_header_names=("Heap Size" "Concurrent Users" "Query Number" "Back-end Service Delay (ms)")
 declare -a header_names
 # Results are usually in following directory structure:
 # results/${scenario_name}/${heap}_heap/${total_users}_users/${msize}B/${sleep_time}ms_sleep

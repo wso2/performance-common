@@ -47,7 +47,7 @@
 # 1. scenario_name
 # 2. heap
 # 3. users
-# 4. msize
+# 4. queryNumber
 # 5. sleep_time
 # 6. report_location
 #
@@ -66,8 +66,8 @@ script_dir=$(dirname "$0")
 declare -a heap_sizes_array
 # Concurrent users (will be divided among JMeter servers)
 declare -a concurrent_users_array
-# Message Sizes
-declare -a message_sizes_array
+# Queries
+declare -a query_number_array
 # Common backend sleep times (in milliseconds).
 declare -a backend_sleep_times_array
 
@@ -126,7 +126,7 @@ declare -A scenario_duration
 function usage() {
     echo ""
     echo "Usage: "
-    echo "$0 -m <heap_sizes> -u <concurrent_users> -b <message_sizes> -s <sleep_times>"
+    echo "$0 -m <heap_sizes> -u <concurrent_users> -b <query_numbers> -s <sleep_times>"
     if function_exists usageCommand; then
         echo "   $(usageCommand)"
     fi
@@ -136,7 +136,7 @@ function usage() {
     echo ""
     echo "-m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Allowed suffixes: M, G."
     echo "-u: Concurrent Users to test. You can give multiple options to specify multiple users."
-    echo "-b: Message sizes in bytes. You can give multiple options to specify multiple message sizes."
+    echo "-b: GraphQL query number. You can give multiple options to specify multiple query numbers."
     echo "-q: Message Iterations"
     echo "-s: Backend Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times."
     if function_exists usageHelp; then
@@ -165,7 +165,7 @@ while getopts "u:b:q:s:m:c:d:w:n:j:k:l:i:e:tp:h" opts; do
         concurrent_users_array+=("${OPTARG}")
         ;;
     b)
-        message_sizes_array+=("${OPTARG}")
+        query_number_array+=("${OPTARG}")
         ;;
     q)
         message_iteratations_array+=("${OPTARG}")
@@ -235,8 +235,8 @@ if [ ${#concurrent_users_array[@]} -eq 0 ]; then
     exit 1
 fi
 
-if [ ${#message_sizes_array[@]} -eq 0 ]; then
-    echo "Please provide message sizes."
+if [ ${#query_number_array[@]} -eq 0 ]; then
+    echo "Please provide query numbers."
     exit 1
 fi
 
@@ -293,9 +293,9 @@ for users in ${concurrent_users_array[@]}; do
     fi
 done
 
-for msize in ${message_sizes_array[@]}; do
-    if ! [[ $msize =~ $number_regex ]]; then
-        echo "Please specify a valid number for message size."
+for queryNumber in ${query_number_array[@]}; do
+    if ! [[ $queryNumber =~ $number_regex ]]; then
+        echo "Please specify a valid query number."
         exit 1
     fi
 done
@@ -458,7 +458,7 @@ function initialize_test() {
     test_parameters_json+=' | .["netty_service_heap_size"]=$netty_service_heap_size'
     test_parameters_json+=' | .["test_scenarios"]=$test_scenarios'
     test_parameters_json+=' | .["heap_sizes"]=$heap_sizes | .["concurrent_users"]=$concurrent_users'
-    test_parameters_json+=' | .["message_sizes"]=$message_sizes | .["backend_sleep_times"]=$backend_sleep_times'
+    test_parameters_json+=' | .["query_numbers"]=$query_numbers | .["backend_sleep_times"]=$backend_sleep_times'
     test_parameters_json+=' | .["iteration_elements"]=$iteration_elements'
     jq -n \
         --arg test_duration "$test_duration" \
@@ -470,7 +470,7 @@ function initialize_test() {
         --argjson test_scenarios "$(echo "$all_scenarios" | jq -s '.')" \
         --argjson heap_sizes "$(printf '%s\n' "${heap_sizes_array[@]}" | jq -nR '[inputs]')" \
         --argjson concurrent_users "$(printf '%s\n' "${concurrent_users_array[@]}" | jq -nR '[inputs]')" \
-        --argjson message_sizes "$(printf '%s\n' "${message_sizes_array[@]}" | jq -nR '[inputs]')" \
+        --argjson query_numbers "$(printf '%s\n' "${query_number_array[@]}" | jq -nR '[inputs]')" \
         --argjson iteration_elements "$(printf '%s\n' "${message_iteratations_array[@]}" | jq -nR '[inputs]')" \
         --argjson backend_sleep_times "$(printf '%s\n' "${backend_sleep_times_array[@]}" | jq -nR '[inputs]')" \
         "$test_parameters_json" >test-metadata.json
@@ -498,25 +498,6 @@ function initialize_test() {
         mkdir results
         cp $0 results/
         mv test-metadata.json results/
-
-        declare -a payload_sizes
-        for msize in ${message_sizes_array[@]}; do
-            payload_sizes+=("-s" "$msize")
-        done
-
-        if [[ $jmeter_servers -gt 1 ]]; then
-            for jmeter_ssh_host in ${jmeter_ssh_hosts[@]}; do
-                echo "Generating Payloads in $jmeter_ssh_host"
-                ssh $jmeter_ssh_host "./payloads/generate-payloads.sh" -p $payload_type ${payload_sizes[@]}
-            done
-        else
-            pushd $HOME
-            # Payloads should be created in the $HOME directory
-            if ! ./payloads/generate-payloads.sh -p $payload_type ${payload_sizes[@]}; then
-                echo "WARNING: Failed to generate payloads!"
-            fi
-            popd
-        fi
 
         if declare -F initialize >/dev/null 2>&1; then
             initialize
@@ -555,7 +536,7 @@ function test_scenarios() {
                 sleep_times_array=("-1")
             fi
             for users in ${concurrent_users_array[@]}; do
-                for msize in ${message_sizes_array[@]}; do
+                for queryNumber in ${query_number_array[@]}; do
                     for sleep_time in ${sleep_times_array[@]}; do
                         if [ "$estimate" = true ]; then
                             record_scenario_duration $scenario_name $(($test_duration + $estimated_processing_time_in_between_tests))
@@ -567,11 +548,11 @@ function test_scenarios() {
 
                         test_counter=$((test_counter + 1))
                         local scenario_desc="Test No: ${test_counter}, Scenario Name: ${scenario_name}, Duration: $test_duration"
-                        scenario_desc+=", Concurrent Users ${users}, Msg Size: ${msize}, Sleep Time: ${sleep_time}"
+                        scenario_desc+=", Concurrent Users ${users}, Query Number: ${queryNumber}, Sleep Time: ${sleep_time}"
                         echo -n "# Starting the performance test."
                         echo " $scenario_desc"
 
-                        report_location=$PWD/results/${scenario_name}/${heap}_heap/${users}_users/${msize}B/${sleep_time}ms_sleep
+                        report_location=$PWD/results/${scenario_name}/${heap}_heap/${users}_users/query_${queryNumber}/${sleep_time}ms_sleep
 
                         echo "Report location is ${report_location}"
                         mkdir -p $report_location
