@@ -26,7 +26,7 @@ default_header_names=("Heap Size" "Concurrent Users" "GraphQL Query Number" "Bac
 declare -a header_names
 # Results are usually in following directory structure:
 # results/${scenario_name}/${heap}_heap/${total_users}_users/${queryNumber}/${sleep_time}ms_sleep
-default_regexs=("([0-9]+[a-zA-Z])_heap" "([0-9]+)_users" "[0-9]" "([0-9]+)ms_sleep")
+default_regexs=("([0-9]+[a-zA-Z])_heap" "([0-9]+)_users" "query_([0-9]+)" "([0-9]+)ms_sleep")
 declare -a regexs
 print_column_names=false
 # Prefix of files
