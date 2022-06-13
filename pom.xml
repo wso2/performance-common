@@ -47,7 +47,6 @@
     </scm>
 
     <modules>
-        <module>components/payload-generator</module>
         <module>components/netty-http-echo-service</module>
         <module>components/jtl-splitter</module>
         <module>distribution</module>

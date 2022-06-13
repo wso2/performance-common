@@ -55,28 +55,28 @@ def main():
     unique_backend_delays = df['Back-end Service Delay'].unique()
     unique_query_numbers = df['Query Number'].unique()
 
-    for heap_size in unique_heap_sizes:
-        df_heap = df.loc[df['Heap Size'] == heap_size]
-
-        for backend_delay in unique_backend_delays:
-            # Plot individual charts for query numbers
-            for query_number in unique_query_numbers:
-                df_data = df_heap.loc[
-                    (df_heap['Query Number'] == query_number) & (df_heap['Back-end Service Delay'] == backend_delay)]
-                file_suffix = "-" + heap_size + "-" + query_number + "-" + backend_delay + ".png"
-                subtitle = "Memory = " + heap_size + ", Query Number = " + query_number + ", Back-end Service Delay = " + backend_delay
-                for ycolumn in df.columns[PLOT_COLUMN_RANGE_START:PLOT_COLUMN_RANGE_END]:
-                    plotcommon.save_line_plot("lineplot-" + plotcommon.get_filename(ycolumn) + file_suffix, ycolumn,
-                                              ycolumn + " vs Concurrent Users", subtitle, df_data)
-
-            # Categorical plots by Query Number
-            for ycolumn in df.columns[PLOT_COLUMN_RANGE_START:PLOT_COLUMN_RANGE_END]:
-                # Cat plot for each backend delay, with GraphQL query number as column
-                df_data = df_heap.loc[df_heap['Back-end Service Delay'] == backend_delay]
-                file_suffix = "-" + heap_size + "-" + backend_delay + ".png"
-                subtitle = "Memory = " + heap_size + ", Back-end Service Delay = " + backend_delay
-                plotcommon.save_cat_plot("catplot-" + plotcommon.get_filename(ycolumn) + file_suffix, ycolumn,
-                                         ycolumn + " vs Concurrent Users", subtitle, df_data, "Query Number")
+#     for heap_size in unique_heap_sizes:
+#         df_heap = df.loc[df['Heap Size'] == heap_size]
+#
+#         for backend_delay in unique_backend_delays:
+#             # Plot individual charts for query numbers
+#             for query_number in unique_query_numbers:
+#                 df_data = df_heap.loc[
+#                     (df_heap['Query Number'] == query_number) & (df_heap['Back-end Service Delay'] == backend_delay)]
+#                 file_suffix = "-" + heap_size + "-" + query_number + "-" + backend_delay + ".png"
+#                 subtitle = "Memory = " + heap_size + ", Query Number = " + query_number + ", Back-end Service Delay = " + backend_delay
+#                 for ycolumn in df.columns[PLOT_COLUMN_RANGE_START:PLOT_COLUMN_RANGE_END]:
+#                     plotcommon.save_line_plot("lineplot-" + plotcommon.get_filename(ycolumn) + file_suffix, ycolumn,
+#                                               ycolumn + " vs Concurrent Users", subtitle, df_data)
+#
+#             # Categorical plots by Query Number
+#             for ycolumn in df.columns[PLOT_COLUMN_RANGE_START:PLOT_COLUMN_RANGE_END]:
+#                 # Cat plot for each backend delay, with GraphQL query number as column
+#                 df_data = df_heap.loc[df_heap['Back-end Service Delay'] == backend_delay]
+#                 file_suffix = "-" + heap_size + "-" + backend_delay + ".png"
+#                 subtitle = "Memory = " + heap_size + ", Back-end Service Delay = " + backend_delay
+#                 plotcommon.save_cat_plot("catplot-" + plotcommon.get_filename(ycolumn) + file_suffix, ycolumn,
+#                                          ycolumn + " vs Concurrent Users", subtitle, df_data, "Query Number")
 
     print("Done")
 
