@@ -586,11 +586,11 @@ function test_scenarios() {
                                 IFS=","
                                 echo "${jmeter_hosts[*]}"
                             ) -X"
-                            for param in ${jmeter_params[@]}; do
+                            for param in "${jmeter_params[@]}"; do
                                 jmeter_command+=" -G$param"
                             done
                         else
-                            for param in ${jmeter_params[@]}; do
+                            for param in "${jmeter_params[@]}"; do
                                 jmeter_command+=" -J$param"
                             done
                         fi
