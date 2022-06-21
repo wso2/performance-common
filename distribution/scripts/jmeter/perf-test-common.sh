@@ -597,13 +597,16 @@ function test_scenarios() {
                         jmeter_command+=" -l ${report_location}/results.jtl"
 
                         echo "Starting JMeter Client with JVM_ARGS=$JVM_ARGS"
-                        echo "$jmeter_command"
+                        echo "#!/bin/bash -e" > jmeter_command.sh
+                        echo "$jmeter_command" >> jmeter_command.sh
+                        chmod +x jmeter_command.sh
 
                         # Start timestamp
                         test_start_timestamp=$(date +%s)
                         echo "Start timestamp: $test_start_timestamp"
                         # Run JMeter in background
-                        $jmeter_command &
+                        sh jmeter_command.sh &
+                        # $jmeter_command &
                         collect_server_metrics jmeter ApacheJMeter.jar
                         local jmeter_pid="$!"
                         if ! wait $jmeter_pid; then
