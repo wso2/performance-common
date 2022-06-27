@@ -89,7 +89,6 @@ public class EchoHttpServerHandler extends SimpleChannelInboundHandler<FullHttpR
         String[] responseList = EchoHttpServer.GQL_QUERY_RESPONSES;
         int queryNumber = Integer.parseInt(request.headers().get("query-number"));
 
-        assert responseList != null;
         String responseBody = responseList[queryNumber - 1];
 
         // Return the response depending on the query-number header value

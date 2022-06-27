@@ -255,7 +255,6 @@ public final class EchoHttpServer {
                 String queryResponse = row[0];
                 responseList[index++] = queryResponse;
             }
-            return responseList;
         } catch (IOException | CsvException e) {
             logger.error("An error occurred while reading the GraphQL query responses csv file", e);
         }
