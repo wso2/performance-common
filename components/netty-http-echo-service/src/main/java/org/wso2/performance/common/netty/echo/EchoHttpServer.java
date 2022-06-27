@@ -59,7 +59,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;
@@ -74,7 +73,7 @@ public final class EchoHttpServer {
     private static final PrintStream consoleErr = System.err;
 
     // Load GraphQL query responses by performing a CSV file read
-    ArrayList<String> graphqlQueryResponses = getQueryResponseList(
+    static final String[] GQL_QUERY_RESPONSES = getQueryResponseList(
             EchoHttpServer.class.getClassLoader().getResourceAsStream("GraphqlQueryResponses.csv"));
 
     @Parameter(names = "--port", description = "Server Port")
@@ -243,22 +242,22 @@ public final class EchoHttpServer {
         return keyStore;
     }
 
-    private static ArrayList<String> getQueryResponseList(InputStream resourceAsStream) {
-        ArrayList<String> responseList = new ArrayList<>();
+    private static String[] getQueryResponseList(InputStream resourceAsStream) {
+        String[] responseList = new String[3];
         CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
         CSVReader reader;
         try {
             reader = new CSVReaderBuilder(
                     new InputStreamReader(resourceAsStream, StandardCharsets.UTF_8)).withCSVParser(parser).build();
             List<String[]> entries = reader.readAll();
+            int index = 0;
             for (String[] row : entries) {
                 String queryResponse = row[0];
-                responseList.add(queryResponse);
+                responseList[index++] = queryResponse;
             }
-            return responseList;
         } catch (IOException | CsvException e) {
             logger.error("An error occurred while reading the GraphQL query responses csv file", e);
         }
-        return null;
+        return responseList;
     }
 }
