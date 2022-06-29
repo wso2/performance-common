@@ -86,9 +86,23 @@ public class EchoHttpServerHandler extends SimpleChannelInboundHandler<FullHttpR
     }
 
     private static FullHttpResponse buildFullHttpResponse(FullHttpRequest request) {
-        String[] responseList = EchoHttpServer.GQL_QUERY_RESPONSES;
-        int queryNumber = Integer.parseInt(request.headers().get("query-number"));
-        String responseBody = responseList[queryNumber - 1];
+//        String[] responseList = EchoHttpServer.GQL_QUERY_RESPONSES;
+//        int queryNumber = Integer.parseInt(request.headers().get("query-number"));
+//        String responseBody = responseList[queryNumber - 1];
+        String responseBody = "{\n" + "  \"data\": {\n" + "    \"hero\": {\n" + "      \"id\": \"2001\",\n"
+                + "      \"name\": \"R2-D2\",\n" + "      \"friends\": [\n" + "        {\n"
+                + "          \"id\": \"1000\",\n" + "          \"name\": \"Luke Skywalker\",\n"
+                + "          \"appearsIn\": [\n" + "            \"NEWHOPE\",\n" + "            \"EMPIRE\",\n"
+                + "            \"JEDI\"\n" + "          ]\n" + "        },\n" + "        {\n"
+                + "          \"id\": \"1002\",\n" + "          \"name\": \"Han Solo\",\n"
+                + "          \"appearsIn\": [\n" + "            \"NEWHOPE\",\n" + "            \"EMPIRE\",\n"
+                + "            \"JEDI\"\n" + "          ]\n" + "        },\n" + "        {\n"
+                + "          \"id\": \"1003\",\n" + "          \"name\": \"Leia Organa\",\n"
+                + "          \"appearsIn\": [\n" + "            \"NEWHOPE\",\n" + "            \"EMPIRE\",\n"
+                + "            \"JEDI\"\n" + "          ]\n" + "        }\n" + "      ],\n"
+                + "      \"friendsConnection\": {\n" + "        \"totalCount\": 3\n" + "      },\n"
+                + "      \"appearsIn\": [\n" + "        \"NEWHOPE\",\n" + "        \"EMPIRE\",\n" + "        \"JEDI\"\n"
+                + "      ]\n" + "    }\n" + "  }\n" + "}";
 
         // Return the response depending on the query-number header value
         ByteBuf content = Unpooled.copiedBuffer(
