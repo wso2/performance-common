@@ -244,7 +244,7 @@ oracle_jdk_distribution_filename=$(basename $oracle_jdk_distribution)
 # fi
 
 if ! [[ $oracle_jdk_distribution_filename =~ ^OpenJDK8U-jdk_x64_[a-zA-Z0-9_]+.tar.gz$ ]]; then
-    echo "Please specify a valid Oracle JDK distribution file (jdk-8u*-linux-x64.tar.gz)"
+    echo "Please specify a valid Open JDK distribution file (OpenJDK8U-jdk_x64_[a-zA-Z0-9_]+.tar.gz)"
     exit 1
 fi
 
