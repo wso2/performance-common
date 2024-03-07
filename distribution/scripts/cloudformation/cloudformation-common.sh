@@ -238,15 +238,15 @@ fi
 
 oracle_jdk_distribution_filename=$(basename $oracle_jdk_distribution)
 
-# if ! [[ $oracle_jdk_distribution_filename =~ ^jdk-8u[0-9]+-linux-x64.tar.gz$ ]]; then
-#     echo "Please specify a valid Oracle JDK distribution file (jdk-8u*-linux-x64.tar.gz)"
-#     exit 1
-# fi
-
-if ! [[ $oracle_jdk_distribution_filename =~ ^OpenJDK8U-jdk_x64_[a-zA-Z0-9_]+.tar.gz$ ]]; then
-    echo "Please specify a valid Open JDK distribution file (OpenJDK8U-jdk_x64_[a-zA-Z0-9_]+.tar.gz)"
+if ! [[ $oracle_jdk_distribution_filename =~ ^jdk-8u[0-9]+-linux-x64.tar.gz$ ]]; then
+    echo "Please specify a valid Oracle JDK distribution file (jdk-8u*-linux-x64.tar.gz)"
     exit 1
 fi
+
+# if ! [[ $oracle_jdk_distribution_filename =~ ^OpenJDK8U-jdk_x64_[a-zA-Z0-9_]+.tar.gz$ ]]; then
+#     echo "Please specify a valid Open JDK distribution file (OpenJDK8U-jdk_x64_[a-zA-Z0-9_]+.tar.gz)"
+#     exit 1
+# fi
 
 if [[ ! -f $gcviewer_jar_path ]]; then
     echo "Please specify the path to GCViewer JAR file."
