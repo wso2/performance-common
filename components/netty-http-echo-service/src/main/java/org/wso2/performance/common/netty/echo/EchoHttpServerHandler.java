@@ -15,6 +15,8 @@
  */
 package org.wso2.performance.common.netty.echo;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -27,6 +29,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http2.HttpConversionUtil;
+import io.netty.util.CharsetUtil;
 
 import java.util.concurrent.TimeUnit;
 
@@ -83,7 +86,16 @@ public class EchoHttpServerHandler extends SimpleChannelInboundHandler<FullHttpR
     }
 
     private static FullHttpResponse buildFullHttpResponse(FullHttpRequest request) {
-        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, request.content().copy());
+        String[] responseList = EchoHttpServer.GQL_QUERY_RESPONSES;
+        int queryNumber = Integer.parseInt(request.headers().get("query-number"));
+        String responseBody = responseList[queryNumber - 1];
+
+        // Return the response depending on the query-number header value
+        ByteBuf content = Unpooled.copiedBuffer(
+                responseBody,
+                CharsetUtil.UTF_8
+        );
+        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
         String contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType != null) {
             response.headers().set(HttpHeaderNames.CONTENT_TYPE, contentType);

@@ -78,7 +78,7 @@ See following sections for more details.
 The performance test scripts can create AWS resources to run standard server performance tests on AWS.
 
 Standard server performance tests include a Back-end service and the parameters include "Application heap memory sizes",
-"Concurrent users", "Message sizes", and "Back-end Sleep Times".
+"Concurrent Users", "GraphQL Query Number", and "Back-end Sleep Times".
 
 The `create-template.py` script can create AWS CloudFormation template based on a `Jinja2` template. The `common_perf_test_cfn.yaml` file
 is a common `Jinja2` template, which has necessary configurations to create a performance test environment on AWS.
@@ -176,8 +176,8 @@ Usage:
 
 #### Running standard server performance tests.
 
-You shoud extend `perf-test-common.sh` to run standard server performance tests. It supports testing with multiple concurrent
-users, different message sizes, different Back-end service delays and different heap memory sizes of the target server.
+You should extend `perf-test-common.sh` to run standard server performance tests. It supports testing with multiple concurrent
+users, different GraphQL queries, different Back-end service delays and different heap memory sizes of the target server.
 
 The script also supports running remote (distributed) JMeter tests and it will also summarize the results for warmup and
 measurement periods.
@@ -236,13 +236,13 @@ Finally, execute test scenarios using the function `test_scenarios`.
 ubuntu@server:~$ ./jmeter/perf-test-common.sh -h
 
 Usage: 
-./jmeter/perf-test-common.sh -m <heap_sizes> -u <concurrent_users> -b <message_sizes> -s <sleep_times> [-d <test_duration>] [-w <warmup_time>]
+./jmeter/perf-test-common.sh -m <heap_sizes> -u <concurrent_users> -b <query_numbers> -s <sleep_times> [-d <test_duration>] [-w <warmup_time>]
    [-n <jmeter_servers>] [-j <jmeter_server_heap_size>] [-k <jmeter_client_heap_size>] [-l <netty_service_heap_size>]
    [-i <include_scenario_name>] [-e <include_scenario_name>] [-t] [-p <estimated_processing_time_in_between_tests>] [-h]
 
 -m: Application heap memory sizes. You can give multiple options to specify multiple heap memory sizes. Allowed suffixes: M, G.
 -u: Concurrent Users to test. You can give multiple options to specify multiple users.
--b: Message sizes in bytes. You can give multiple options to specify multiple message sizes.
+-b: GraphQL query number. You can give multiple options to specify multiple query numbers.
 -s: Back-end Sleep Times in milliseconds. You can give multiple options to specify multiple sleep times.
 -d: Test Duration in seconds. Default 900.
 -w: Warm-up time in seconds. Default 300.
@@ -272,7 +272,7 @@ Usage:
 -n: Name of the application to be used in column headers.
 -c: Column header name for each parameter.
     You should give multiple header names in order for each directory in the results directory structure.
-    Default: Heap Size,Concurrent Users,Message Size (Bytes),Back-end Service Delay (ms)
+    Default: Heap Size,Concurrent Users,Query Number,Back-end Service Delay (ms)
 -r: Regular expression with a single group to extract parameter value from directory name.
     You should give multiple regular expressions in order for each directory in the results directory structure.
     Default: ([0-9]+[a-zA-Z])_heap,([0-9]+)_users,([0-9]+)B,([0-9]+)ms_sleep
