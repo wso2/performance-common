@@ -22,3 +22,6 @@ __pycache__
 
 # Generated POM
 dependency-reduced-pom.xml
+
+# OS generated files
+.DS_Store
