@@ -631,7 +631,8 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     echo "Creating stack $stack_name..."
     echo "$create_stack_command"
     # Create stack
-    stack_id="$($create_stack_command)"
+    stack_result="$($create_stack_command)"
+    stack_id=$(echo "$stack_result" | jq -r '.StackId')
     # stack_id="Stack"
     stack_ids+=("$stack_id")
     echo "Created stack: $stack_name. ID: $stack_id"
