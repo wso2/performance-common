@@ -72,7 +72,7 @@ if [ "$download" = true ]; then
         echo "Do not specify JMeter distribution file with download option."
         exit 1
     fi
-    jmeter_version="4.0"
+    jmeter_version="5.6.2"
     jmeter_dist="apache-jmeter-${jmeter_version}.tgz"
     jmeter_download_url="https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${jmeter_version}.tgz"
     if [[ ! -f $jmeter_dist ]]; then

@@ -238,10 +238,10 @@ fi
 
 oracle_jdk_distribution_filename=$(basename $oracle_jdk_distribution)
 
-if ! [[ $oracle_jdk_distribution_filename =~ ^jdk-8u[0-9]+-linux-x64.tar.gz$ ]]; then
-    echo "Please specify a valid Oracle JDK distribution file (jdk-8u*-linux-x64.tar.gz)"
-    exit 1
-fi
+#if ! [[ $oracle_jdk_distribution_filename =~ ^jdk-8u[0-9]+-linux-x64.tar.gz$ ]]; then
+#    echo "Please specify a valid Oracle JDK distribution file (jdk-8u*-linux-x64.tar.gz)"
+#    exit 1
+#fi
 
 if [[ ! -f $gcviewer_jar_path ]]; then
     echo "Please specify the path to GCViewer JAR file."
@@ -631,7 +631,8 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     echo "Creating stack $stack_name..."
     echo "$create_stack_command"
     # Create stack
-    stack_id="$($create_stack_command)"
+    stack_result="$($create_stack_command)"
+    stack_id=$(echo "$stack_result" | jq -r '.StackId')
     # stack_id="Stack"
     stack_ids+=("$stack_id")
     echo "Created stack: $stack_name. ID: $stack_id"
@@ -661,7 +662,7 @@ function download_files() {
             cat $instance_ips_file
             echo "Uploading $instance_ips_file to $instance_public_ip"
             if scp -i $key_file -o "StrictHostKeyChecking=no" $instance_ips_file ubuntu@$instance_public_ip:; then
-                download_files_command="ssh -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip ./cloudformation/download-files.sh -f $(basename $instance_ips_file) -k private_key.pem -o /home/ubuntu"
+                download_files_command="ssh -i $key_file -o "StrictHostKeyChecking=no" ubuntu@$instance_public_ip /home/ubuntu/ballerina-performance-distribution-1.1.1-SNAPSHOT/cloudformation/download-files.sh -f $(basename $instance_ips_file) -k private_key.pem -o /home/ubuntu"
                 echo "Download files command: $download_files_command"
                 $download_files_command
                 echo "Downloading files.zip"
@@ -775,7 +776,7 @@ function run_perf_tests_in_stack() {
 
     ssh_command_prefix="ssh -i $key_file -o "StrictHostKeyChecking=no" -T ubuntu@$jmeter_client_ip"
     # Run performance tests
-    run_remote_tests_command="$ssh_command_prefix ./jmeter/${run_performance_tests_script_name} ${performance_test_options[$index]}"
+    run_remote_tests_command="$ssh_command_prefix /home/ubuntu/ballerina-performance-distribution-1.1.1-SNAPSHOT/jmeter/${run_performance_tests_script_name} ${performance_test_options[$index]}"
     echo "Running performance tests: $run_remote_tests_command"
     # Handle any error and let the script continue.
     $run_remote_tests_command || echo "Remote test ssh command failed: $run_remote_tests_command"
