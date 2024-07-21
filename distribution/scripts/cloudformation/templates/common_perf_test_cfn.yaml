@@ -481,6 +481,7 @@ Resources:
           /usr/local/bin/cfn-init -v --stack ${AWS::StackId} --resource {{ resource_name }} --region ${AWS::Region}
           # Extract distribution
           tar xzf /home/ubuntu/performance-distribution.tar.gz -C /home/ubuntu
+          chmod 755 /home/ubuntu/ballerina-performance-distribution-1.1.1-SNAPSHOT
           {% if caller is defined -%}
           # Must run setup script in User Data (Commands executed within cfn-init do not show the progress in logs)
           # Run setup
@@ -488,7 +489,8 @@ Resources:
           {% endif -%}
           # Write system information
           mkdir /home/ubuntu/system-info
-          /home/ubuntu/cloudformation/write-system-information.sh -o /home/ubuntu/system-info/
+          chmod 755 /home/ubuntu/system-info
+          /home/ubuntu/ballerina-performance-distribution-1.1.1-SNAPSHOT/cloudformation/write-system-information.sh -o /home/ubuntu/system-info/
           # Signal
           /usr/local/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource {{ resource_name }} --region ${AWS::Region}
     CreationPolicy:

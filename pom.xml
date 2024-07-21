@@ -53,13 +53,13 @@
         <module>distribution</module>
     </modules>
 
-    <repositories>
-        <repository>
-            <id>jcenter</id>
-            <name>bintray</name>
-            <url>http://jcenter.bintray.com</url>
-        </repository>
-    </repositories>
+<!--    <repositories>-->
+<!--        <repository>-->
+<!--            <id>jcenter</id>-->
+<!--            <name>bintray</name>-->
+<!--            <url>http://jcenter.bintray.com</url>-->
+<!--        </repository>-->
+<!--    </repositories>-->
 
     <dependencyManagement>
         <dependencies>
@@ -181,6 +181,16 @@
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons.lang3.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>net.sf.saxon</groupId>
+                <artifactId>Saxon-HE</artifactId>
+                <version>9.9.1-1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.io7m.xom</groupId>
+                <artifactId>xom</artifactId>
+                <version>1.2.10</version>
             </dependency>
             <!-- Test Dependencies - End -->
         </dependencies>

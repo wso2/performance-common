@@ -72,13 +72,45 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
+        <dependency>
+            <groupId>net.sf.saxon</groupId>
+            <artifactId>Saxon-HE</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.io7m.xom</groupId>
+            <artifactId>xom</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-shade-plugin</artifactId>-->
+<!--            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>${maven.assembly.plugin.version}</version>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.wso2.performance.common.netty.echo.EchoHttpServer</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>assemble-all</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -138,7 +170,7 @@
                             <workingDirectory>${project.build.directory}</workingDirectory>
                             <arguments>
                                 <argument>-jar</argument>
-                                <argument>${project.artifactId}-${project.version}.jar</argument>
+                                <argument>${project.artifactId}-${project.version}-jar-with-dependencies.jar</argument>
                             </arguments>
                             <skip>${skipTests}</skip>
                         </configuration>
@@ -150,17 +182,17 @@
                 <artifactId>jmeter-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>jmeter-tests</id>
+                        <id>configuration</id>
                         <phase>integration-test</phase>
                         <goals>
-                            <goal>jmeter</goal>
+                            <goal>configure</goal>
                         </goals>
                     </execution>
                     <execution>
-                        <id>jmeter-check-results</id>
+                        <id>jmeter-tests</id>
                         <phase>post-integration-test</phase>
                         <goals>
-                            <goal>results</goal>
+                            <goal>jmeter</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -178,6 +210,19 @@
                         <duration>90</duration>
                     </propertiesUser>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>net.sf.saxon</groupId>
+                        <artifactId>Saxon-HE</artifactId>
+                        <version>9.9.1-1</version>
+                        <exclusions>
+                            <exclusion>
+                                <groupId>xom</groupId>
+                                <artifactId>xom</artifactId>
+                            </exclusion>
+                        </exclusions>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
@@ -186,4 +231,46 @@
         <main.class>org.wso2.performance.common.netty.echo.EchoHttpServer</main.class>
     </properties>
 
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>ignore</checksumPolicy>
+            </releases>
+            <id>wso2.releases</id>
+            <name>WSO2 Releases Repository</name>
+            <url>http://maven.wso2.org/nexus/content/repositories/releases/</url>
+        </repository>
+        <repository>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+            </snapshots>
+            <id>wso2.snapshots</id>
+            <name>WSO2 Snapshot Repository</name>
+            <url>http://maven.wso2.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>ignore</checksumPolicy>
+            </releases>
+            <id>wso2-nexus</id>
+            <name>WSO2 internal Repository</name>
+            <url>http://maven.wso2.org/nexus/content/groups/wso2-public/</url>
+        </repository>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>central</id>
+            <name>Central Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+    </repositories>
 </project>
