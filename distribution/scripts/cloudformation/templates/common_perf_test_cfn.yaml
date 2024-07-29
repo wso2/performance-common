@@ -63,8 +63,8 @@ Parameters:
   OracleJDKDistributionName:
     Description: The name of the 'Oracle JDK Distribution' in S3 Bucket.
     Type: String
-    ConstraintDescription: must be a valid Oracle JDK
-    AllowedPattern: ^jdk-8u[0-9]+-linux-x64.tar.gz$
+    #ConstraintDescription: must be a valid Oracle JDK
+    #AllowedPattern: ^jdk-8u[0-9]+-linux-x64.tar.gz$
   JMeterClientInstanceType:
     Description: JMeter Client EC2 instance type
     Type: String
