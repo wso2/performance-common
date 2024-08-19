@@ -109,7 +109,7 @@ jmeter_servers=$default_jmeter_servers
 # JMeter SSH hosts array depending on the number of servers. For example, jmeter1 and jmeter2 for two servers.
 declare -a jmeter_ssh_hosts
 
-payload_type=ARRAY
+payload_type=OBJECT
 # Estimate flag
 estimate=false
 # Estimated processing time in between tests
