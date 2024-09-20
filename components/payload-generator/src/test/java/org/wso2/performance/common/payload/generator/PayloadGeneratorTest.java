@@ -143,7 +143,7 @@ public class PayloadGeneratorTest {
     public void tesObjectPayloads() throws IOException {
         int[] objectPayloadSizes = {500, 1000, 10000, 100000};
         for (int size : objectPayloadSizes) {
-            String fileName = String.format("%dB.json", size);
+            String fileName = String.format("%dB-obj-payload.json", size);
             String expected = new String(Files.readAllBytes(TEST_RESOURCES.resolve(fileName)));
             ObjectPayload payload = new ObjectPayload(size, 10);
             String payloadStr = new String(payload.getJson(), StandardCharsets.UTF_8);
