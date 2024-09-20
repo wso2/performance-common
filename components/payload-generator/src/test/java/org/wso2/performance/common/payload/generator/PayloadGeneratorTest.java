@@ -23,6 +23,11 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -34,6 +39,7 @@ public class PayloadGeneratorTest {
 
     private PayloadGenerator payloadGenerator;
     private Random random;
+    private static final Path TEST_RESOURCES = Paths.get("src/test/resources/test-resources");
 
     @BeforeClass
     private void init() {
@@ -77,11 +83,6 @@ public class PayloadGeneratorTest {
     @Test(dataProvider = "sizes")
     private void testArrayPayload(int size) {
         testPayload(new ArrayPayload(size, 10).getJson(), size);
-    }
-
-    @Test(dataProvider = "sizes")
-    private void testObjectPayload(int size) {
-        testPayload(new ObjectPayload(size, 10).getJson(), size);
     }
 
     private void testPayload(byte[] payload, int size) {
@@ -133,13 +134,20 @@ public class PayloadGeneratorTest {
         return payloads.toArray(new Object[payloads.size()][1]);
     }
 
-    @Test(dataProvider = "objectPayloads")
-    private void testObjectPayload(int size, String expected) {
-        testPayload(new ObjectPayload(size, 10).getJson(), expected);
-    }
-
     private void testPayload(byte[] payload, String expected) {
         String json = new String(payload);
         Assert.assertEquals(json, expected, "Unexpected Json\n" + json);
+    }
+
+    @Test
+    public void tesObjectPayloads() throws IOException {
+        int[] objectPayloadSizes = {500, 1000, 10000, 100000};
+        for (int size : objectPayloadSizes) {
+            String fileName = String.format("%dB-obj-payload.json", size);
+            String expected = new String(Files.readAllBytes(TEST_RESOURCES.resolve(fileName)));
+            ObjectPayload payload = new ObjectPayload(size, 10);
+            String payloadStr = new String(payload.getJson(), StandardCharsets.UTF_8);
+            Assert.assertEquals(payloadStr, expected);
+        }
     }
 }
