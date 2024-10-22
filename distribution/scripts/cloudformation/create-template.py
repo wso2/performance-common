@@ -78,7 +78,7 @@ def main():
     if args.parameters is not None:
         context.update(args.parameters)
 
-    with open(args.output_name, 'w') as f:
+    with open(args.output_name, 'wb') as f:
         markdown_file = render_template(args.template_name, context)
         f.write(markdown_file.encode("utf-8"))
 

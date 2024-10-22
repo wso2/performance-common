@@ -243,6 +243,11 @@ if ! [[ $oracle_jdk_distribution_filename =~ ^jdk-8u[0-9]+-linux-x64.tar.gz$ ]];
     exit 1
 fi
 
+# if ! [[ $oracle_jdk_distribution_filename =~ ^OpenJDK8U-jdk_x64_[a-zA-Z0-9_]+.tar.gz$ ]]; then
+#     echo "Please specify a valid Open JDK distribution file (OpenJDK8U-jdk_x64_[a-zA-Z0-9_]+.tar.gz)"
+#     exit 1
+# fi
+
 if [[ ! -f $gcviewer_jar_path ]]; then
     echo "Please specify the path to GCViewer JAR file."
     exit 1
@@ -631,7 +636,8 @@ for ((i = 0; i < ${#performance_test_options[@]}; i++)); do
     echo "Creating stack $stack_name..."
     echo "$create_stack_command"
     # Create stack
-    stack_id="$($create_stack_command)"
+    stack_result="$($create_stack_command)"
+    stack_id=$(echo "$stack_result" | jq -r '.StackId')
     # stack_id="Stack"
     stack_ids+=("$stack_id")
     echo "Created stack: $stack_name. ID: $stack_id"
