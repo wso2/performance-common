@@ -54,7 +54,7 @@ def main():
                 & (df['timestamp'] <= args.end_timestamp)]
         df = df.drop(columns=['hostname', 'interval', 'timestamp'])
         df = df.rename(columns=lambda x: re.sub(r'[%/\-]', '', x))
-        sar_averages.update(df.mean().round(2).to_dict())
+        sar_averages.update(df.mean(numeric_only=True).round(2).to_dict())
 
     with open(args.output_file, 'w') as outfile:
         json.dump(sar_averages, outfile)
