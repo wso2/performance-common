@@ -421,6 +421,9 @@ Usage: EchoHttpServer [options]
     --worker-threads
       Worker Threads
       Default: 8
+    --max-content-length
+      Max HTTP content length in bytes
+      Default: 1048576 (i.e. 1MiB)
 ```
 
 ### Payloads
