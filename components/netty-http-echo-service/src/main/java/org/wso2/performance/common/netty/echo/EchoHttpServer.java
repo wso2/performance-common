@@ -95,6 +95,9 @@ public final class EchoHttpServer {
     @Parameter(names = "--h2-content-aggregate", description = "Enable HTTP/2 content aggregation")
     private boolean h2ContentAggregate = true;
 
+    @Parameter(names = "--max-content-length", description = "Max HTTP content length in bytes")
+    private int maxContentLength = 1 * 1024 * 1024; // Default 1MiB
+
     public static void main(String[] args) throws Exception {
         EchoHttpServer echoHttpServer = new EchoHttpServer();
         final JCommander jcmdr = new JCommander(echoHttpServer);
@@ -163,7 +166,7 @@ public final class EchoHttpServer {
                             p.addLast(sslCtx.newHandler(ch.alloc()));
                         }
                         p.addLast(new HttpServerCodec());
-                        p.addLast("aggregator", new HttpObjectAggregator(1048576));
+                        p.addLast("aggregator", new HttpObjectAggregator(maxContentLength));
                         p.addLast(new EchoHttpServerHandler(sleepTime, false));
                     }
                 });
