@@ -597,7 +597,7 @@ trap exit_handler EXIT
 
 # Find latest Ubuntu AMI ID
 # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami.html
-latest_ami_id="$(aws ec2 describe-images --owners 099720109477 --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-????????' 'Name=state,Values=available' --output json | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId')"
+latest_ami_id="$(aws ec2 describe-images --owners 099720109477 --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-????????' 'Name=state,Values=available' --include-deprecated --output json | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId')"
 echo "Latest Ubuntu AMI ID: $latest_ami_id"
 
 # Create stacks
